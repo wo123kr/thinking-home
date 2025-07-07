@@ -187,10 +187,10 @@ function getFormName(form) {
   }
   
   return form.title || 
-         form.getAttribute('data-form-name') ||
-         form.closest('[data-form-name]')?.getAttribute('data-form-name') ||
+    form.getAttribute('data-form-name') ||
+    form.closest('[data-form-name]')?.getAttribute('data-form-name') ||
          form.querySelector('h1, h2')?.textContent?.trim() ||
-         '알 수 없는 폼';
+    '알 수 없는 폼';
 }
 
 // ThinkingData 공식 폼 타입 구분 (실제 URL 구조 기반)
@@ -256,7 +256,7 @@ function getThinkingDataFormInfo(form) {
   }
   
   return formInfo;
-}
+  }
 
 // 마스킹 함수들은 utils.js에서 가져와서 사용
 

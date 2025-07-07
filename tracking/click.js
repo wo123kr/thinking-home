@@ -27,8 +27,8 @@ function trackClickEvents() {
       updateSessionActivity();
       
       const elementData = {
-        element_id: closestClickable.id || '',
-        element_class_list: closestClickable.className ? closestClickable.className.split(' ') : [],
+        element_id: (closestClickable.id || '') + '',
+        element_class_list: Array.isArray(closestClickable.className ? closestClickable.className.split(' ') : []) ? closestClickable.className.split(' ') : [],
         // name 추출: 텍스트만, 2000자 이내, 없으면 alt/id/unknown
         element_name: (function() {
           let name = '';
@@ -42,14 +42,14 @@ function trackClickEvents() {
             name = 'unknown';
           }
           if (name.length > 2000) name = name.substring(0, 2000);
-          return name;
+          return (name || '') + '';
         })(),
-        element_tag_name: closestClickable.tagName.toLowerCase(),
-        element_target_url: closestClickable.href || '',
-        page_url: window.location.href,
+        element_tag_name: (closestClickable.tagName ? closestClickable.tagName.toLowerCase() : '') + '',
+        element_target_url: (closestClickable.href || '') + '',
+        page_url: (window.location.href || '') + '',
         click_coordinates_page: {
-          x_coordinate: event.pageX,
-          y_coordinate: event.pageY
+          x_coordinate: typeof event.pageX === 'number' ? event.pageX : 0,
+          y_coordinate: typeof event.pageY === 'number' ? event.pageY : 0
         }
       };
       

@@ -355,8 +355,22 @@ function updateSuperProperties() {
     }
   });
   
-  window.te.setSuperProperties(superProperties);
+  window.te.setSuperProperties(nullSafeObject(superProperties));
   console.log('✅ Super properties set:', superProperties);
+}
+
+// null/undefined → '' 변환 유틸리티
+function nullSafeObject(obj) {
+  if (!obj || typeof obj !== 'object') return obj;
+  const safe = {};
+  for (const k in obj) {
+    if (obj[k] === null || obj[k] === undefined) {
+      safe[k] = '';
+    } else {
+      safe[k] = obj[k];
+    }
+  }
+  return safe;
 }
 
 /**

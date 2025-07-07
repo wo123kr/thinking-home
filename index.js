@@ -104,7 +104,7 @@
     // 모듈 로드 시작
     loadAllModules();
     
-})();
+})(); 
 
 console.log('🚀 Webflow Tracking System 시작...');
 

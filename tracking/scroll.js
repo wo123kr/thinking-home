@@ -80,11 +80,11 @@ function trackScrollDepth() {
   }
   
   // 스크롤 이벤트 리스너 (디바운싱 적용)
-  let scrollTimeout;
+let scrollTimeout;
   const debounceDelay = getScrollDebounceDelay();
   
-  window.addEventListener('scroll', function() {
-    clearTimeout(scrollTimeout);
+window.addEventListener('scroll', function() {
+  clearTimeout(scrollTimeout);
     scrollTimeout = setTimeout(handleScroll, debounceDelay);
   });
   

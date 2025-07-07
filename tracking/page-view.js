@@ -41,7 +41,7 @@ function trackPageView() {
     page_meta_data: getPageMetaData(),
     page_structure_info: getPageStructureInfo(),
     event_source: 'custom_module', // 커스텀 모듈에서 발생한 이벤트임을 표시
-    timestamp: new Date().toISOString()
+    timestamp: Date.now()
   };
   
   // referrer 정보가 있을 때만 추가

@@ -5,7 +5,7 @@
 
 // ThinkingData 설정
 var config = {
-  appId: "cf003f81e4564662955fc0e0d914cef9",
+  appId: "01135534d2e04fa0bbfc5f4adc7f84ca",
   serverUrl: "https://te-receiver-naver.thinkingdata.kr/sync_js",
   autoTrack: {
     pageShow: true,  // 페이지 진입 자동 추적
@@ -49,47 +49,155 @@ function setupAutoEventTracking() {
     });
     console.log('✅ 페이지뷰 자동 추적 설정 완료');
 
-    // 2. 클릭 이벤트 자동 추적
-    window.te.trackLink(
-      {
-        tag: ["a", "button"],
-        class: ["btn", "button", "link", "cta", "nav-link", "menu-item"],
-        id: ["submit", "demo", "contact", "download", "signup"]
-      },
-      "element_click",
-      {
-        page_section: getPageSection(),
-        page_type: getPageType()
+    // 2. 클릭 이벤트 자동 추적 (커스텀 처리로 변경)
+    document.addEventListener('click', function(event) {
+      const target = event.target;
+      const clickableElement = target.closest('a, button, [role="button"], .btn, .button, .link, .cta, .nav-link, .menu-item, #submit, #demo, #contact, #download, #signup');
+      
+      if (clickableElement) {
+        // 텍스트만 추출 (HTML 제거)
+        let elementText = '';
+        
+        // 1. alt 속성 확인
+        if (clickableElement.getAttribute('alt')) {
+          elementText = clickableElement.getAttribute('alt');
+        }
+        // 2. title 속성 확인
+        else if (clickableElement.getAttribute('title')) {
+          elementText = clickableElement.getAttribute('title');
+        }
+        // 3. 텍스트 내용 추출 (HTML 태그 제거)
+        else if (clickableElement.textContent) {
+          elementText = clickableElement.textContent.trim().replace(/\s+/g, ' ');
+        }
+        // 4. id 속성 확인
+        else if (clickableElement.id) {
+          elementText = clickableElement.id;
+        }
+        // 5. 기본값
+        else {
+          elementText = 'clickable_element';
+        }
+        
+        // 2000자 제한
+        if (elementText.length > 2000) {
+          elementText = elementText.substring(0, 2000);
+        }
+        
+        window.te.track('element_click', {
+          page_section: getPageSection(),
+          page_type: getPageType(),
+          name: elementText,
+          element_text: elementText,
+          element_tag: clickableElement.tagName.toLowerCase(),
+          element_id: clickableElement.id || null,
+          element_class: clickableElement.className || null
+        });
       }
-    );
+    });
     console.log('✅ 클릭 이벤트 자동 추적 설정 완료');
 
-    // 3. 폼 제출 자동 추적
-    window.te.trackLink(
-      {
-        tag: ["form"],
-        class: ["form", "contact-form", "demo-form", "signup-form"]
-      },
-      "form_submit",
-      {
-        form_type: getFormType(),
-        page_url: window.location.href
+    // 3. 폼 제출 자동 추적 (커스텀 처리로 변경)
+    document.addEventListener('submit', function(event) {
+      const form = event.target;
+      
+      if (form && form.tagName === 'FORM') {
+        // 폼 이름 추출
+        let formName = '';
+        
+        // 1. name 속성 확인
+        if (form.getAttribute('name')) {
+          formName = form.getAttribute('name');
+        }
+        // 2. id 속성 확인
+        else if (form.id) {
+          formName = form.id;
+        }
+        // 3. action URL에서 추출
+        else if (form.action) {
+          try {
+            const url = new URL(form.action);
+            formName = url.pathname.split('/').pop() || 'form';
+          } catch (e) {
+            formName = 'form';
+          }
+        }
+        // 4. 기본값
+        else {
+          formName = 'form';
+        }
+        
+        // 2000자 제한
+        if (formName.length > 2000) {
+          formName = formName.substring(0, 2000);
+        }
+        
+        window.te.track('form_submit', {
+          form_type: getFormType(),
+          page_url: window.location.href,
+          name: formName,
+          form_name: formName,
+          form_id: form.id || null,
+          form_class: form.className || null
+        });
       }
-    );
+    });
     console.log('✅ 폼 제출 자동 추적 설정 완료');
 
-    // 4. 외부 링크 클릭 자동 추적
-    window.te.trackLink(
-      {
-        tag: ["a"],
-        class: ["external-link", "outbound-link"]
-      },
-      "outbound_link_click",
-      {
-        link_destination: "external",
-        page_url: window.location.href
+    // 4. 외부 링크 클릭 자동 추적 (커스텀 처리로 변경)
+    document.addEventListener('click', function(event) {
+      const target = event.target;
+      const link = target.closest('a');
+      
+      if (link && link.href) {
+        const url = link.href;
+        const currentHost = window.location.hostname;
+        
+        try {
+          const linkHost = new URL(url).hostname;
+          if (linkHost !== currentHost) {
+            // 텍스트만 추출 (HTML 제거)
+            let linkText = '';
+            
+            // 1. alt 속성 확인
+            if (link.getAttribute('alt')) {
+              linkText = link.getAttribute('alt');
+            }
+            // 2. title 속성 확인
+            else if (link.getAttribute('title')) {
+              linkText = link.getAttribute('title');
+            }
+            // 3. 텍스트 내용 추출 (HTML 태그 제거)
+            else if (link.textContent) {
+              linkText = link.textContent.trim().replace(/\s+/g, ' ');
+            }
+            // 4. id 속성 확인
+            else if (link.id) {
+              linkText = link.id;
+            }
+            // 5. 기본값
+            else {
+              linkText = 'external_link';
+            }
+            
+            // 2000자 제한
+            if (linkText.length > 2000) {
+              linkText = linkText.substring(0, 2000);
+            }
+            
+            window.te.track('outbound_link_click', {
+              link_destination: "external",
+              page_url: window.location.href,
+              outbound_url: url,
+              name: linkText,
+              link_text: linkText
+            });
+          }
+        } catch (e) {
+          console.warn('외부 링크 URL 파싱 실패:', e);
+        }
       }
-    );
+    });
     console.log('✅ 외부 링크 자동 추적 설정 완료');
 
     console.log('🎉 자동 이벤트 수집 설정 완료!');
