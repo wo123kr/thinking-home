@@ -55,7 +55,7 @@ function trackPopupEvents() {
     
     if (buttonType !== 'none') {
       updateSessionActivity();
-      trackEvent('popup_action', {
+      trackEvent('te_popup_action', {
         action_type: buttonType,
         button_text: target.textContent ? target.textContent.trim() : null,
         element_id: target.id || null,
@@ -71,7 +71,7 @@ function trackPopupEvents() {
   document.addEventListener('keydown', function(event) {
     if (event.key === 'Escape') {
       updateSessionActivity();
-      trackEvent('popup_action', {
+      trackEvent('te_popup_action', {
         action_type: 'popup_close',
         close_method: 'escape_key',
         popup_type: getCurrentPopupType(),
@@ -88,7 +88,7 @@ function trackPopupEvents() {
     // 동적 팝업 외부 클릭 감지
     if (isPopupOutsideClick(target)) {
       updateSessionActivity();
-      trackEvent('popup_action', {
+      trackEvent('te_popup_action', {
         action_type: 'popup_close',
         close_method: 'outside_click',
         popup_type: getCurrentPopupType(),
@@ -256,7 +256,7 @@ function trackPopupShown(popup) {
     popupInfo.buttons = buttons;
   }
   
-        trackEvent('popup_shown', popupInfo);
+        trackEvent('te_popup_shown', popupInfo);
   
   console.log('🎪 팝업 표시 추적:', popupInfo);
 }

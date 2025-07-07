@@ -40,7 +40,7 @@ function trackResourceDownloads() {
           file_size: getFileSize(link.href)
         };
         
-        trackEvent('resource_download', downloadData);
+        trackEvent('te_resource_download', downloadData);
         
         console.log('📥 리소스 다운로드 추적:', resourceType, downloadData.download_filename);
       }

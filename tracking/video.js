@@ -186,7 +186,7 @@ function initializeYouTubePlayers() {
             });
             
             // 플레이어 준비 완료 이벤트
-                    trackEvent('video_ready', videoData);
+            trackEvent('te_video_ready', videoData);
           },
           'onStateChange': function(event) {
             const session = videoSessions.get(iframe.id);
@@ -211,7 +211,7 @@ function initializeYouTubePlayers() {
                 session.start_time = Date.now();
                 session.last_position = currentTime;
                 
-                trackEvent('video_play', {
+                trackEvent('te_video_play', {
                   video_name: session.video_name,
                   video_url: session.video_url,
                   video_id: session.video_id,
@@ -233,7 +233,7 @@ function initializeYouTubePlayers() {
                 session.pause_count++;
                 session.completion_rate = Math.max(session.completion_rate, completionRate);
                 
-                trackEvent('video_pause', {
+                trackEvent('te_video_pause', {
                   video_name: session.video_name,
                   video_url: session.video_url,
                   video_id: session.video_id,
@@ -256,7 +256,7 @@ function initializeYouTubePlayers() {
                   session.total_watch_time += watchTime;
                 }
                 
-                trackEvent('video_ended', {
+                trackEvent('te_video_ended', {
                   video_name: session.video_name,
                   video_url: session.video_url,
                   video_id: session.video_id,
@@ -271,7 +271,7 @@ function initializeYouTubePlayers() {
                 });
                 
                 // 완료 이벤트
-                trackEvent('video_complete', {
+                trackEvent('te_video_complete', {
                   video_name: session.video_name,
                   video_url: session.video_url,
                   video_id: session.video_id,
@@ -285,7 +285,7 @@ function initializeYouTubePlayers() {
                 break;
                 
               case YT.PlayerState.BUFFERING:
-                trackEvent('video_buffering', {
+                trackEvent('te_video_buffering', {
                   video_name: session.video_name,
                   video_url: session.video_url,
                   video_id: session.video_id,
@@ -296,7 +296,7 @@ function initializeYouTubePlayers() {
                 break;
                 
               case YT.PlayerState.CUED:
-                trackEvent('video_cued', {
+                trackEvent('te_video_cued', {
                   video_name: session.video_name,
                   video_url: session.video_url,
                   video_id: session.video_id,
@@ -307,7 +307,7 @@ function initializeYouTubePlayers() {
           },
           'onError': function(event) {
             console.error('❌ 비디오 플레이어 오류:', event.data);
-            trackEvent('video_error', {
+            trackEvent('te_video_error', {
               video_id: iframe.id,
               error_code: event.data,
               platform: iframe.dataset.videoPlatform || 'youtube'
@@ -354,7 +354,7 @@ function checkVideoProgress(session, currentRate) {
   
   milestones.forEach(milestone => {
     if (currentRate >= milestone && session.completion_rate < milestone) {
-      trackEvent('video_progress', {
+      trackEvent('te_video_progress', {
         video_name: session.video_name,
         video_url: session.video_url,
         video_id: session.video_id,
