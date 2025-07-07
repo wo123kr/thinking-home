@@ -366,10 +366,15 @@ function getPageLoadTime() {
   return null;
 }
 
-// SPA 환경에서 페이지 변경 감지를 위한 함수
+// SPA 환경에서 페이지 변경 감지를 위한 함수 (SDK 자동 수집 사용으로 비활성화)
 function initSPAPageTracking() {
-  console.log('📄 SPA 페이지 추적 초기화...');
+  console.log('📄 SPA 페이지 추적 - SDK 자동 수집 사용으로 비활성화됨');
   
+  // SDK 자동 수집 이벤트가 이미 SPA 페이지 변경을 처리하므로 비활성화
+  return;
+  
+  // 아래 코드는 참고용으로 유지 (필요시 주석 해제)
+  /*
   let lastUrl = window.location.href;
   let lastPath = window.location.pathname;
   
@@ -408,6 +413,7 @@ function initSPAPageTracking() {
   });
   
   console.log('✅ SPA 페이지 추적 초기화 완료');
+  */
 }
 
 // 설정 업데이트 함수 (런타임에 설정 변경 가능)
@@ -482,29 +488,29 @@ window.initSPAPageTracking = initSPAPageTracking;
 window.debugPageViewTracking = debugPageViewTracking;
 window.updatePageViewConfig = updatePageViewConfig;
 
-// DOM 로드 완료 후 자동 실행
+// DOM 로드 완료 후 자동 실행 (SDK 자동 수집 사용으로 비활성화)
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', function() {
-    console.log('📄 DOM 로드 완료, 페이지 뷰 추적 시작');
-    setTimeout(trackPageView, 1000);
+    console.log('📄 DOM 로드 완료, 페이지 뷰 추적 - SDK 자동 수집 사용으로 비활성화됨');
+    // setTimeout(trackPageView, 1000); // 비활성화
   });
 } else {
   // DOM이 이미 로드된 경우
-  console.log('📄 DOM 이미 로드됨, 페이지 뷰 추적 시작');
-  setTimeout(trackPageView, 1000);
+  console.log('📄 DOM 이미 로드됨, 페이지 뷰 추적 - SDK 자동 수집 사용으로 비활성화됨');
+  // setTimeout(trackPageView, 1000); // 비활성화
 }
 
-// ThinkingData 초기화 완료 이벤트 감지
+// ThinkingData 초기화 완료 이벤트 감지 (SDK 자동 수집 사용으로 비활성화)
 window.addEventListener('thinkingdata:ready', function() {
-  console.log('📄 ThinkingData 초기화 완료, 페이지 뷰 추적 시작');
-  setTimeout(trackPageView, 500);
+  console.log('📄 ThinkingData 초기화 완료, 페이지 뷰 추적 - SDK 자동 수집 사용으로 비활성화됨');
+  // setTimeout(trackPageView, 500); // 비활성화
 });
 
-// 페이지 로드 완료 후 한 번 더 시도
+// 페이지 로드 완료 후 한 번 더 시도 (SDK 자동 수집 사용으로 비활성화)
 window.addEventListener('load', function() {
-  console.log('📄 페이지 로드 완료, 페이지 뷰 추적 재확인');
-  setTimeout(trackPageView, 2000);
+  console.log('📄 페이지 로드 완료, 페이지 뷰 추적 - SDK 자동 수집 사용으로 비활성화됨');
+  // setTimeout(trackPageView, 2000); // 비활성화
 });
 
-// 페이지 로드 즉시 실행 (기존 로직 유지)
-trackPageView();
+// 페이지 로드 즉시 실행 (SDK 자동 수집 사용으로 비활성화)
+// trackPageView(); // 비활성화
