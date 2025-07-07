@@ -41,13 +41,16 @@ function setupAutoEventTracking() {
 
     console.log('🔄 자동 이벤트 수집 설정 시작...');
 
-    // 1. 페이지뷰 자동 추적
-    window.te.quick("autoTrack", {
+    // 1. 페이지뷰 자동 추적 (SDK ta_page_show 사용으로 중복 방지)
+    // window.te.quick("autoTrack") 제거 - SDK 자동 이벤트 ta_page_show 사용
+    // 공통 속성으로 페이지 정보 추가
+    window.te.setSuperProperties({
       page_type: getPageType(),
       page_category: getPageCategory(),
+      page_section: getPageSection(),
       source: getTrafficSource()
     });
-    console.log('✅ 페이지뷰 자동 추적 설정 완료');
+    console.log('✅ SDK 자동 페이지뷰 이벤트 사용 (ta_page_show) + 공통 속성 설정');
 
     // 2. 클릭 이벤트 자동 추적 (커스텀 처리로 변경)
     document.addEventListener('click', function(event) {
@@ -341,6 +344,12 @@ function initializeTrackingSystem() {
 
 // 모든 추적 시작
 function startAllTracking() {
+  // 중복 실행 방지
+  if (window.thinkingDataInitialized) {
+    console.log('ℹ️ ThinkingData 추적 시스템이 이미 초기화됨');
+    return;
+  }
+  
   console.log('🔄 ThinkingData 추적 모듈 초기화 시작...');
   
   let initializedCount = 0;
@@ -349,51 +358,59 @@ function startAllTracking() {
   setupAutoEventTracking();
   
   // 각 모듈의 초기화 함수 호출 (커스텀 모듈)
-  if (typeof window.trackPopupEvents === 'function') {
+  if (typeof window.trackPopupEvents === 'function' && !window.popupTrackingInitialized) {
     window.trackPopupEvents();
+    window.popupTrackingInitialized = true;
     initializedCount++;
     console.log('✅ 팝업 추적 초기화 완료');
   }
   
-  if (typeof window.trackClickEvents === 'function') {
+  if (typeof window.trackClickEvents === 'function' && !window.clickTrackingInitialized) {
     window.trackClickEvents();
+    window.clickTrackingInitialized = true;
     initializedCount++;
     console.log('✅ 클릭 추적 초기화 완료');
   }
   
-  if (typeof window.trackScrollDepth === 'function') {
+  if (typeof window.trackScrollDepth === 'function' && !window.scrollTrackingInitialized) {
     window.trackScrollDepth();
+    window.scrollTrackingInitialized = true;
     initializedCount++;
     console.log('✅ 스크롤 추적 초기화 완료');
   }
   
-  if (typeof window.trackFormSubmissions === 'function') {
+  if (typeof window.trackFormSubmissions === 'function' && !window.formTrackingInitialized) {
     window.trackFormSubmissions();
+    window.formTrackingInitialized = true;
     initializedCount++;
     console.log('✅ 폼 추적 초기화 완료');
   }
   
-  if (typeof window.trackVideoEvents === 'function') {
+  if (typeof window.trackVideoEvents === 'function' && !window.videoTrackingInitialized) {
     window.trackVideoEvents();
+    window.videoTrackingInitialized = true;
     initializedCount++;
     console.log('✅ 비디오 추적 초기화 완료');
   }
   
-  if (typeof window.trackResourceDownloads === 'function') {
+  if (typeof window.trackResourceDownloads === 'function' && !window.resourceTrackingInitialized) {
     window.trackResourceDownloads();
+    window.resourceTrackingInitialized = true;
     initializedCount++;
     console.log('✅ 리소스 추적 초기화 완료');
   }
   
-  if (typeof window.initializePageExitTracking === 'function') {
+  if (typeof window.initializePageExitTracking === 'function' && !window.exitTrackingInitialized) {
     window.initializePageExitTracking();
+    window.exitTrackingInitialized = true;
     initializedCount++;
     console.log('✅ 페이지 종료 추적 초기화 완료');
   }
   
   // 유저 속성 추적 초기화
-  if (typeof window.initializeUserAttributeTracker === 'function') {
+  if (typeof window.initializeUserAttributeTracker === 'function' && !window.userAttributeTrackingInitialized) {
     window.initializeUserAttributeTracker();
+    window.userAttributeTrackingInitialized = true;
     initializedCount++;
     console.log('✅ 유저 속성 추적 초기화 완료');
   }
@@ -404,6 +421,9 @@ function startAllTracking() {
   //   console.log('✅ 페이지 뷰 이벤트 전송 완료');
   // }
   console.log('✅ SDK 자동 페이지뷰 이벤트 사용 (중복 방지)');
+  
+  // 초기화 완료 플래그 설정
+  window.thinkingDataInitialized = true;
   
   console.log(`🎉 ThinkingData 추적 시스템 완전 초기화 완료! (${initializedCount}개 모듈 + 자동 이벤트)`);
   
@@ -445,6 +465,12 @@ function startAllTracking() {
 
 // SDK 초기화 함수
 function initializeThinkingData() {
+  // 중복 실행 방지
+  if (window.te && window.te.getDistinctId) {
+    console.log('ℹ️ ThinkingData SDK가 이미 초기화됨');
+    return;
+  }
+  
   try {
     // thinkingdata 객체 확인
     if (typeof thinkingdata === 'undefined') {
@@ -486,9 +512,10 @@ if (document.readyState === 'loading') {
   setTimeout(initializeThinkingData, 500);
 }
 
-// 페이지 로드 완료 후 한 번 더 시도
+// 페이지 로드 완료 후 한 번 더 시도 (중복 방지)
 window.addEventListener('load', function() {
-  if (!window.te) {
+  if (!window.te && !window.thinkingDataLoadAttempted) {
+    window.thinkingDataLoadAttempted = true;
     console.log('🔄 페이지 로드 완료, ThinkingData 재초기화 시도');
     setTimeout(initializeThinkingData, 1000);
   }
@@ -497,5 +524,5 @@ window.addEventListener('load', function() {
 // 전역 함수로 노출
 window.initializeThinkingData = initializeThinkingData;
 
-// 시작 로그
-console.log('🚀 ThinkingData 추적 시스템 로드 시작... (자동 이벤트 수집 포함)');
+// 시작 로그 (간소화)
+console.log('🚀 ThinkingData 추적 시스템 로드 시작...');
