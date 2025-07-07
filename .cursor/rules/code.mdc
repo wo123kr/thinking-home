@@ -1,0 +1,1675 @@
+---
+alwaysApply: true
+---
+<!-- ✅ Thinking Data 2 -->
+<script src="https://cdn.jsdelivr.net/npm/thinkingdata-browser@2.0.3/thinkingdata.umd.min.js"></script>
+<script src="https://te-receiver-naver.thinkingdata.kr/te-sdk/latest/ta.js"></script>
+
+<script>
+    // ✅ ThinkingData SDK 초기화
+    var config = {
+        appId: "cf003f81e4564662955fc0e0d914cef9",
+        serverUrl: "https://te-receiver-naver.thinkingdata.kr/sync_js",
+        autoTrack: {
+            pageShow: true,  // 페이지 진입 자동 추적
+            pageHide: true   // 페이지 이탈 자동 추적
+        }
+    };
+
+    window.te = thinkingdata;
+    te.init(config);  // ✅ SDK 초기화 완료
+    console.log("✅ ThinkingData SDK initialized:", config);
+
+    
+    /* ================================
+       📍 ✅ 세션 관리 및 공통 속성 설정
+    ================================= */
+    
+    // 세션 관리 변수
+    let sessionId = null;
+    let sessionNumber = parseInt(localStorage.getItem('te_session_number') || '0');
+    let sessionStartTime = null;
+    let isEngagedSession = false;
+    let interactionCount = 0;
+    let lastActivityTime = Date.now();
+    const SESSION_TIMEOUT = 30 * 60 * 1000; // 30분 (웹 기준)
+    
+    // 세션 ID 생성
+    function generateSessionId() {
+        return Date.now(); // Epoch 시간 사용 (Amplitude 권장)
+    }
+    
+    // 세션 시작
+    function startSession() {
+        sessionId = generateSessionId();
+        sessionNumber++;
+        sessionStartTime = Date.now();
+        isEngagedSession = false;
+        interactionCount = 0;
+        
+        localStorage.setItem('te_session_number', sessionNumber.toString());
+        localStorage.setItem('te_session_id', sessionId.toString());
+        localStorage.setItem('te_session_start_time', sessionStartTime.toString());
+        
+        // 공통 속성 업데이트 (새 세션 정보 반영)
+        setSuperProperties();
+        
+        // 세션 시작 이벤트 전송
+        te.track('te_session_start', {
+            session_id: sessionId,
+            session_number: sessionNumber,
+            is_engaged_session: isEngagedSession
+        });
+        
+        console.log('✅ Session started:', sessionId, 'Session Number:', sessionNumber);
+    }
+    
+    // 세션 활동 업데이트
+    function updateSessionActivity() {
+        lastActivityTime = Date.now();
+        interactionCount++;
+        
+        // 인게이지 세션 조건: 10초 이상 또는 2회 이상 상호작용
+        if (!isEngagedSession) {
+            const timeSpent = Date.now() - sessionStartTime;
+            if (timeSpent >= 10000 || interactionCount >= 2) {
+                isEngagedSession = true;
+                console.log('✅ Session became engaged');
+            }
+        }
+    }
+    
+    // 세션 만료 체크
+    function checkSessionExpiry() {
+        if (Date.now() - lastActivityTime > SESSION_TIMEOUT) {
+            startSession(); // 새 세션 시작
+        }
+    }
+    
+            // 기존 세션 복원 또는 새 세션 시작
+        function initializeSession() {
+            const storedSessionId = localStorage.getItem('te_session_id');
+            const storedStartTime = localStorage.getItem('te_session_start_time');
+            
+            if (storedSessionId && storedStartTime) {
+                const timeSinceStart = Date.now() - parseInt(storedStartTime);
+                if (timeSinceStart < SESSION_TIMEOUT) {
+                    // 기존 세션 복원
+                    sessionId = parseInt(storedSessionId);
+                    sessionStartTime = parseInt(storedStartTime);
+                    sessionNumber = parseInt(localStorage.getItem('te_session_number') || '1');
+                    console.log('✅ Session restored:', sessionId, 'Session Number:', sessionNumber);
+                } else {
+                    startSession(); // 새 세션 시작
+                }
+            } else {
+                startSession(); // 새 세션 시작
+            }
+        }
+    
+    // 공통 속성 설정 (모든 이벤트에 자동 추가)
+    function setSuperProperties() {
+        const superProperties = {
+            // 세션 관련 (커스텀)
+            session_id: sessionId,
+            session_number: sessionNumber,
+            
+            // 페이지 정보 (SDK 자동수집 #url, #url_path, #title과 별개)
+            page_host: window.location.hostname,
+            page_protocol: window.location.protocol,
+            page_hash: window.location.hash || null,
+            page_query: window.location.search || null,
+            
+            // 뷰포트 정보 (SDK의 #screen_width/height와 다름 - 실제 브라우저 창 크기)
+            viewport_width: window.innerWidth,
+            viewport_height: window.innerHeight,
+            viewport_ratio: Math.round((window.innerWidth / window.innerHeight) * 100) / 100,
+            
+            // 디바이스 정보 (SDK 자동수집 외 추가 정보)
+            device_pixel_ratio: window.devicePixelRatio || 1,
+            orientation: window.innerHeight > window.innerWidth ? 'portrait' : 'landscape',
+            
+            // 환경 감지 (SDK에서 제공하지 않는 정보)
+            is_mobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent),
+            is_touch_device: 'ontouchstart' in window || navigator.maxTouchPoints > 0,
+            is_tablet: /iPad|Android|Tablet/i.test(navigator.userAgent) && window.innerWidth >= 768,
+            
+            // 브라우저 기능 지원 (기술적 제약사항)
+            local_storage_enabled: (function() {
+                try {
+                    localStorage.setItem('test', 'test');
+                    localStorage.removeItem('test');
+                    return true;
+                } catch (e) {
+                    return false;
+                }
+            })(),
+            cookies_enabled: navigator.cookieEnabled,
+            webgl_enabled: (function() {
+                try {
+                    const canvas = document.createElement('canvas');
+                    return !!(canvas.getContext('webgl') || canvas.getContext('experimental-webgl'));
+                } catch (e) {
+                    return false;
+                }
+            })(),
+            
+            // 네트워크 정보 (지원하는 브라우저만)
+            connection_type: navigator.connection ? navigator.connection.effectiveType : null,
+            connection_downlink: navigator.connection ? navigator.connection.downlink : null,
+            is_online: navigator.onLine,
+            
+            // 타이밍 정보
+            timestamp: Date.now(),
+            local_time: new Date().toISOString(),
+            
+            // 성능 정보 (의미있는 지표만)
+            dom_ready_state: document.readyState,
+            performance_now: Math.round(performance.now()),
+            connection_rtt: navigator.connection ? navigator.connection.rtt : null, // 네트워크 지연시간
+            memory_used: performance.memory && performance.memory.usedJSHeapSize ? 
+                Math.round(performance.memory.usedJSHeapSize / 1024 / 1024) : null // MB 단위
+        };
+        
+        // UTM 파라미터 추출 (마케팅 캠페인 추적 - SDK #utm과 별개)
+        const urlParams = new URLSearchParams(window.location.search);
+        ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'utm_id'].forEach(function(param) {
+            const value = urlParams.get(param);
+            if (value) {
+                superProperties[param] = value;
+            }
+        });
+        
+        // 커스텀 추적 ID들
+        ['gclid', 'fbclid', 'msclkid', '_ga'].forEach(function(param) {
+            const value = urlParams.get(param);
+            if (value) {
+                superProperties[param] = value;
+            }
+        });
+        
+        te.setSuperProperties(superProperties);
+        console.log('✅ Super properties set:', superProperties);
+    }
+    
+    // 세션 초기화
+    initializeSession();
+    setSuperProperties();
+    
+    /* ================================
+       📍 ✅ 페이지 뷰 이벤트
+    ================================= */
+    
+    // 페이지 뷰 이벤트 전송
+    function trackPageView() {
+        const pageViewProperties = {
+            page_url: window.location.href,
+            page_path: window.location.pathname,
+            page_title: document.title
+        };
+        
+        // referrer 정보가 있을 때만 추가
+        if (document.referrer) {
+            pageViewProperties.referrer = document.referrer;
+            try {
+                pageViewProperties.referrer_host = new URL(document.referrer).hostname;
+            } catch (e) {
+                // URL 파싱 실패 시 무시
+            }
+        }
+        
+        te.track('te_page_view', pageViewProperties);
+    }
+    
+    trackPageView();
+    
+    /* ================================
+       📍 ✅ 팝업 추적
+    ================================= */
+    
+    // 팝업 관련 추적
+    function trackPopupEvents() {
+        // 팝업 표시 감지
+        const popupObserver = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                mutation.addedNodes.forEach(function(node) {
+                    if (node.nodeType === 1) { // Element node
+                        // 팝업으로 추정되는 요소들 감지
+                        if (node.classList && (
+                            node.classList.contains('modal') ||
+                            node.classList.contains('popup') ||
+                            node.classList.contains('overlay') ||
+                            node.getAttribute('role') === 'dialog'
+                        )) {
+                            te.track('popup_shown', {
+                                popup_type: 'benefit_check',
+                                popup_id: node.id || 'unknown',
+                                popup_class: Array.from(node.classList).join(' ')
+                            });
+                        }
+                    }
+                });
+            });
+        });
+        
+        popupObserver.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+        
+        // 팝업 닫기 버튼 추적
+        document.addEventListener('click', function(event) {
+            const target = event.target;
+            
+            // 혜택 확인하기 버튼 감지
+            if (target.textContent && target.textContent.includes('혜택 확인하기')) {
+                updateSessionActivity();
+                te.track('popup_action', {
+                    action_type: 'benefit_check_click',
+                    button_text: target.textContent.trim(),
+                    element_id: target.id || null,
+                    element_class: target.className || null
+                });
+            }
+            
+            // 팝업 닫기 버튼 감지
+            if (target.classList.contains('close') || 
+                target.classList.contains('modal-close') ||
+                target.getAttribute('aria-label') === 'Close' ||
+                target.textContent === '+' ||
+                target.closest('.popup-close')) {
+                updateSessionActivity();
+                te.track('popup_action', {
+                    action_type: 'popup_close',
+                    close_method: 'button_click',
+                    element_id: target.id || null,
+                    element_class: target.className || null
+                });
+            }
+        });
+        
+        // ESC 키로 팝업 닫기 감지
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                updateSessionActivity();
+                te.track('popup_action', {
+                    action_type: 'popup_close',
+                    close_method: 'escape_key'
+                });
+            }
+        });
+    }
+    
+    /* ================================
+       📍 ✅ 클릭 이벤트 추적
+    ================================= */
+    
+    // 버튼 및 링크 클릭 추적
+    function trackClickEvents() {
+        document.addEventListener('click', function(event) {
+            const target = event.target;
+            const closestClickable = target.closest('a, button, [role="button"], .btn, .button');
+            
+            if (closestClickable) {
+                updateSessionActivity();
+                
+                const elementData = {
+                    element_id: closestClickable.id || null,
+                    element_class_list: closestClickable.className ? closestClickable.className.split(' ') : [],
+                    element_name: closestClickable.textContent ? closestClickable.textContent.trim() : null,
+                    element_tag_name: closestClickable.tagName.toLowerCase(),
+                    element_target_url: closestClickable.href || null,
+                    page_url: window.location.href,
+                    click_coordinates_page: {
+                        x_coordinate: event.pageX,
+                        y_coordinate: event.pageY
+                    }
+                };
+                
+                // 메뉴 클릭 감지 (GNB 등)
+                if (closestClickable.closest('nav') || 
+                    closestClickable.closest('.navigation') ||
+                    closestClickable.closest('.menu') ||
+                    closestClickable.closest('header')) {
+                    
+                    te.track('te_menu_click', {
+                        ...elementData,
+                        menu_id: closestClickable.id || elementData.element_name || 'unknown',
+                        menu_name: elementData.element_name,
+                        menu_depth: getMenuDepth(closestClickable),
+                        menu_position: getMenuPosition(closestClickable),
+                        menu_target_url: elementData.element_target_url
+                    });
+                }
+                // 외부 링크 클릭 감지
+                else if (closestClickable.href && isExternalLink(closestClickable.href)) {
+                    te.track('te_outbound_link_click', {
+                        outbound_url: closestClickable.href,
+                        link_text: elementData.element_name,
+                        link_id: elementData.element_id,
+                        link_class_list: elementData.element_class_list
+                    });
+                }
+                // 일반 요소 클릭
+                else {
+                    te.track('te_element_click', elementData);
+                }
+            }
+        });
+    }
+    
+    // 메뉴 깊이 판단
+    function getMenuDepth(element) {
+        let depth = 1;
+        let parent = element.parentElement;
+        
+        while (parent && !parent.closest('nav, .navigation, .menu')) {
+            if (parent.tagName === 'UL' || parent.tagName === 'OL') {
+                depth++;
+            }
+            parent = parent.parentElement;
+        }
+        
+        return depth + '차';
+    }
+    
+    // 메뉴 위치 판단
+    function getMenuPosition(element) {
+        const nav = element.closest('nav, .navigation, .menu');
+        if (!nav) return 'unknown';
+        
+        const rect = nav.getBoundingClientRect();
+        if (rect.top < 100) return '상단';
+        if (rect.left < 100) return '사이드';
+        if (rect.bottom > window.innerHeight - 100) return '푸터';
+        return '기타';
+    }
+    
+    // 외부 링크 판단
+    function isExternalLink(url) {
+        try {
+            const linkHost = new URL(url).hostname;
+            const currentHost = window.location.hostname;
+            return linkHost !== currentHost;
+        } catch (e) {
+            return false;
+        }
+    }
+    
+    /* ================================
+       📍 ✅ 스크롤 깊이 추적
+    ================================= */
+    
+    let scrollDepthTracked = new Set();
+    let maxScrollDepth = 0;
+    
+    function trackScrollDepth() {
+        const scrollDepthThresholds = [25, 50, 75, 90, 100];
+        
+        function calculateScrollDepth() {
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            const windowHeight = window.innerHeight;
+            const documentHeight = Math.max(
+                document.body.scrollHeight,
+                document.body.offsetHeight,
+                document.documentElement.clientHeight,
+                document.documentElement.scrollHeight,
+                document.documentElement.offsetHeight
+            );
+            
+            const scrollDepthPercentage = Math.round(
+                ((scrollTop + windowHeight) / documentHeight) * 100
+            );
+            
+            return {
+                percentage: Math.min(scrollDepthPercentage, 100),
+                pixels: scrollTop,
+                totalHeight: documentHeight
+            };
+        }
+        
+        function handleScroll() {
+            updateSessionActivity();
+            
+            const scrollData = calculateScrollDepth();
+            
+            // 최대 스크롤 깊이 업데이트
+            if (scrollData.percentage > maxScrollDepth) {
+                maxScrollDepth = scrollData.percentage;
+            }
+            
+            // 임계값 도달 시 이벤트 전송
+            scrollDepthThresholds.forEach(threshold => {
+                if (scrollData.percentage >= threshold && !scrollDepthTracked.has(threshold)) {
+                    scrollDepthTracked.add(threshold);
+                    
+                    te.track('te_scroll_depth', {
+                        scroll_depth_percentage: threshold,
+                        scroll_depth_pixels: scrollData.pixels,
+                        page_total_height_pixels: scrollData.totalHeight,
+                        page_name: document.title,
+                        page_url: window.location.href,
+                        scroll_direction: 'vertical'
+                    });
+                }
+            });
+        }
+        
+        // 스크롤 이벤트 리스너 (디바운싱 적용)
+        let scrollTimeout;
+        window.addEventListener('scroll', function() {
+            clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(handleScroll, 100);
+        });
+    }
+
+    /* ================================
+       📍 ✅ 폼 제출 추적
+    ================================= */
+
+    function trackFormSubmissions() {
+        document.addEventListener('submit', function(event) {
+            const form = event.target;
+            updateSessionActivity();
+            
+            // 폼 데이터 수집 (개인정보 제외)
+            const formData = new FormData(form);
+            const formFields = {};
+            
+            // 개인정보가 아닌 필드만 수집
+            for (let [key, value] of formData.entries()) {
+                if (!isPersonalInfo(key)) {
+                    formFields[key] = value;
+                }
+            }
+            
+            // 개인정보 동의 체크박스 확인
+            const privacyCheckbox = form.querySelector('input[type="checkbox"][name*="privacy"], input[type="checkbox"][name*="agreement"]');
+            const privacyAgreed = privacyCheckbox ? privacyCheckbox.checked : null;
+            
+            // ThinkingData 공식 폼 구분
+            const formType = getThinkingDataFormType(form);
+            
+            const formSubmitData = {
+                form_id: form.id || form.name || 'unknown_form',
+                form_name: getFormName(form),
+                form_type: formType, // 'demo_request', 'contact_inquiry', 'other'
+                form_url: window.location.href,
+                form_fields_submitted_info: {
+                    name: formData.get('name') ? maskName(formData.get('name')) : null,
+                    email: formData.get('email') ? maskEmail(formData.get('email')) : null,
+                    phone: formData.get('phone') ? maskPhone(formData.get('phone')) : null,
+                    company_name: formData.get('company') || formData.get('company_name') || null, // 회사명은 마스킹 안함
+                    inquiry_source: formData.get('source') || formData.get('how_did_you_know') || null,
+                    message_length: formData.get('message') ? formData.get('message').length : null // 메시지 길이만
+                },
+                privacy_agreement_checked: privacyAgreed,
+                submission_status: 'pending'
+            };
+            
+            te.track('te_form_submit', formSubmitData);
+            
+            // 폼 제출 결과 추적 (AJAX 요청인 경우)
+            setTimeout(() => {
+                const submitButton = form.querySelector('button[type="submit"], input[type="submit"]');
+                if (submitButton && submitButton.disabled) {
+                    // 성공으로 가정
+                    te.track('te_form_submit', {
+                        ...formSubmitData,
+                        submission_status: 'success'
+                    });
+                }
+            }, 1000);
+        });
+        
+        // 폼 제출 오류 추적
+        document.addEventListener('invalid', function(event) {
+            updateSessionActivity();
+            
+            const form = event.target.closest('form');
+            if (form) {
+                te.track('te_form_submit_error', {
+                    form_name: getFormName(form),
+                    error_type: 'validation_error',
+                    field_name: event.target.name || event.target.id,
+                    error_message: event.target.validationMessage
+                });
+            }
+        }, true);
+    }
+    
+    // 개인정보 필드 판단
+    function isPersonalInfo(fieldName) {
+        const personalFields = ['email', 'phone', 'name', 'password', 'ssn', 'birthday'];
+        return personalFields.some(field => fieldName.toLowerCase().includes(field));
+    }
+    
+    // 폼 이름 추출
+    function getFormName(form) {
+        return form.title || 
+               form.getAttribute('data-form-name') ||
+               form.closest('[data-form-name]')?.getAttribute('data-form-name') ||
+               '알 수 없는 폼';
+    }
+    
+    // ThinkingData 공식 폼 타입 구분
+    function getThinkingDataFormType(form) {
+        const submitButton = form.querySelector('input[type="submit"], button[type="submit"]');
+        const url = window.location.href;
+        
+        // URL과 버튼 ID 기반으로 구분
+        if (url.includes('/form-demo') || (submitButton && submitButton.id === 'demo_submit')) {
+            return 'demo_request';
+        } else if (url.includes('/form-ask') || (submitButton && submitButton.id === 'ask_submit')) {
+            return 'contact_inquiry';
+        } else {
+            return 'other';
+        }
+    }
+    
+    // 🎭 개선된 마스킹 함수들 (실제 데이터 패턴 유지하면서 보안)
+    function maskEmail(email) {
+        if (!email || typeof email !== 'string') return null;
+        
+        const parts = email.split('@');
+        if (parts.length !== 2) return '***@***.***';
+        
+        const [localPart, domain] = parts;
+        const domainParts = domain.split('.');
+        
+        // 이메일 패턴: 첫글자 + *** + @도메인첫글자*** + .확장자
+        const maskedLocal = localPart.length > 1 ? localPart[0] + '***' : '***';
+        const maskedDomain = domainParts.length > 1 ? 
+            domainParts[0][0] + '***.' + domainParts[domainParts.length - 1] : 
+            '***.' + domainParts[0];
+            
+        return maskedLocal + '@' + maskedDomain;
+    }
+    
+    function maskPhone(phone) {
+        if (!phone || typeof phone !== 'string') return null;
+        
+        // 숫자만 추출
+        const numbers = phone.replace(/\D/g, '');
+        
+        if (numbers.length >= 10) {
+            // 010-****-1234 형태로 마스킹 (앞3자리, 뒤4자리 보이고 중간 마스킹)
+            return numbers.substring(0, 3) + '-****-' + numbers.slice(-4);
+        } else if (numbers.length >= 7) {
+            return numbers.substring(0, 2) + '***' + numbers.slice(-2);
+        } else {
+            return '***-****-****';
+        }
+    }
+    
+    function maskName(name) {
+        if (!name || typeof name !== 'string') return null;
+        
+        const trimmed = name.trim();
+        if (trimmed.length <= 1) {
+            return '*';
+        } else if (trimmed.length === 2) {
+            return trimmed[0] + '*';
+        } else {
+            // 3글자 이상: 첫글자 + *** + 마지막글자
+            return trimmed[0] + '***' + trimmed[trimmed.length - 1];
+        }
+    }
+
+    /* ================================
+       📍 ✅ 유튜브 비디오 추적 (YouTube API 활용)
+    ================================= */
+
+    // 비디오 세션 추적을 위한 변수들
+    let videoSessions = new Map(); // 각 비디오별 세션 추적
+    
+    function trackVideoEvents() {
+        console.log('🎬 비디오 추적 초기화 시작...');
+        
+        // YouTube iframe이 있는지 확인
+        const youtubeIframes = document.querySelectorAll('iframe[src*="youtube.com"], iframe[src*="youtu.be"]');
+        console.log(`🎯 YouTube iframe 발견: ${youtubeIframes.length}개`);
+        
+        if (youtubeIframes.length > 0) {
+            // YouTube API 즉시 로드 (더 정확한 추적을 위해)
+            loadYouTubeAPI();
+        } else {
+            console.log('ℹ️ YouTube iframe이 없어서 API 로드하지 않음');
+        }
+    }
+    
+    // YouTube API 동적 로드 (더 정확한 추적을 위해)
+    function loadYouTubeAPI() {
+        // 이미 로드된 경우 중복 로드 방지
+        if (window.YT && window.YT.Player) {
+            initializeYouTubePlayers();
+            return;
+        }
+        
+        // 이미 스크립트가 있는지 확인
+        if (document.querySelector('script[src*="youtube.com/iframe_api"]')) {
+            return;
+        }
+        
+        console.log('🎬 YouTube API 로드 시작...');
+        
+        const script = document.createElement('script');
+        script.src = 'https://www.youtube.com/iframe_api';
+        script.async = true;
+        script.onload = function() {
+            console.log('✅ YouTube API 스크립트 로드 완료');
+        };
+        script.onerror = function() {
+            console.error('❌ YouTube API 스크립트 로드 실패');
+        };
+        document.head.appendChild(script);
+        
+        // YouTube API 준비 완료 시 호출될 함수
+        window.onYouTubeIframeAPIReady = function() {
+            console.log('✅ YouTube API 준비 완료!');
+            initializeYouTubePlayers();
+        };
+    }
+    
+    // YouTube 플레이어 초기화
+    function initializeYouTubePlayers() {
+        const youtubeIframes = document.querySelectorAll('iframe[src*="youtube.com"], iframe[src*="youtu.be"]');
+        console.log(`🎯 YouTube iframe 발견: ${youtubeIframes.length}개`);
+        
+        youtubeIframes.forEach((iframe, index) => {
+            if (!iframe.id) {
+                iframe.id = `youtube_player_${index}`;
+            }
+            
+            console.log(`🎬 YouTube 플레이어 초기화: ${iframe.id}`);
+            
+            try {
+                const player = new YT.Player(iframe.id, {
+                    events: {
+                        'onReady': function(event) {
+                            console.log(`✅ YouTube 플레이어 준비 완료: ${iframe.id}`);
+                            
+                            const videoData = {
+                                video_name: event.target.getVideoData().title || `유튜브 동영상_${index + 1}`,
+                                label_name: 'Youtube 동영상 플레이어',
+                                video_url: `https://www.youtube.com/watch?v=${event.target.getVideoData().video_id}`,
+                                video_id: iframe.id,
+                                platform: 'youtube'
+                            };
+                            
+                            videoSessions.set(iframe.id, {
+                                ...videoData,
+                                player: event.target,
+                                start_time: null,
+                                pause_count: 0,
+                                seek_count: 0,
+                                completion_rate: 0,
+                                total_watch_time: 0,
+                                last_position: 0
+                            });
+                            
+                            // 플레이어 준비 완료 이벤트
+                            te.track('video_ready', {
+                                ...videoData,
+                                video_duration: Math.round(event.target.getDuration() || 0)
+                            });
+                        },
+                        'onStateChange': function(event) {
+                            const session = videoSessions.get(iframe.id);
+                            if (!session) {
+                                console.warn(`⚠️ 세션을 찾을 수 없음: ${iframe.id}`);
+                                return;
+                            }
+                            
+                            const currentTime = Math.round(session.player.getCurrentTime());
+                            const duration = Math.round(session.player.getDuration());
+                            const completionRate = duration > 0 ? Math.round((currentTime / duration) * 100) : 0;
+                            
+                            console.log(`🎬 YouTube 상태 변경: ${getYouTubeStateText(event.data)} - ${currentTime}/${duration}초 (${completionRate}%)`);
+                            
+                            switch (event.data) {
+                                case YT.PlayerState.PLAYING:
+                                    updateSessionActivity();
+                                    session.start_time = Date.now();
+                                    session.last_position = currentTime;
+                                    
+                                    te.track('video_play', {
+                                        video_name: session.video_name,
+                                        video_url: session.video_url,
+                                        video_id: session.video_id,
+                                        video_position: currentTime,
+                                        video_duration: duration,
+                                        completion_rate: completionRate,
+                                        is_replay: currentTime > 5,
+                                        platform: 'youtube'
+                                    });
+                                    break;
+                                    
+                                case YT.PlayerState.PAUSED:
+                                    updateSessionActivity();
+                                    
+                                    // 시청 시간 계산
+                                    if (session.start_time) {
+                                        const watchTime = Math.round((Date.now() - session.start_time) / 1000);
+                                        session.total_watch_time += watchTime;
+                                    }
+                                    
+                                    session.pause_count++;
+                                    session.completion_rate = Math.max(session.completion_rate, completionRate);
+                                    
+                                    te.track('video_pause', {
+                                        video_name: session.video_name,
+                                        video_url: session.video_url,
+                                        video_id: session.video_id,
+                                        video_position: currentTime,
+                                        video_duration: duration,
+                                        completion_rate: session.completion_rate,
+                                        pause_count: session.pause_count,
+                                        total_watch_time: session.total_watch_time,
+                                        platform: 'youtube'
+                                    });
+                                    
+                                    // 진행률 마일스톤 체크
+                                    checkVideoProgress(session, completionRate);
+                                    break;
+                                    
+                                case YT.PlayerState.ENDED:
+                                    // 시청 시간 계산
+                                    if (session.start_time) {
+                                        const watchTime = Math.round((Date.now() - session.start_time) / 1000);
+                                        session.total_watch_time += watchTime;
+                                    }
+                                    
+                                    te.track('video_ended', {
+                                        video_name: session.video_name,
+                                        video_url: session.video_url,
+                                        video_id: session.video_id,
+                                        video_position: currentTime,
+                                        video_duration: duration,
+                                        completion_rate: 100,
+                                        total_watch_time: session.total_watch_time,
+                                        pause_count: session.pause_count,
+                                        seek_count: session.seek_count,
+                                        ended_naturally: true,
+                                        platform: 'youtube'
+                                    });
+                                    
+                                    // 완료 이벤트
+                                    te.track('video_complete', {
+                                        video_name: session.video_name,
+                                        video_url: session.video_url,
+                                        video_id: session.video_id,
+                                        video_duration: duration,
+                                        total_watch_time: session.total_watch_time,
+                                        pause_count: session.pause_count,
+                                        seek_count: session.seek_count,
+                                        completion_rate: 100,
+                                        platform: 'youtube'
+                                    });
+                                    break;
+                                    
+                                case YT.PlayerState.BUFFERING:
+                                    te.track('video_buffering', {
+                                        video_name: session.video_name,
+                                        video_url: session.video_url,
+                                        video_id: session.video_id,
+                                        video_position: currentTime,
+                                        video_duration: duration,
+                                        platform: 'youtube'
+                                    });
+                                    break;
+                                    
+                                case YT.PlayerState.CUED:
+                                    te.track('video_cued', {
+                                        video_name: session.video_name,
+                                        video_url: session.video_url,
+                                        video_id: session.video_id,
+                                        platform: 'youtube'
+                                    });
+                                    break;
+                            }
+                        },
+                        'onError': function(event) {
+                            console.error('❌ YouTube 플레이어 오류:', event.data);
+                            te.track('video_error', {
+                                video_id: iframe.id,
+                                error_code: event.data,
+                                platform: 'youtube'
+                            });
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('❌ YouTube 플레이어 생성 실패:', error);
+            }
+        });
+    }
+    
+    // YouTube 상태 텍스트 변환
+    function getYouTubeStateText(state) {
+        const states = {
+            [-1]: 'UNSTARTED',
+            [0]: 'ENDED',
+            [1]: 'PLAYING',
+            [2]: 'PAUSED',
+            [3]: 'BUFFERING',
+            [5]: 'CUED'
+        };
+        return states[state] || `UNKNOWN(${state})`;
+    }
+    
+    // 비디오 진행률 마일스톤 체크 함수
+    function checkVideoProgress(session, currentRate) {
+        const milestones = [25, 50, 75, 90];
+        
+        milestones.forEach(milestone => {
+            if (currentRate >= milestone && session.completion_rate < milestone) {
+                te.track('video_progress', {
+                    video_name: session.video_name,
+                    video_url: session.video_url,
+                    video_id: session.video_id,
+                    completion_rate: milestone,
+                    milestone_reached: `${milestone}%`,
+                    total_watch_time: session.total_watch_time,
+                    platform: 'youtube'
+                });
+            }
+        });
+    }
+
+    /* ================================
+       📍 ✅ 리소스 다운로드 추적
+    ================================= */
+
+    function trackResourceDownloads() {
+        document.addEventListener('click', function(event) {
+            const target = event.target;
+            const link = target.closest('a');
+            
+            if (link && link.href) {
+                const url = link.href.toLowerCase();
+                const downloadExtensions = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.zip', '.rar'];
+                
+                if (downloadExtensions.some(ext => url.includes(ext))) {
+                    updateSessionActivity();
+                    
+                    te.track('resource_download', {
+                        page_name: document.title,
+                        page_url: window.location.href,
+                        download_url: link.href,
+                        download_filename: link.href.split('/').pop(),
+                        download_success: true // 클릭 시점에서는 true로 설정
+                    });
+                }
+            }
+        });
+    }
+    
+    /* ================================
+       📍 ✅ 활동 모니터링 및 이벤트 초기화
+    ================================= */
+  
+    // 주기적으로 세션 만료 체크
+    setInterval(checkSessionExpiry, 60000); // 1분마다 체크
+    
+    // 페이지 종료 추적 초기화
+    initializePageExitTracking();
+    
+    // 🚪 페이지 종료 추적 초기화
+    function initializePageExitTracking() {
+        let pageStartTime = Date.now();
+        let isPageVisible = !document.hidden;
+        let totalVisibleTime = 0;
+        let lastVisibilityChange = Date.now();
+        
+        // 페이지 가시성 변경 추적
+        function handleVisibilityChange() {
+            const now = Date.now();
+            
+            if (document.hidden) {
+                // 페이지가 숨겨짐 (탭 변경, 최소화, 다른 앱으로 전환)
+                if (isPageVisible) {
+                    totalVisibleTime += now - lastVisibilityChange;
+                    isPageVisible = false;
+                    
+                    te.track('te_page_visibility_change', {
+                        visibility_state: 'hidden',
+                        total_visible_time: Math.round(totalVisibleTime / 1000), // 초 단위
+                        session_duration: Math.round((now - pageStartTime) / 1000),
+                        exit_reason: 'visibility_hidden'
+                    });
+                }
+            } else {
+                // 페이지가 다시 보임
+                isPageVisible = true;
+                lastVisibilityChange = now;
+                
+                te.track('te_page_visibility_change', {
+                    visibility_state: 'visible',
+                    total_visible_time: Math.round(totalVisibleTime / 1000),
+                    session_duration: Math.round((now - pageStartTime) / 1000),
+                    exit_reason: 'page_returned'
+                });
+            }
+            
+            // 기존 세션 활동 업데이트
+            if (!document.hidden) {
+                updateSessionActivity();
+            }
+        }
+        
+        // Page Visibility API 사용
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        
+        // beforeunload: 페이지 떠나기 전 (새로고침, 닫기, 다른 페이지 이동)
+        window.addEventListener('beforeunload', function() {
+            const now = Date.now();
+            if (isPageVisible) {
+                totalVisibleTime += now - lastVisibilityChange;
+            }
+            
+            // 세션 정보 저장 (기존 로직 유지)
+            localStorage.setItem('te_last_activity_time', Date.now().toString());
+            localStorage.setItem('te_is_engaged_session', isEngagedSession.toString());
+            
+            // 동기적으로 즉시 전송 (navigator.sendBeacon 사용)
+            const exitData = {
+                exit_type: 'beforeunload',
+                total_visible_time: Math.round(totalVisibleTime / 1000),
+                session_duration: Math.round((now - pageStartTime) / 1000),
+                page_url: window.location.href,
+                exit_reason: 'page_unload',
+                user_agent: navigator.userAgent
+            };
+            
+            // 동기 전송 시도
+            try {
+                const payload = JSON.stringify({
+                    data: [{
+                        "#type": "track",
+                        "#time": new Date().toISOString().replace('T', ' ').slice(0, 23),
+                        "#distinct_id": te.getDistinctId(),
+                        "#event_name": "te_page_exit",
+                        "properties": Object.assign(exitData, {
+                            session_id: sessionId,
+                            session_number: sessionNumber
+                        })
+                    }],
+                    "#app_id": "test",
+                    "#flush_time": Date.now()
+                });
+                
+                // Beacon API 사용 (가장 안정적)
+                if (navigator.sendBeacon) {
+                    navigator.sendBeacon(
+                        'https://te-receiver-naver.thinkingdata.kr/sync_js',
+                        payload
+                    );
+                }
+            } catch (e) {
+                console.warn('페이지 종료 이벤트 전송 실패:', e);
+            }
+        });
+        
+        // unload: 페이지 완전 언로드 (실제 브라우저/탭 종료)
+        window.addEventListener('unload', function() {
+            const now = Date.now();
+            if (isPageVisible) {
+                totalVisibleTime += now - lastVisibilityChange;
+            }
+            
+            // 최종 종료 이벤트 (매우 제한적인 시간)
+            try {
+                if (navigator.sendBeacon) {
+                    const payload = JSON.stringify({
+                        data: [{
+                            "#type": "track",
+                            "#time": new Date().toISOString().replace('T', ' ').slice(0, 23),
+                            "#distinct_id": te.getDistinctId(),
+                            "#event_name": "te_browser_exit",
+                            "properties": {
+                                exit_type: 'unload',
+                                total_visible_time: Math.round(totalVisibleTime / 1000),
+                                session_duration: Math.round((now - pageStartTime) / 1000),
+                                final_url: window.location.href,
+                                session_id: sessionId,
+                                session_number: sessionNumber
+                            }
+                        }],
+                        "#app_id": "test",
+                        "#flush_time": Date.now()
+                    });
+                    
+                    navigator.sendBeacon(
+                        'https://te-receiver-naver.thinkingdata.kr/sync_js',
+                        payload
+                    );
+                }
+            } catch (e) {
+                // unload에서는 로그도 출력 안됨
+            }
+        });
+        
+        // pagehide: 모바일에서 더 안정적 (브라우저 캐시 등)
+        window.addEventListener('pagehide', function(event) {
+            const now = Date.now();
+            if (isPageVisible) {
+                totalVisibleTime += now - lastVisibilityChange;
+            }
+            
+            const exitData = {
+                exit_type: 'pagehide',
+                is_persisted: event.persisted, // 브라우저 캐시에 저장되는지
+                total_visible_time: Math.round(totalVisibleTime / 1000),
+                session_duration: Math.round((now - pageStartTime) / 1000),
+                page_url: window.location.href,
+                session_id: sessionId,
+                session_number: sessionNumber
+            };
+            
+            // 캐시되지 않는 경우만 종료로 간주
+            if (!event.persisted) {
+                try {
+                    if (navigator.sendBeacon) {
+                        const payload = JSON.stringify({
+                            data: [{
+                                "#type": "track",
+                                "#time": new Date().toISOString().replace('T', ' ').slice(0, 23),
+                                "#distinct_id": te.getDistinctId(),
+                                "#event_name": "te_page_final_exit",
+                                "properties": exitData
+                            }],
+                            "#app_id": "test",
+                            "#flush_time": Date.now()
+                        });
+                        
+                        navigator.sendBeacon(
+                            'https://te-receiver-naver.thinkingdata.kr/sync_js',
+                            payload
+                        );
+                    }
+                } catch (e) {
+                    console.warn('최종 페이지 종료 이벤트 전송 실패:', e);
+                }
+            }
+        });
+        
+        console.log('✅ 페이지 종료 추적 초기화 완료');
+    }
+    
+    // DOM 로드 완료 후 이벤트 추적 시작
+    document.addEventListener('DOMContentLoaded', function() {
+        trackPopupEvents();
+        trackClickEvents();
+        trackScrollDepth();
+        trackFormSubmissions();
+        trackVideoEvents();
+        trackResourceDownloads();
+        
+        console.log('✅ All tracking events initialized');
+    });
+    
+    // 페이지 로드 즉시 실행되는 추적들
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('✅ DOM loaded, tracking active');
+        });
+    } else {
+        // DOM이 이미 로드된 경우
+        trackPopupEvents();
+        trackClickEvents();
+        trackScrollDepth();
+        trackFormSubmissions();
+        trackVideoEvents();
+        trackResourceDownloads();
+        
+        console.log('✅ All tracking events initialized (DOM already loaded)');
+    }
+
+    /* ================================
+       📍 ✅ 유저 속성 추적 시스템 (익명 웹사이트용)
+    ================================= */
+
+    // 유저 속성 관리 클래스
+    class UserAttributeTracker {
+        constructor() {
+            this.storageKey = 'te_user_attributes';
+            this.attributes = this.loadAttributes();
+            this.sessionStartTime = Date.now();
+            this.pageStartTime = Date.now();
+            this.currentPageCategory = null;
+            this.contentEngagementTimer = null;
+            
+                    // ThinkingData 실제 블로그 카테고리 매핑 (웹사이트 기준)
+        this.contentCategories = {
+            'analytics': '분석',
+            'feature': '기능',
+            'industry': '산업시리즈', 
+            'playbook': '플레이북'
+        };
+        
+        // 실제 존재하는 섹션만 매핑
+        this.sectionMapping = {
+            '/blog': 'blog',
+            '/user-case': 'user_case',
+            '/company': 'company',
+            '/culture': 'culture', 
+            '/news': 'news'
+        };
+            
+            this.initializeUser();
+        }
+        
+        // 속성 로컬스토리지에서 로드
+        loadAttributes() {
+            try {
+                const stored = localStorage.getItem(this.storageKey);
+                return stored ? JSON.parse(stored) : {};
+            } catch (e) {
+                return {};
+            }
+        }
+        
+        // 속성 로컬스토리지에 저장
+        saveAttributes() {
+            try {
+                localStorage.setItem(this.storageKey, JSON.stringify(this.attributes));
+            } catch (e) {
+                console.warn('Failed to save user attributes to localStorage');
+            }
+        }
+        
+        // 사용자 초기화
+        initializeUser() {
+            const now = Date.now();
+            const today = new Date().toISOString().split('T')[0];
+            
+            // 1. 최초 방문 시점 기록 (한 번만)
+            if (!this.attributes.first_visit_timestamp) {
+                te.userSetOnce({ first_visit_timestamp: now });
+                this.attributes.first_visit_timestamp = now;
+            }
+            
+            // 2. 세션 수 증가
+            te.userAdd({ total_sessions: 1 });
+            this.attributes.total_sessions = (this.attributes.total_sessions || 0) + 1;
+            
+            // 3. 오늘 세션 수 (날짜가 바뀌면 리셋)
+            const lastVisitDate = this.attributes.last_visit_date;
+            if (lastVisitDate !== today) {
+                te.userSet({ session_count_today: 1 });
+                this.attributes.session_count_today = 1;
+                this.attributes.last_visit_date = today;
+            } else {
+                te.userAdd({ session_count_today: 1 });
+                this.attributes.session_count_today = (this.attributes.session_count_today || 0) + 1;
+            }
+            
+            // 4. 재방문자 체크 (2번째 세션부터)
+            if (this.attributes.total_sessions >= 2) {
+                te.userSet({ is_returning_visitor: true });
+                this.attributes.is_returning_visitor = true;
+            }
+            
+            // 5. 최초 유입 정보 기록 (한 번만)
+            this.recordFirstVisitSource();
+            
+            // 6. 기본 시간 정보 업데이트
+            this.updateTimeAttributes();
+            
+            this.saveAttributes();
+            console.log('✅ User attributes initialized:', this.attributes);
+        }
+        
+        // 최초 유입 소스 기록
+        recordFirstVisitSource() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const utmSource = urlParams.get('utm_source') || this.inferTrafficSource();
+            const utmCampaign = urlParams.get('utm_campaign');
+            const referrerDomain = document.referrer ? new URL(document.referrer).hostname : 'direct';
+            
+            // 최초 방문 시에만 기록
+            te.userSetOnce({
+                first_utm_source: utmSource,
+                first_utm_campaign: utmCampaign,
+                first_referrer_domain: referrerDomain
+            });
+            
+            // 사용한 유입 소스 누적 (중복 제거)
+            te.userUniqAppend({
+                traffic_sources_used: [utmSource]
+            });
+            
+            // 로컬에도 저장
+            if (!this.attributes.first_utm_source) {
+                this.attributes.first_utm_source = utmSource;
+                this.attributes.first_utm_campaign = utmCampaign;
+                this.attributes.first_referrer_domain = referrerDomain;
+            }
+            
+            this.attributes.traffic_sources_used = this.attributes.traffic_sources_used || [];
+            if (!this.attributes.traffic_sources_used.includes(utmSource)) {
+                this.attributes.traffic_sources_used.push(utmSource);
+            }
+        }
+        
+        // 트래픽 소스 추론
+        inferTrafficSource() {
+            const referrer = document.referrer;
+            if (!referrer) return 'direct';
+            
+            const referrerHost = new URL(referrer).hostname.toLowerCase();
+            
+            if (referrerHost.includes('google')) return 'google';
+            if (referrerHost.includes('naver')) return 'naver';
+            if (referrerHost.includes('facebook')) return 'facebook';
+            if (referrerHost.includes('instagram')) return 'instagram';
+            if (referrerHost.includes('linkedin')) return 'linkedin';
+            if (referrerHost.includes('twitter') || referrerHost.includes('t.co')) return 'twitter';
+            if (referrerHost.includes('youtube')) return 'youtube';
+            
+            return 'referral';
+        }
+        
+        // 페이지 관심사 업데이트
+        updatePageInterests() {
+            const currentPath = window.location.pathname;
+            const pageCategory = this.categorizePageContent(currentPath);
+            const sectionName = this.getMostVisitedSection(currentPath);
+            
+            console.log('📊 Page interests update:', { currentPath, pageCategory, sectionName });
+            
+            // 관심 주제 추가 (ThinkingData 블로그 카테고리 기반)
+            if (pageCategory) {
+                te.userUniqAppend({ 
+                    interested_topics: [pageCategory] 
+                });
+                
+                this.attributes.interested_topics = this.attributes.interested_topics || [];
+                if (!this.attributes.interested_topics.includes(pageCategory)) {
+                    this.attributes.interested_topics.push(pageCategory);
+                }
+            }
+            
+            // 최근 방문 페이지 추가 (최대 20개 유지)
+            this.attributes.viewed_pages = this.attributes.viewed_pages || [];
+            this.attributes.viewed_pages.unshift(currentPath);
+            if (this.attributes.viewed_pages.length > 20) {
+                this.attributes.viewed_pages = this.attributes.viewed_pages.slice(0, 20);
+            }
+            
+            te.userSet({ 
+                viewed_pages: this.attributes.viewed_pages.slice(0, 10) // ThinkingData에는 최근 10개만 전송
+            });
+            
+            // 가장 많이 방문한 섹션 업데이트
+            if (sectionName) {
+                this.updateMostVisitedSection(sectionName);
+            }
+            
+            this.saveAttributes();
+        }
+        
+            // 페이지 콘텐츠 카테고리 분류 (실제 ThinkingData 웹사이트 기준)
+    categorizePageContent(path) {
+        // 블로그는 실제 카테고리가 4개만 존재: 분석, 기능, 산업시리즈, 플레이북
+        if (path.includes('/blog/')) {
+            // 실제 블로그 카테고리에 맞춰 단순화
+            if (path.includes('feature') || path.includes('기능')) return 'feature';
+            if (path.includes('industry') || path.includes('산업시리즈')) return 'industry';
+            if (path.includes('playbook') || path.includes('플레이북')) return 'playbook';
+            
+            // 분석이 가장 많으므로 기본값
+            return 'analytics';
+        }
+        
+        // 실제 존재하는 섹션들만
+        if (path.includes('/user-case')) return 'user_case';
+        if (path.includes('/company')) return 'company';
+        if (path.includes('/culture')) return 'culture';
+        if (path.includes('/news')) return 'news';
+        
+        return null;
+    }
+        
+        // 섹션 분류
+        getMostVisitedSection(path) {
+            for (const [section, name] of Object.entries(this.sectionMapping)) {
+                if (path.startsWith(section)) {
+                    return name;
+                }
+            }
+            return 'other';
+        }
+        
+        // 가장 많이 방문한 섹션 업데이트
+        updateMostVisitedSection(sectionName) {
+            this.attributes.section_visits = this.attributes.section_visits || {};
+            this.attributes.section_visits[sectionName] = (this.attributes.section_visits[sectionName] || 0) + 1;
+            
+            // 가장 많이 방문한 섹션 찾기
+            const mostVisited = Object.entries(this.attributes.section_visits)
+                .sort(([,a], [,b]) => b - a)[0];
+            
+            if (mostVisited) {
+                te.userSet({ most_visited_section: mostVisited[0] });
+                this.attributes.most_visited_section = mostVisited[0];
+            }
+        }
+        
+        // 폼 제출 추적
+        trackFormSubmission() {
+            te.userAdd({ total_form_submissions: 1 });
+            this.attributes.total_form_submissions = (this.attributes.total_form_submissions || 0) + 1;
+            this.updateEngagementLevel();
+            this.saveAttributes();
+        }
+        
+        // 다운로드 추적
+        trackDownload() {
+            te.userAdd({ total_downloads: 1 });
+            this.attributes.total_downloads = (this.attributes.total_downloads || 0) + 1;
+            this.updateEngagementLevel();
+            this.saveAttributes();
+        }
+        
+        // 비디오 상호작용 추적
+        trackVideoInteraction() {
+            te.userAdd({ total_video_interactions: 1 });
+            this.attributes.total_video_interactions = (this.attributes.total_video_interactions || 0) + 1;
+            this.updateEngagementLevel();
+            this.saveAttributes();
+        }
+        
+        // 100% 스크롤 추적
+        trackFullScroll() {
+            te.userAdd({ total_scroll_depth_100: 1 });
+            this.attributes.total_scroll_depth_100 = (this.attributes.total_scroll_depth_100 || 0) + 1;
+            this.updateContentPreference('deep');
+            this.updateEngagementLevel();
+            this.saveAttributes();
+        }
+        
+        // 팝업 상호작용 추적
+        trackPopupInteraction() {
+            te.userAdd({ popup_interactions: 1 });
+            this.attributes.popup_interactions = (this.attributes.popup_interactions || 0) + 1;
+            this.saveAttributes();
+        }
+        
+        // 외부 링크 클릭 추적
+        trackExternalLinkClick() {
+            te.userAdd({ external_link_clicks: 1 });
+            this.attributes.external_link_clicks = (this.attributes.external_link_clicks || 0) + 1;
+            this.saveAttributes();
+        }
+        
+        // 시간 관련 속성 업데이트
+        updateTimeAttributes() {
+            const now = new Date();
+            const hour = now.getHours();
+            const dayOfWeek = now.toLocaleDateString('en', {weekday: 'lowercase'});
+            
+            // 선호 방문 시간대
+            const timeOfDay = this.getTimeOfDay(hour);
+            te.userSet({ 
+                preferred_visit_time: timeOfDay,
+                last_visit_day_of_week: dayOfWeek 
+            });
+            
+            this.attributes.preferred_visit_time = timeOfDay;
+            this.attributes.last_visit_day_of_week = dayOfWeek;
+        }
+        
+        // 시간대 분류
+        getTimeOfDay(hour) {
+            if (hour >= 6 && hour < 12) return 'morning';
+            if (hour >= 12 && hour < 18) return 'afternoon';
+            if (hour >= 18 && hour < 22) return 'evening';
+            return 'night';
+        }
+        
+        // 세션 종료 시 시간 지표 업데이트
+        updateSessionTimeMetrics(sessionDuration) {
+            // 총 체류시간 누적
+            te.userAdd({ total_time_spent: sessionDuration });
+            this.attributes.total_time_spent = (this.attributes.total_time_spent || 0) + sessionDuration;
+            
+            // 최장 세션 기록 갱신
+            const currentLongest = this.attributes.longest_session_duration || 0;
+            if (sessionDuration > currentLongest) {
+                te.userSet({ longest_session_duration: sessionDuration });
+                this.attributes.longest_session_duration = sessionDuration;
+            }
+            
+            // 평균 세션 지속시간 계산
+            const totalSessions = this.attributes.total_sessions || 1;
+            const averageDuration = Math.round(this.attributes.total_time_spent / totalSessions);
+            te.userSet({ average_session_duration: averageDuration });
+            this.attributes.average_session_duration = averageDuration;
+            
+            this.saveAttributes();
+        }
+        
+        // 참여도 수준 업데이트
+        updateEngagementLevel() {
+            let score = 0;
+            
+            // 행동별 점수 계산
+            score += (this.attributes.total_form_submissions || 0) * 50;
+            score += (this.attributes.total_downloads || 0) * 30;
+            score += (this.attributes.total_video_interactions || 0) * 20;
+            score += (this.attributes.total_scroll_depth_100 || 0) * 15;
+            score += (this.attributes.popup_interactions || 0) * 10;
+            score += (this.attributes.external_link_clicks || 0) * 5;
+            
+            // 세션 수와 체류시간 고려
+            score += Math.min((this.attributes.total_sessions || 0) * 10, 100);
+            score += Math.min((this.attributes.total_time_spent || 0) / 60, 200); // 분당 1점, 최대 200점
+            
+            // 참여도 수준 분류
+            let level = 'low';
+            if (score >= 200) level = 'high';
+            else if (score >= 50) level = 'medium';
+            
+            te.userSet({ 
+                engagement_level: level,
+                engagement_score: score 
+            });
+            
+            this.attributes.engagement_level = level;
+            this.attributes.engagement_score = score;
+            
+            // 생명주기 단계 업데이트
+            this.updateLifecycleStage();
+        }
+        
+        // 콘텐츠 선호도 업데이트
+        updateContentPreference(depth) {
+            this.attributes.content_engagement = this.attributes.content_engagement || {};
+            
+            // 깊이별 선호도 누적
+            this.attributes.content_engagement[depth] = (this.attributes.content_engagement[depth] || 0) + 1;
+            
+            // 가장 선호하는 깊이 찾기
+            const preferences = Object.entries(this.attributes.content_engagement)
+                .sort(([,a], [,b]) => b - a);
+            
+            if (preferences.length > 0) {
+                te.userSet({ content_depth_preference: preferences[0][0] });
+                this.attributes.content_depth_preference = preferences[0][0];
+            }
+        }
+        
+            // 방문자 생명주기 단계 업데이트 (실제 웹사이트 구조 기준)
+    updateLifecycleStage() {
+        const sessions = this.attributes.total_sessions || 0;
+        const formSubmissions = this.attributes.total_form_submissions || 0;
+        const downloads = this.attributes.total_downloads || 0;
+        const companyViews = (this.attributes.section_visits && this.attributes.section_visits.company) || 0;
+        const userCaseViews = (this.attributes.section_visits && this.attributes.section_visits.user_case) || 0;
+        
+        let stage = 'awareness';
+        
+        // Decision: 폼 제출이나 회사 소개/고객사례 페이지 여러 번 방문 (구매 검토 단계)
+        if (formSubmissions > 0 || companyViews >= 2 || userCaseViews >= 2) {
+            stage = 'decision';
+        }
+        // Consideration: 세션 3회 이상 또는 다운로드 경험 또는 회사/고객사례 방문
+        else if (sessions >= 3 || downloads > 0 || companyViews > 0 || userCaseViews > 0) {
+            stage = 'consideration';
+        }
+        
+        te.userSet({ visitor_lifecycle_stage: stage });
+        this.attributes.visitor_lifecycle_stage = stage;
+    }
+        
+        // 상호작용 빈도 계산
+        updateInteractionFrequency() {
+            const totalInteractions = (this.attributes.total_form_submissions || 0) +
+                                    (this.attributes.total_downloads || 0) +
+                                    (this.attributes.total_video_interactions || 0) +
+                                    (this.attributes.popup_interactions || 0) +
+                                    (this.attributes.external_link_clicks || 0);
+            
+            const sessions = this.attributes.total_sessions || 1;
+            const interactionRate = totalInteractions / sessions;
+            
+            let frequency = 'low';
+            if (interactionRate >= 3) frequency = 'high';
+            else if (interactionRate >= 1) frequency = 'medium';
+            
+            te.userSet({ interaction_frequency: frequency });
+            this.attributes.interaction_frequency = frequency;
+        }
+        
+        // 페이지 체류 시간 추적 시작
+        startPageEngagement() {
+            this.pageStartTime = Date.now();
+            
+            // 10초 후 콘텐츠 선호도 'medium' 기록
+            this.contentEngagementTimer = setTimeout(() => {
+                this.updateContentPreference('medium');
+            }, 10000);
+        }
+        
+        // 페이지 체류 종료
+        endPageEngagement() {
+            const engagementTime = Date.now() - this.pageStartTime;
+            
+            // 타이머 정리
+            if (this.contentEngagementTimer) {
+                clearTimeout(this.contentEngagementTimer);
+            }
+            
+            // 30초 이상 체류시 'surface' 선호도 기록
+            if (engagementTime >= 30000) {
+                this.updateContentPreference('surface');
+            }
+            
+            return Math.round(engagementTime / 1000);
+        }
+    }
+
+    // 유저 속성 추적기 인스턴스 생성
+    const userTracker = new UserAttributeTracker();
+
+    // 기존 이벤트 핸들러에 유저 속성 추적 추가
+    document.addEventListener('DOMContentLoaded', function() {
+        // 페이지 관심사 업데이트
+        userTracker.updatePageInterests();
+        userTracker.startPageEngagement();
+    });
+
+    // 페이지 종료 시 세션 시간 업데이트
+    window.addEventListener('beforeunload', function() {
+        const sessionDuration = Math.round((Date.now() - userTracker.sessionStartTime) / 1000);
+        userTracker.updateSessionTimeMetrics(sessionDuration);
+        
+        const pageEngagement = userTracker.endPageEngagement();
+        console.log('📊 Page engagement time:', pageEngagement, 'seconds');
+    });
+
+    // 기존 이벤트 함수들에 유저 속성 추적 연동
+    const originalTrackFormSubmission = window.trackFormSubmission || function() {};
+    window.trackFormSubmission = function() {
+        originalTrackFormSubmission();
+        userTracker.trackFormSubmission();
+    };
+
+    const originalTrackDownload = window.trackDownload || function() {};
+    window.trackDownload = function() {
+        originalTrackDownload();
+        userTracker.trackDownload();
+    };
+
+    const originalTrackFullScroll = window.trackFullScroll || function() {};
+    window.trackFullScroll = function() {
+        originalTrackFullScroll();
+        userTracker.trackFullScroll();
+    };
+
+    // 비디오 이벤트에 유저 속성 추적 연동
+    const originalVideoEventHandlers = {
+        onPlay: function() { userTracker.trackVideoInteraction(); },
+        onComplete: function() { userTracker.trackVideoInteraction(); }
+    };
+
+    // 스크롤 깊이 100% 도달 시 유저 속성 업데이트
+    let originalScrollHandler = null;
+    if (typeof handleScroll === 'function') {
+        originalScrollHandler = handleScroll;
+        window.handleScroll = function() {
+            originalScrollHandler();
+            
+            // 100% 스크롤 체크
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            const windowHeight = window.innerHeight;
+            const documentHeight = Math.max(
+                document.body.scrollHeight,
+                document.documentElement.scrollHeight
+            );
+            
+            const scrollPercentage = Math.round(((scrollTop + windowHeight) / documentHeight) * 100);
+            
+            if (scrollPercentage >= 100 && !window.fullScrollTracked) {
+                userTracker.trackFullScroll();
+                window.fullScrollTracked = true;
+            }
+        };
+    }
+
+    // 팝업 상호작용 추적
+    document.addEventListener('click', function(event) {
+        const target = event.target;
+        
+        // 외부 링크 클릭 감지
+        if (target.closest('a')) {
+            const link = target.closest('a');
+            if (link.href && isExternalLink(link.href)) {
+                userTracker.trackExternalLinkClick();
+            }
+        }
+        
+        // 팝업 관련 클릭 감지
+        if (target.classList.contains('close') || 
+            target.classList.contains('modal-close') ||
+            target.textContent.includes('혜택 확인하기')) {
+            userTracker.trackPopupInteraction();
+        }
+    });
+
+    // 페이지 변경 감지 (SPA 대응)
+    let currentPath = window.location.pathname;
+    setInterval(function() {
+        if (window.location.pathname !== currentPath) {
+            currentPath = window.location.pathname;
+            userTracker.updatePageInterests();
+            userTracker.startPageEngagement();
+        }
+    }, 1000);
+
+         console.log('✅ User Attribute Tracking System initialized');
+
+</script>
+<!-- End Thinking Data -->
