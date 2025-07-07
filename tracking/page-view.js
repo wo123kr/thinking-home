@@ -2,10 +2,16 @@
  * 페이지 뷰 이벤트 추적 - 유연하고 확장 가능한 구조
  */
 
-// 페이지 뷰 이벤트 전송
+// 페이지 뷰 이벤트 전송 (SDK 자동 수집과 중복 방지를 위해 비활성화)
 function trackPageView() {
-  console.log('📄 페이지 뷰 추적 시작...');
+  console.log('📄 페이지 뷰 추적 - SDK 자동 수집 사용으로 비활성화됨');
   
+  // SDK 자동 수집 이벤트(ta_page_show, ta_pageview)가 이미 수집되므로
+  // 커스텀 페이지뷰 이벤트는 중복을 방지하기 위해 비활성화
+  return;
+  
+  // 아래 코드는 참고용으로 유지 (필요시 주석 해제)
+  /*
   // ThinkingData SDK 확인
   if (typeof window.te === 'undefined') {
     console.warn('⚠️ ThinkingData SDK가 로드되지 않음, 3초 후 재시도...');
@@ -69,6 +75,7 @@ function trackPageView() {
   
   trackEvent('custom_page_view', pageViewProperties);
   console.log('📄 페이지 뷰 이벤트 전송:', pageViewProperties);
+  */
 }
 
 // 동적 페이지 섹션 감지 (확장 가능)

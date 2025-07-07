@@ -2,10 +2,16 @@
  * 클릭 이벤트 추적 모듈 - 동적 설정 가능한 구조
  */
 
-// 버튼 및 링크 클릭 추적
+// 버튼 및 링크 클릭 추적 (SDK 자동 수집과 중복 방지를 위해 비활성화)
 function trackClickEvents() {
-  console.log('🖱️ 클릭 추적 초기화 시작...');
+  console.log('🖱️ 클릭 추적 - SDK 자동 수집 사용으로 비활성화됨');
   
+  // SDK 자동 수집 이벤트(element_click, outbound_link_click)가 이미 수집되므로
+  // 커스텀 클릭 이벤트는 중복을 방지하기 위해 비활성화
+  return;
+  
+  // 아래 코드는 참고용으로 유지 (필요시 주석 해제)
+  /*
   // ThinkingData SDK 확인
   if (typeof window.te === 'undefined') {
     console.warn('⚠️ ThinkingData SDK가 로드되지 않음, 3초 후 재시도...');
@@ -82,6 +88,7 @@ function trackClickEvents() {
   });
   
   console.log('✅ 클릭 추적 초기화 완료');
+  */
 }
 
 // 동적 클릭 가능한 요소 선택자 (설정 가능)
