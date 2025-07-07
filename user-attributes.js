@@ -95,28 +95,28 @@ class UserAttributeTracker {
         
         // 1. 최초 방문 시점 기록 (한 번만)
         if (!this.attributes.first_visit_timestamp) {
-            this.safeTeCall('userSetOnce', { first_visit_timestamp: now });
+            this.safeTeCall('userSetOnce', nullSafeObject({ first_visit_timestamp: now }));
             this.attributes.first_visit_timestamp = now;
         }
         
         // 2. 세션 수 증가
-        this.safeTeCall('userAdd', { total_sessions: 1 });
+        this.safeTeCall('userAdd', nullSafeObject({ total_sessions: 1 }));
         this.attributes.total_sessions = (this.attributes.total_sessions || 0) + 1;
         
         // 3. 오늘 세션 수 (날짜가 바뀌면 리셋)
         const lastVisitDate = this.attributes.last_visit_date;
         if (lastVisitDate !== today) {
-            this.safeTeCall('userSet', { session_count_today: 1 });
+            this.safeTeCall('userSet', nullSafeObject({ session_count_today: 1 }));
             this.attributes.session_count_today = 1;
             this.attributes.last_visit_date = today;
         } else {
-            this.safeTeCall('userAdd', { session_count_today: 1 });
+            this.safeTeCall('userAdd', nullSafeObject({ session_count_today: 1 }));
             this.attributes.session_count_today = (this.attributes.session_count_today || 0) + 1;
         }
         
         // 4. 재방문자 체크 (2번째 세션부터)
         if (this.attributes.total_sessions >= 2) {
-            this.safeTeCall('userSet', { is_returning_visitor: true });
+            this.safeTeCall('userSet', nullSafeObject({ is_returning_visitor: true }));
             this.attributes.is_returning_visitor = true;
         }
         
@@ -141,33 +141,33 @@ class UserAttributeTracker {
         const pageCategory = this.getPageCategory(path);
         
         // 기본 페이지 정보 설정
-        this.safeTeCall('userSet', {
+        this.safeTeCall('userSet', nullSafeObject({
             current_page_section: pageSection,
             current_page_category: pageCategory,
             website_domain: 'thinkingdata.kr',
             is_thinkingdata_website: true
-        });
+        }));
         
         // ThinkingData 특화 관심사 설정
         if (pageSection === 'home') {
-            this.safeTeCall('userSet', { 
+            this.safeTeCall('userSet', nullSafeObject({ 
                 interested_in_data_analytics: true,
                 potential_customer: true
-            });
+            }));
         }
         
         if (pageSection === 'solution' || pageSection === 'feature') {
-            this.safeTeCall('userSet', { 
+            this.safeTeCall('userSet', nullSafeObject({ 
                 interested_in_solutions: true,
                 solution_researcher: true
-            });
+            }));
         }
         
         if (pageSection === 'user_case') {
-            this.safeTeCall('userSet', { 
+            this.safeTeCall('userSet', nullSafeObject({ 
                 interested_in_case_studies: true,
                 case_study_researcher: true
-            });
+            }));
         }
     }
     
@@ -179,16 +179,16 @@ class UserAttributeTracker {
         const referrerDomain = document.referrer ? new URL(document.referrer).hostname : 'direct';
         
         // 최초 방문 시에만 기록
-        this.safeTeCall('userSetOnce', {
+        this.safeTeCall('userSetOnce', nullSafeObject({
             first_utm_source: utmSource,
             first_utm_campaign: (utmCampaign || '') + '',
             first_referrer_domain: referrerDomain
-        });
+        }));
         
         // 사용한 유입 소스 누적 (중복 제거)
-        this.safeTeCall('userUniqAppend', {
+        this.safeTeCall('userUniqAppend', nullSafeObject({
             traffic_sources_used: [utmSource]
-        });
+        }));
         
         // 로컬에도 저장
         if (!this.attributes.first_utm_source) {
@@ -233,9 +233,9 @@ class UserAttributeTracker {
         
         // 관심 주제 추가 (ThinkingData 홈페이지 카테고리 기반)
         if (pageCategory) {
-            this.safeTeCall('userUniqAppend', { 
+            this.safeTeCall('userUniqAppend', nullSafeObject({ 
                 interested_topics: [pageCategory] 
-            });
+            }));
             
             this.attributes.interested_topics = this.attributes.interested_topics || [];
             if (!this.attributes.interested_topics.includes(pageCategory)) {
@@ -250,9 +250,9 @@ class UserAttributeTracker {
             this.attributes.viewed_pages = this.attributes.viewed_pages.slice(0, 20);
         }
         
-        this.safeTeCall('userSet', { 
+        this.safeTeCall('userSet', nullSafeObject({ 
             viewed_pages: this.attributes.viewed_pages.slice(0, 10) // ThinkingData에는 최근 10개만 전송
-        });
+        }));
         
         // 가장 많이 방문한 섹션 업데이트
         if (sectionName) {
@@ -289,7 +289,7 @@ class UserAttributeTracker {
             pageInfo.case_study_interest = true;
         }
         
-        this.safeTeCall('userSet', pageInfo);
+        this.safeTeCall('userSet', nullSafeObject(pageInfo));
     }
     
     // 페이지 콘텐츠 카테고리 분류 (ThinkingData 홈페이지 기준)
@@ -351,14 +351,14 @@ class UserAttributeTracker {
             .sort(([,a], [,b]) => b - a)[0];
         
         if (mostVisited) {
-            this.safeTeCall('userSet', { most_visited_section: mostVisited[0] });
+            this.safeTeCall('userSet', nullSafeObject({ most_visited_section: mostVisited[0] }));
             this.attributes.most_visited_section = mostVisited[0];
         }
     }
     
     // 폼 제출 추적
     trackFormSubmission() {
-        this.safeTeCall('userAdd', { total_form_submissions: 1 });
+        this.safeTeCall('userAdd', nullSafeObject({ total_form_submissions: 1 }));
         this.attributes.total_form_submissions = (this.attributes.total_form_submissions || 0) + 1;
         this.updateEngagementLevel();
         this.saveAttributes();
@@ -367,7 +367,7 @@ class UserAttributeTracker {
     
     // 다운로드 추적
     trackDownload() {
-        this.safeTeCall('userAdd', { total_downloads: 1 });
+        this.safeTeCall('userAdd', nullSafeObject({ total_downloads: 1 }));
         this.attributes.total_downloads = (this.attributes.total_downloads || 0) + 1;
         this.updateEngagementLevel();
         this.saveAttributes();
@@ -376,7 +376,7 @@ class UserAttributeTracker {
     
     // 비디오 상호작용 추적
     trackVideoInteraction() {
-        this.safeTeCall('userAdd', { total_video_interactions: 1 });
+        this.safeTeCall('userAdd', nullSafeObject({ total_video_interactions: 1 }));
         this.attributes.total_video_interactions = (this.attributes.total_video_interactions || 0) + 1;
         this.updateEngagementLevel();
         this.saveAttributes();
@@ -385,7 +385,7 @@ class UserAttributeTracker {
     
     // 100% 스크롤 추적
     trackFullScroll() {
-        this.safeTeCall('userAdd', { total_scroll_depth_100: 1 });
+        this.safeTeCall('userAdd', nullSafeObject({ total_scroll_depth_100: 1 }));
         this.attributes.total_scroll_depth_100 = (this.attributes.total_scroll_depth_100 || 0) + 1;
         this.updateContentPreference('deep');
         this.updateEngagementLevel();
@@ -395,7 +395,7 @@ class UserAttributeTracker {
     
     // 팝업 상호작용 추적
     trackPopupInteraction() {
-        this.safeTeCall('userAdd', { popup_interactions: 1 });
+        this.safeTeCall('userAdd', nullSafeObject({ popup_interactions: 1 }));
         this.attributes.popup_interactions = (this.attributes.popup_interactions || 0) + 1;
         this.saveAttributes();
         console.log('🪟 팝업 상호작용 추적:', this.attributes.popup_interactions);
@@ -403,7 +403,7 @@ class UserAttributeTracker {
     
     // 외부 링크 클릭 추적
     trackExternalLinkClick() {
-        this.safeTeCall('userAdd', { external_link_clicks: 1 });
+        this.safeTeCall('userAdd', nullSafeObject({ external_link_clicks: 1 }));
         this.attributes.external_link_clicks = (this.attributes.external_link_clicks || 0) + 1;
         this.saveAttributes();
         console.log('🔗 외부 링크 클릭 추적:', this.attributes.external_link_clicks);
@@ -411,19 +411,29 @@ class UserAttributeTracker {
     
     // 시간 관련 속성 업데이트
     updateTimeAttributes() {
-        const now = new Date();
-        const hour = now.getHours();
-        const dayOfWeek = now.toLocaleDateString('en', {weekday: 'long'}).toLowerCase();
-        
-        // 선호 방문 시간대
-        const timeOfDay = this.getTimeOfDay(hour);
-        this.safeTeCall('userSet', { 
-            preferred_visit_time: timeOfDay,
-            last_visit_day_of_week: dayOfWeek 
-        });
-        
-        this.attributes.preferred_visit_time = timeOfDay;
-        this.attributes.last_visit_day_of_week = dayOfWeek;
+        try {
+            console.log('🕐 updateTimeAttributes 시작');
+            const now = new Date();
+            const hour = now.getHours();
+            
+            console.log('🕐 weekday 옵션 테스트 시작');
+            const dayOfWeek = now.toLocaleDateString('en', {weekday: 'long'}).toLowerCase();
+            console.log('🕐 weekday 처리 완료:', dayOfWeek);
+            
+            // 선호 방문 시간대
+            const timeOfDay = this.getTimeOfDay(hour);
+            this.safeTeCall('userSet', nullSafeObject({ 
+                preferred_visit_time: timeOfDay,
+                last_visit_day_of_week: dayOfWeek 
+            }));
+            
+            this.attributes.preferred_visit_time = timeOfDay;
+            this.attributes.last_visit_day_of_week = dayOfWeek;
+            console.log('🕐 updateTimeAttributes 완료');
+        } catch (error) {
+            console.error('❌ updateTimeAttributes 오류:', error);
+            console.error('❌ 오류 스택:', error.stack);
+        }
     }
     
     // 시간대 분류
@@ -437,20 +447,20 @@ class UserAttributeTracker {
     // 세션 종료 시 시간 지표 업데이트
     updateSessionTimeMetrics(sessionDuration) {
         // 총 체류시간 누적
-        this.safeTeCall('userAdd', { total_time_spent: sessionDuration });
+        this.safeTeCall('userAdd', nullSafeObject({ total_time_spent: sessionDuration }));
         this.attributes.total_time_spent = (this.attributes.total_time_spent || 0) + sessionDuration;
         
         // 최장 세션 기록 갱신
         const currentLongest = this.attributes.longest_session_duration || 0;
         if (sessionDuration > currentLongest) {
-            this.safeTeCall('userSet', { longest_session_duration: sessionDuration });
+            this.safeTeCall('userSet', nullSafeObject({ longest_session_duration: sessionDuration }));
             this.attributes.longest_session_duration = sessionDuration;
         }
         
         // 평균 세션 지속시간 계산
         const totalSessions = this.attributes.total_sessions || 1;
         const averageDuration = Math.round(this.attributes.total_time_spent / totalSessions);
-        this.safeTeCall('userSet', { average_session_duration: averageDuration });
+        this.safeTeCall('userSet', nullSafeObject({ average_session_duration: averageDuration }));
         this.attributes.average_session_duration = averageDuration;
         
         this.saveAttributes();
@@ -478,10 +488,10 @@ class UserAttributeTracker {
         if (score >= 200) level = 'high';
         else if (score >= 50) level = 'medium';
         
-        this.safeTeCall('userSet', { 
+        this.safeTeCall('userSet', nullSafeObject({ 
             engagement_level: level,
             engagement_score: score 
-        });
+        }));
         
         this.attributes.engagement_level = level;
         this.attributes.engagement_score = score;
@@ -503,7 +513,7 @@ class UserAttributeTracker {
             .sort(([,a], [,b]) => b - a);
         
         if (preferences.length > 0) {
-            this.safeTeCall('userSet', { content_depth_preference: preferences[0][0] });
+            this.safeTeCall('userSet', nullSafeObject({ content_depth_preference: preferences[0][0] }));
             this.attributes.content_depth_preference = preferences[0][0];
         }
     }
@@ -528,7 +538,7 @@ class UserAttributeTracker {
             stage = 'consideration';
         }
         
-        this.safeTeCall('userSet', { visitor_lifecycle_stage: stage });
+        this.safeTeCall('userSet', nullSafeObject({ visitor_lifecycle_stage: stage }));
         this.attributes.visitor_lifecycle_stage = stage;
         console.log('🔄 생명주기 단계 업데이트:', stage);
     }
@@ -548,7 +558,7 @@ class UserAttributeTracker {
         if (interactionRate >= 3) frequency = 'high';
         else if (interactionRate >= 1) frequency = 'medium';
         
-        this.safeTeCall('userSet', { interaction_frequency: frequency });
+        this.safeTeCall('userSet', nullSafeObject({ interaction_frequency: frequency }));
         this.attributes.interaction_frequency = frequency;
     }
     
@@ -756,4 +766,28 @@ setTimeout(function() {
         console.log('👤 안전장치: 유저 속성 추적 재시도');
         window.initializeUserAttributeTracker();
     }
-}, 10000); 
+}, 10000);
+
+// null/undefined → '' 변환 유틸리티
+function nullSafeObject(obj) {
+    if (!obj || typeof obj !== 'object') return obj;
+    const safe = {};
+    for (const k in obj) {
+        if (obj[k] === null || obj[k] === undefined) {
+            safe[k] = '';
+        } else {
+            safe[k] = obj[k];
+        }
+    }
+    return safe;
+}
+
+// te.userSetOnce, te.userSet, te.userAdd, te.userUniqAppend 등에서 nullSafeObject 적용
+// 예시:
+// te.userSetOnce(nullSafeObject({ ... }))
+// te.userSet(nullSafeObject({ ... }))
+// te.userAdd(nullSafeObject({ ... }))
+// te.userUniqAppend(nullSafeObject({ ... }))
+// ... existing code ...
+// recordFirstVisitSource, initializeUser 등에서 적용
+// ... existing code ... 
