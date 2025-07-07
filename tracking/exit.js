@@ -158,7 +158,7 @@ function initializePageExitTracking() {
             "#event_name": eventName,
             "properties": exitData
           }],
-          "#app_id": "01135534d2e04fa0bbfc5f4adc7f84ca",
+          "#app_id": "b33016b8b26f4798aee67722ed4438be",
           "#flush_time": Date.now()
         });
         
@@ -189,7 +189,7 @@ function initializePageExitTracking() {
           "#event_name": eventName,
           "properties": exitData
         }],
-        "#app_id": "01135534d2e04fa0bbfc5f4adc7f84ca",
+        "#app_id": "b33016b8b26f4798aee67722ed4438be",
         "#flush_time": Date.now()
       });
       
@@ -220,7 +220,7 @@ function initializePageExitTracking() {
           "#event_name": eventName,
           "properties": exitData
         }],
-        "#app_id": "01135534d2e04fa0bbfc5f4adc7f84ca",
+        "#app_id": "b33016b8b26f4798aee67722ed4438be",
         "#flush_time": Date.now()
       });
       
