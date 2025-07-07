@@ -2,7 +2,18 @@
  * 리소스 다운로드 추적 모듈 - 동적 설정 가능한 구조
  */
 
+// 리소스 다운로드 추적 초기화 플래그
+let resourceTrackingInitialized = false;
+
+// 리소스 다운로드 추적 함수
 function trackResourceDownloads() {
+  // 중복 실행 방지
+  if (resourceTrackingInitialized) {
+    console.log('📥 리소스 추적 이미 초기화됨, 중복 실행 방지');
+    return;
+  }
+  
+  resourceTrackingInitialized = true;
   console.log('📥 리소스 다운로드 추적 초기화 시작...');
   
   // ThinkingData SDK 확인
@@ -241,26 +252,48 @@ window.trackResourceDownloads = trackResourceDownloads;
 window.updateResourceTrackingConfig = updateResourceTrackingConfig;
 window.debugResourceTracking = debugResourceTracking;
 
-// DOM 로드 완료 후 자동 실행
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', function() {
-    console.log('📥 DOM 로드 완료, 리소스 다운로드 추적 시작');
-    setTimeout(trackResourceDownloads, 1000);
-  });
-} else {
-  // DOM이 이미 로드된 경우
-  console.log('📥 DOM 이미 로드됨, 리소스 다운로드 추적 시작');
-  setTimeout(trackResourceDownloads, 1000);
+// 초기화 함수 (한 번만 실행)
+function initializeResourceTracking() {
+  if (resourceTrackingInitialized) {
+    return;
+  }
+  
+  // DOM 로드 완료 후 자동 실행
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('📥 DOM 로드 완료, 리소스 다운로드 추적 시작');
+      trackResourceDownloads();
+    });
+  } else {
+    // DOM이 이미 로드된 경우
+    console.log('📥 DOM 이미 로드됨, 리소스 다운로드 추적 시작');
+    trackResourceDownloads();
+  }
 }
 
-// ThinkingData 초기화 완료 이벤트 감지
-window.addEventListener('thinkingdata:ready', function() {
-  console.log('📥 ThinkingData 초기화 완료, 리소스 다운로드 추적 시작');
-  setTimeout(trackResourceDownloads, 500);
-});
+// 초기화 실행
+initializeResourceTracking();
 
-// 페이지 로드 완료 후 한 번 더 시도
-window.addEventListener('load', function() {
-  console.log('📥 페이지 로드 완료, 리소스 다운로드 추적 재확인');
-  setTimeout(trackResourceDownloads, 2000);
-});
+// ThinkingData 초기화 완료 이벤트 감지 (한 번만)
+if (!window.thinkingDataResourceListenerAdded) {
+  window.thinkingDataResourceListenerAdded = true;
+  window.addEventListener('thinkingdata:ready', function() {
+    console.log('📥 ThinkingData 초기화 완료, 리소스 다운로드 추적 확인');
+    // 이미 초기화되었으면 재실행하지 않음
+    if (!resourceTrackingInitialized) {
+      trackResourceDownloads();
+    }
+  });
+}
+
+// 페이지 로드 완료 후 확인 (한 번만)
+if (!window.loadResourceListenerAdded) {
+  window.loadResourceListenerAdded = true;
+  window.addEventListener('load', function() {
+    console.log('📥 페이지 로드 완료, 리소스 다운로드 추적 확인');
+    // 이미 초기화되었으면 재실행하지 않음
+    if (!resourceTrackingInitialized) {
+      trackResourceDownloads();
+    }
+  });
+}
