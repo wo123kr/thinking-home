@@ -240,7 +240,7 @@ window.debugPopupTracking = function() {
     const benefitButton = popup.querySelector('a[href*="thinkingdata-onestore-special-promotion"], .button-3');
     if (benefitButton) {
       console.log(`  - 혜택 확인하기 버튼:`, {
-        text: benefitButton.textContent ? benefitButton.textContent.trim() : null,
+        text: benefitButton.textContent ? benefitButton.textContent.trim() : '',
         href: benefitButton.href,
         classList: Array.from(benefitButton.classList)
       });
@@ -250,7 +250,7 @@ window.debugPopupTracking = function() {
     const closeButton = popup.querySelector('.link-block-2, .close, .modal-close');
     if (closeButton) {
       console.log(`  - 닫기 버튼:`, {
-        text: closeButton.textContent ? closeButton.textContent.trim() : null,
+        text: closeButton.textContent ? closeButton.textContent.trim() : '',
         classList: Array.from(closeButton.classList)
       });
     }
@@ -314,7 +314,7 @@ window.debugResourceTracking = function() {
   downloadLinks.forEach((link, index) => {
     console.log(`📥 다운로드 링크 ${index + 1}:`, {
       href: link.href,
-      text: link.textContent ? link.textContent.trim() : null,
+              text: link.textContent ? link.textContent.trim() : '',
       filename: link.href.split('/').pop()
     });
   });

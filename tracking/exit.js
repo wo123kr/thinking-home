@@ -275,7 +275,7 @@ function initializePageExitTracking() {
       user_engagement_level: getUserEngagementLevel(),
       scroll_depth: window.maxScrollDepth || 0,
       interaction_count: window.interactionCount || 0,
-      session_id: (window.sessionId || '') + '',
+      session_id: (window.sessionId || '').toString(),
       session_number: window.sessionNumber || 0
     };
     
@@ -312,7 +312,7 @@ function initializePageExitTracking() {
       user_engagement_level: getUserEngagementLevel(),
       scroll_depth: window.maxScrollDepth || 0,
       interaction_count: window.interactionCount || 0,
-      session_id: (window.sessionId || '') + '',
+      session_id: (window.sessionId || '').toString(),
       session_number: window.sessionNumber || 0
     };
     
@@ -344,7 +344,7 @@ function initializePageExitTracking() {
       user_engagement_level: getUserEngagementLevel(),
       scroll_depth: window.maxScrollDepth || 0,
       interaction_count: window.interactionCount || 0,
-      session_id: (window.sessionId || '') + '',
+      session_id: (window.sessionId || '').toString(),
       session_number: window.sessionNumber || 0
     };
     
@@ -378,7 +378,7 @@ function initializePageExitTracking() {
         user_engagement_level: getUserEngagementLevel(),
         scroll_depth: window.maxScrollDepth || 0,
         interaction_count: window.interactionCount || 0,
-        session_id: (window.sessionId || '') + '',
+        session_id: (window.sessionId || '').toString(),
         session_number: window.sessionNumber || 0
       };
       
@@ -437,9 +437,9 @@ function testExitEvent() {
     test_type: 'manual_test',
     page_url: window.location.href,
     page_title: document.title,
-    timestamp: Date.now(),
-    session_id: window.sessionId || null,
-    session_number: window.sessionNumber || null
+    timestamp: new Date().toISOString().replace('T', ' ').slice(0, 23),
+          session_id: window.sessionId || '',
+      session_number: window.sessionNumber || 0
   });
   console.log('✅ 테스트 종료 이벤트 전송 완료');
 }

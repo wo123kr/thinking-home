@@ -198,9 +198,9 @@ function getFileSize(url) {
   try {
     const urlParams = new URLSearchParams(url.split('?')[1] || '');
     const size = urlParams.get('size') || urlParams.get('filesize');
-    return size ? parseInt(size) : null;
+    return size ? parseInt(size) : 0;
   } catch (e) {
-    return null;
+    return 0;
   }
 }
 

@@ -234,7 +234,7 @@ function trackPopupShown(popup) {
     popup_class: Array.from(popup.classList).join(' '),
     popup_visible: isElementVisible(popup),
     page_url: window.location.href,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString().replace('T', ' ').slice(0, 23)
   };
   
   // 동적 버튼 감지
@@ -245,9 +245,9 @@ function trackPopupShown(popup) {
     const button = findButtonInPopup(popup, patterns);
     if (button) {
       buttons[buttonType] = {
-        text: button.textContent ? button.textContent.trim() : null,
-        id: button.id || null,
-        class: button.className || null
+              text: button.textContent ? button.textContent.trim() : '',
+      id: button.id || '',
+      class: button.className || ''
       };
     }
   }

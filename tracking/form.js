@@ -56,7 +56,7 @@ function trackFormSubmissions() {
       // ThinkingData 특화 정보
       form_info: formInfo,
       form_validation_passed: true,
-      form_submission_time: Date.now()
+      form_submission_time: new Date().toISOString().replace('T', ' ').slice(0, 23)
     };
     
     trackEvent('te_form_submit', formSubmitData);
@@ -104,7 +104,7 @@ function trackFormSubmissions() {
         field_name: event.target.name || event.target.id,
         field_type: event.target.type,
         error_message: event.target.validationMessage,
-        error_time: Date.now()
+        error_time: new Date().toISOString().replace('T', ' ').slice(0, 23)
       };
       
       trackEvent('te_form_submit_error', errorData);
@@ -125,7 +125,7 @@ function trackFormSubmissions() {
         field_type: field.type,
         field_value_length: field.value ? field.value.length : 0,
         field_has_value: !!field.value,
-        interaction_time: Date.now()
+        interaction_time: new Date().toISOString().replace('T', ' ').slice(0, 23)
       };
       
       // 개인정보 필드가 아닌 경우에만 값 길이 전송
@@ -148,7 +148,7 @@ function trackFormSubmissions() {
         form_type: getThinkingDataFormType(form),
         field_name: field.name || field.id,
         field_type: field.type,
-        focus_time: Date.now()
+        focus_time: new Date().toISOString().replace('T', ' ').slice(0, 23)
       });
     }
   });

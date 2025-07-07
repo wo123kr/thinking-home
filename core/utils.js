@@ -10,11 +10,11 @@ function safeTeCall(method, ...args) {
       return window.te[method](...args);
     } catch (error) {
       console.warn(`ThinkingData ${method} 호출 실패:`, error);
-      return null;
+      return '';
     }
   } else {
     console.warn(`ThinkingData SDK의 ${method} 메서드를 사용할 수 없습니다.`);
-    return null;
+    return '';
   }
 }
 
@@ -201,7 +201,7 @@ function getPageLoadTime() {
       return navigation.loadEventEnd - navigation.startTime;
     }
   }
-  return null;
+  return 0;
 }
 
 // 동적 패턴 매칭 함수
@@ -226,7 +226,7 @@ function matchPatterns(element, patterns) {
     }
   }
   
-  return null;
+  return '';
 }
 
 // 설정 관리자

@@ -87,14 +87,14 @@ function startNewSession() {
   
   // 세션 시작 이벤트 전송 (GA4/Amplitude 방식)
   const sessionStartData = {
-    session_id: sessionId,
+    session_id: sessionId.toString(),
     session_number: sessionNumber,
-    session_start_time: new Date(sessionStartTime).toISOString(),
+    session_start_time: new Date(sessionStartTime).toISOString().replace('T', ' ').slice(0, 23),
     is_engaged_session: isEngagedSession,
     interaction_count: interactionCount,
     page_url: window.location.href,
     page_title: document.title,
-    referrer: document.referrer || null,
+    referrer: document.referrer || '',
     user_agent: navigator.userAgent,
     screen_resolution: `${screen.width}x${screen.height}`,
     viewport_size: `${window.innerWidth}x${window.innerHeight}`,
@@ -158,7 +158,7 @@ function updateSessionActivity() {
       
       // 인게이지 세션 이벤트 전송
       trackEvent('session_engaged', {
-        session_id: sessionId,
+        session_id: sessionId.toString(),
         session_number: sessionNumber,
         engagement_time: Math.round(timeSpent / 1000),
         interaction_count: interactionCount,
@@ -195,10 +195,10 @@ function endSession(reason = 'page_exit') {
   const sessionDuration = Math.round((sessionEndTime - sessionStartTime) / 1000);
   
   const sessionEndData = {
-    session_id: sessionId,
+    session_id: sessionId.toString(),
     session_number: sessionNumber,
-    session_start_time: new Date(sessionStartTime).toISOString(),
-    session_end_time: new Date(sessionEndTime).toISOString(),
+    session_start_time: new Date(sessionStartTime).toISOString().replace('T', ' ').slice(0, 23),
+    session_end_time: new Date(sessionEndTime).toISOString().replace('T', ' ').slice(0, 23),
     session_duration_seconds: sessionDuration,
     session_duration_minutes: Math.round(sessionDuration / 60 * 100) / 100,
     is_engaged_session: isEngagedSession,
@@ -327,8 +327,8 @@ function updateSuperProperties() {
     is_online: navigator.onLine,
     
     // 타이밍 정보
-    timestamp: Date.now(),
-    local_time: new Date().toISOString(),
+    timestamp: new Date().toISOString().replace('T', ' ').slice(0, 23),
+    local_time: new Date().toISOString().replace('T', ' ').slice(0, 23),
     
     // 성능 정보 (의미있는 지표만)
     dom_ready_state: document.readyState,

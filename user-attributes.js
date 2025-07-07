@@ -95,7 +95,7 @@ class UserAttributeTracker {
         
         // 1. 최초 방문 시점 기록 (한 번만)
         if (!this.attributes.first_visit_timestamp) {
-            this.safeTeCall('userSetOnce', { first_visit_timestamp: now });
+            this.safeTeCall('userSetOnce', { first_visit_timestamp: new Date(now).toISOString().replace('T', ' ').slice(0, 23) });
             this.attributes.first_visit_timestamp = now;
         }
         
@@ -270,7 +270,7 @@ class UserAttributeTracker {
         const pageInfo = {
             current_page_section: section,
             current_page_category: category,
-            last_page_visit: Date.now()
+            last_page_visit: new Date().toISOString().replace('T', ' ').slice(0, 23)
         };
         
         // 특정 페이지 타입별 추가 정보

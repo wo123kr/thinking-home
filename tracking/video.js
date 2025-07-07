@@ -177,7 +177,7 @@ function initializeYouTubePlayers() {
             videoSessions.set(iframe.id, {
               ...videoData,
               player: event.target,
-              start_time: null,
+              start_time: '',
               pause_count: 0,
               seek_count: 0,
               completion_rate: 0,

@@ -26,8 +26,8 @@ function trackPageView() {
     page_title: document.title,
     page_hostname: window.location.hostname,
     page_protocol: window.location.protocol,
-    page_hash: window.location.hash || null,
-    page_query: window.location.search || null,
+    page_hash: window.location.hash || '',
+    page_query: window.location.search || '',
     // 동적 페이지 분석 정보
     page_section: getPageSection(),
     page_category: getPageCategory(),
@@ -36,12 +36,12 @@ function trackPageView() {
     page_has_videos: hasVideos(),
     page_has_downloads: hasDownloads(),
     page_load_time: getPageLoadTime(),
-    page_view_timestamp: Date.now(),
+    page_view_timestamp: new Date().toISOString().replace('T', ' ').slice(0, 23),
     // 동적 메타데이터 수집
     page_meta_data: getPageMetaData(),
     page_structure_info: getPageStructureInfo(),
     event_source: 'custom_module', // 커스텀 모듈에서 발생한 이벤트임을 표시
-    timestamp: Date.now()
+    timestamp: new Date().toISOString().replace('T', ' ').slice(0, 23)
   };
   
   // referrer 정보가 있을 때만 추가
