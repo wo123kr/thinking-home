@@ -1,5 +1,6 @@
 /**
  * ThinkingData SDK 초기화 코드 - Webflow 최적화
+ * 자동 이벤트 수집 기능 포함
  */
 
 // ThinkingData 설정
@@ -28,6 +29,155 @@ function loadModule(url) {
     };
     document.head.appendChild(script);
   });
+}
+
+// 자동 이벤트 수집 설정
+function setupAutoEventTracking() {
+  try {
+    if (!window.te) {
+      console.warn('⚠️ ThinkingData SDK가 로드되지 않아 자동 이벤트 설정을 건너뜁니다.');
+      return;
+    }
+
+    console.log('🔄 자동 이벤트 수집 설정 시작...');
+
+    // 1. 페이지뷰 자동 추적
+    window.te.quick("autoTrack", {
+      page_type: getPageType(),
+      page_category: getPageCategory(),
+      source: getTrafficSource()
+    });
+    console.log('✅ 페이지뷰 자동 추적 설정 완료');
+
+    // 2. 클릭 이벤트 자동 추적
+    window.te.trackLink(
+      {
+        tag: ["a", "button"],
+        class: ["btn", "button", "link", "cta", "nav-link", "menu-item"],
+        id: ["submit", "demo", "contact", "download", "signup"]
+      },
+      "element_click",
+      {
+        page_section: getPageSection(),
+        page_type: getPageType()
+      }
+    );
+    console.log('✅ 클릭 이벤트 자동 추적 설정 완료');
+
+    // 3. 폼 제출 자동 추적
+    window.te.trackLink(
+      {
+        tag: ["form"],
+        class: ["form", "contact-form", "demo-form", "signup-form"]
+      },
+      "form_submit",
+      {
+        form_type: getFormType(),
+        page_url: window.location.href
+      }
+    );
+    console.log('✅ 폼 제출 자동 추적 설정 완료');
+
+    // 4. 외부 링크 클릭 자동 추적
+    window.te.trackLink(
+      {
+        tag: ["a"],
+        class: ["external-link", "outbound-link"]
+      },
+      "outbound_link_click",
+      {
+        link_destination: "external",
+        page_url: window.location.href
+      }
+    );
+    console.log('✅ 외부 링크 자동 추적 설정 완료');
+
+    console.log('🎉 자동 이벤트 수집 설정 완료!');
+
+  } catch (error) {
+    console.error('❌ 자동 이벤트 수집 설정 실패:', error);
+  }
+}
+
+// 페이지 타입 판단
+function getPageType() {
+  const path = window.location.pathname;
+  
+  if (path.includes('/form-demo')) return 'demo_request';
+  if (path.includes('/form-ask')) return 'contact_inquiry';
+  if (path.includes('/blog')) return 'blog';
+  if (path.includes('/user-case')) return 'user_case';
+  if (path.includes('/company')) return 'company';
+  if (path.includes('/culture')) return 'culture';
+  if (path.includes('/news')) return 'news';
+  
+  return 'landing';
+}
+
+// 페이지 카테고리 판단
+function getPageCategory() {
+  const path = window.location.pathname;
+  
+  if (path.includes('/blog/')) {
+    if (path.includes('feature') || path.includes('기능')) return 'feature';
+    if (path.includes('industry') || path.includes('산업시리즈')) return 'industry';
+    if (path.includes('playbook') || path.includes('플레이북')) return 'playbook';
+    return 'analytics';
+  }
+  
+  if (path.includes('/user-case')) return 'user_case';
+  if (path.includes('/company')) return 'company';
+  if (path.includes('/culture')) return 'culture';
+  if (path.includes('/news')) return 'news';
+  
+  return 'main';
+}
+
+// 페이지 섹션 판단
+function getPageSection() {
+  const path = window.location.pathname;
+  
+  if (path.includes('/form-demo') || path.includes('/form-ask')) return 'form';
+  if (path.includes('/blog')) return 'blog';
+  if (path.includes('/user-case')) return 'user_case';
+  if (path.includes('/company')) return 'company';
+  if (path.includes('/culture')) return 'culture';
+  if (path.includes('/news')) return 'news';
+  
+  return 'main';
+}
+
+// 폼 타입 판단
+function getFormType() {
+  const path = window.location.pathname;
+  
+  if (path.includes('/form-demo')) return 'demo_request';
+  if (path.includes('/form-ask')) return 'contact_inquiry';
+  
+  return 'general';
+}
+
+// 트래픽 소스 판단
+function getTrafficSource() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const utmSource = urlParams.get('utm_source');
+  
+  if (utmSource) return utmSource;
+  
+  const referrer = document.referrer;
+  if (!referrer) return 'direct';
+  
+  const referrerHost = new URL(referrer).hostname.toLowerCase();
+  
+  if (referrerHost.includes('google')) return 'google';
+  if (referrerHost.includes('naver')) return 'naver';
+  if (referrerHost.includes('facebook')) return 'facebook';
+  if (referrerHost.includes('instagram')) return 'instagram';
+  if (referrerHost.includes('linkedin')) return 'linkedin';
+  if (referrerHost.includes('twitter') || referrerHost.includes('t.co')) return 'twitter';
+  if (referrerHost.includes('youtube')) return 'youtube';
+  
+  return 'referral';
 }
 
 // 모든 모듈 로드
@@ -87,7 +237,10 @@ function startAllTracking() {
   
   let initializedCount = 0;
   
-  // 각 모듈의 초기화 함수 호출
+  // 자동 이벤트 수집 설정 (SDK 기본 기능)
+  setupAutoEventTracking();
+  
+  // 각 모듈의 초기화 함수 호출 (커스텀 모듈)
   if (typeof window.trackPopupEvents === 'function') {
     window.trackPopupEvents();
     initializedCount++;
@@ -143,7 +296,7 @@ function startAllTracking() {
     console.log('✅ 페이지 뷰 이벤트 전송 완료');
   }
   
-  console.log(`🎉 ThinkingData 추적 시스템 완전 초기화 완료! (${initializedCount}개 모듈)`);
+  console.log(`🎉 ThinkingData 추적 시스템 완전 초기화 완료! (${initializedCount}개 모듈 + 자동 이벤트)`);
   
   // 전역 디버깅 함수 추가
   window.debugThinkingData = function() {
@@ -151,7 +304,9 @@ function startAllTracking() {
     console.log('- SDK 상태:', {
       thinkingdata: typeof thinkingdata,
       te: typeof window.te,
-      track: window.te ? typeof window.te.track : 'N/A'
+      track: window.te ? typeof window.te.track : 'N/A',
+      trackLink: window.te ? typeof window.te.trackLink : 'N/A',
+      quick: window.te ? typeof window.te.quick : 'N/A'
     });
     console.log('- 모듈 상태:', {
       utils: typeof window.trackEvent,
@@ -165,6 +320,12 @@ function startAllTracking() {
       resource: typeof window.trackResourceDownloads,
       exit: typeof window.initializePageExitTracking,
       userAttr: typeof window.initializeUserAttributeTracker
+    });
+    console.log('- 페이지 정보:', {
+      type: getPageType(),
+      category: getPageCategory(),
+      section: getPageSection(),
+      source: getTrafficSource()
     });
   };
 }
@@ -224,4 +385,4 @@ window.addEventListener('load', function() {
 window.initializeThinkingData = initializeThinkingData;
 
 // 시작 로그
-console.log('🚀 ThinkingData 추적 시스템 로드 시작...');
+console.log('🚀 ThinkingData 추적 시스템 로드 시작... (자동 이벤트 수집 포함)');
