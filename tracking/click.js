@@ -29,7 +29,21 @@ function trackClickEvents() {
       const elementData = {
         element_id: closestClickable.id || '',
         element_class_list: closestClickable.className ? closestClickable.className.split(' ') : [],
-        element_name: closestClickable.textContent ? closestClickable.textContent.trim() : '',
+        // name 추출: 텍스트만, 2000자 이내, 없으면 alt/id/unknown
+        element_name: (function() {
+          let name = '';
+          if (closestClickable.textContent && closestClickable.textContent.trim()) {
+            name = closestClickable.textContent.trim();
+          } else if (closestClickable.alt) {
+            name = closestClickable.alt;
+          } else if (closestClickable.id) {
+            name = closestClickable.id;
+          } else {
+            name = 'unknown';
+          }
+          if (name.length > 2000) name = name.substring(0, 2000);
+          return name;
+        })(),
         element_tag_name: closestClickable.tagName.toLowerCase(),
         element_target_url: closestClickable.href || '',
         page_url: window.location.href,
