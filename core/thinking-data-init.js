@@ -526,3 +526,4 @@ window.initializeThinkingData = initializeThinkingData;
 
 // 시작 로그 (간소화)
 console.log('🚀 ThinkingData 추적 시스템 로드 시작...');// Cache busting update - #오후
+// Main branch refresh - #오후
