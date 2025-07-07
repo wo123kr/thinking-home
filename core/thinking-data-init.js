@@ -290,11 +290,12 @@ function startAllTracking() {
     console.log('✅ 유저 속성 추적 초기화 완료');
   }
   
-  // 페이지 뷰 즉시 전송
-  if (typeof window.trackPageView === 'function') {
-    window.trackPageView();
-    console.log('✅ 페이지 뷰 이벤트 전송 완료');
-  }
+  // ⚠️ 커스텀 페이지뷰 이벤트 비활성화 (SDK 자동 이벤트 사용)
+  // if (typeof window.trackPageView === 'function') {
+  //   window.trackPageView();
+  //   console.log('✅ 페이지 뷰 이벤트 전송 완료');
+  // }
+  console.log('✅ SDK 자동 페이지뷰 이벤트 사용 (중복 방지)');
   
   console.log(`🎉 ThinkingData 추적 시스템 완전 초기화 완료! (${initializedCount}개 모듈 + 자동 이벤트)`);
   
@@ -326,6 +327,10 @@ function startAllTracking() {
       category: getPageCategory(),
       section: getPageSection(),
       source: getTrafficSource()
+    });
+    console.log('- 이벤트 중복 방지:', {
+      autoPageView: '활성화 (ta_pageview)',
+      customPageView: '비활성화 (te_page_view)'
     });
   };
 }

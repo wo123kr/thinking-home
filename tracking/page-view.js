@@ -13,6 +13,7 @@ function trackPageView() {
     return;
   }
   
+  // SDK 자동 이벤트와 중복 방지를 위해 커스텀 이벤트명 사용
   const pageViewProperties = {
     page_url: window.location.href,
     page_path: window.location.pathname,
@@ -32,7 +33,9 @@ function trackPageView() {
     page_view_timestamp: Date.now(),
     // 동적 메타데이터 수집
     page_meta_data: getPageMetaData(),
-    page_structure_info: getPageStructureInfo()
+    page_structure_info: getPageStructureInfo(),
+    event_source: 'custom_module', // 커스텀 모듈에서 발생한 이벤트임을 표시
+    timestamp: new Date().toISOString()
   };
   
   // referrer 정보가 있을 때만 추가
@@ -64,7 +67,7 @@ function trackPageView() {
     pageViewProperties.custom_parameters = dynamicParams.custom;
   }
   
-  trackEvent('te_page_view', pageViewProperties);
+  trackEvent('custom_page_view', pageViewProperties);
   console.log('📄 페이지 뷰 이벤트 전송:', pageViewProperties);
 }
 
