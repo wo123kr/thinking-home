@@ -12,11 +12,11 @@ function trackClickEvents() {
       updateSessionActivity();
       
       const elementData = {
-        element_id: closestClickable.id || null,
+        element_id: closestClickable.id || '',
         element_class_list: closestClickable.className ? closestClickable.className.split(' ') : [],
-        element_name: closestClickable.textContent ? closestClickable.textContent.trim() : null,
+        element_name: closestClickable.textContent ? closestClickable.textContent.trim() : '',
         element_tag_name: closestClickable.tagName.toLowerCase(),
-        element_target_url: closestClickable.href || null,
+        element_target_url: closestClickable.href || '',
         page_url: window.location.href,
         click_coordinates_page: {
           x_coordinate: event.pageX,

@@ -20,7 +20,7 @@ function trackFormSubmissions() {
     
     // 개인정보 동의 체크박스 확인
     const privacyCheckbox = form.querySelector('input[type="checkbox"][name*="privacy"], input[type="checkbox"][name*="agreement"]');
-    const privacyAgreed = privacyCheckbox ? privacyCheckbox.checked : null;
+    const privacyAgreed = privacyCheckbox ? privacyCheckbox.checked : false;
     
     // ThinkingData 공식 폼 구분
     const formType = getThinkingDataFormType(form);
@@ -31,12 +31,12 @@ function trackFormSubmissions() {
       form_type: formType, // 'demo_request', 'contact_inquiry', 'other'
       form_url: window.location.href,
       form_fields_submitted_info: {
-        name: formData.get('name') ? maskName(formData.get('name')) : null,
-        email: formData.get('email') ? maskEmail(formData.get('email')) : null,
-        phone: formData.get('phone') ? maskPhone(formData.get('phone')) : null,
-        company_name: formData.get('company') || formData.get('company_name') || null, // 회사명은 마스킹 안함
-        inquiry_source: formData.get('source') || formData.get('how_did_you_know') || null,
-        message_length: formData.get('message') ? formData.get('message').length : null // 메시지 길이만
+        name: formData.get('name') ? maskName(formData.get('name')) : '',
+        email: formData.get('email') ? maskEmail(formData.get('email')) : '',
+        phone: formData.get('phone') ? maskPhone(formData.get('phone')) : '',
+        company_name: formData.get('company') || formData.get('company_name') || '', // 회사명은 마스킹 안함
+        inquiry_source: formData.get('source') || formData.get('how_did_you_know') || '',
+        message_length: formData.get('message') ? formData.get('message').length : 0 // 메시지 길이만
       },
       privacy_agreement_checked: privacyAgreed,
       submission_status: 'pending'
@@ -103,7 +103,7 @@ function getThinkingDataFormType(form) {
 
 // 🎭 개선된 마스킹 함수들 (실제 데이터 패턴 유지하면서 보안)
 function maskEmail(email) {
-  if (!email || typeof email !== 'string') return null;
+  if (!email || typeof email !== 'string') return '';
   const parts = email.split('@');
   if (parts.length !== 2) return '***@***.***';
   
@@ -120,7 +120,7 @@ function maskEmail(email) {
 }
 
 function maskPhone(phone) {
-  if (!phone || typeof phone !== 'string') return null;
+  if (!phone || typeof phone !== 'string') return '';
   
   // 숫자만 추출
   const numbers = phone.replace(/\D/g, '');
@@ -136,7 +136,7 @@ function maskPhone(phone) {
 }
 
 function maskName(name) {
-  if (!name || typeof name !== 'string') return null;
+  if (!name || typeof name !== 'string') return '';
   const trimmed = name.trim();
   
   if (trimmed.length <= 1) {

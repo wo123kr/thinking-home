@@ -93,8 +93,8 @@ function setSuperProperties() {
     // 페이지 정보 (SDK 자동수집 #url, #url_path, #title과 별개)
     page_host: window.location.hostname,
     page_protocol: window.location.protocol,
-    page_hash: window.location.hash || null,
-    page_query: window.location.search || null,
+    page_hash: window.location.hash || '',
+    page_query: window.location.search || '',
     
     // 뷰포트 정보 (SDK의 #screen_width/height와 다름 - 실제 브라우저 창 크기)
     viewport_width: window.innerWidth,
@@ -131,8 +131,8 @@ function setSuperProperties() {
     })(),
     
     // 네트워크 정보 (지원하는 브라우저만)
-    connection_type: navigator.connection ? navigator.connection.effectiveType : null,
-    connection_downlink: navigator.connection ? navigator.connection.downlink : null,
+    connection_type: navigator.connection ? navigator.connection.effectiveType : '',
+    connection_downlink: navigator.connection ? navigator.connection.downlink : '',
     is_online: navigator.onLine,
     
     // 타이밍 정보
@@ -142,9 +142,9 @@ function setSuperProperties() {
     // 성능 정보 (의미있는 지표만)
     dom_ready_state: document.readyState,
     performance_now: Math.round(performance.now()),
-    connection_rtt: navigator.connection ? navigator.connection.rtt : null, // 네트워크 지연시간
+    connection_rtt: navigator.connection ? navigator.connection.rtt : '', // 네트워크 지연시간
     memory_used: performance.memory && performance.memory.usedJSHeapSize ? 
-      Math.round(performance.memory.usedJSHeapSize / 1024 / 1024) : null // MB 단위
+      Math.round(performance.memory.usedJSHeapSize / 1024 / 1024) : '' // MB 단위
   };
   
   // UTM 파라미터 추출 (마케팅 캠페인 추적 - SDK #utm과 별개)
