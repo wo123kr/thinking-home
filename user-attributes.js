@@ -413,7 +413,7 @@ class UserAttributeTracker {
     updateTimeAttributes() {
         const now = new Date();
         const hour = now.getHours();
-        const dayOfWeek = now.toLocaleDateString('en', {weekday: 'lowercase'});
+        const dayOfWeek = now.toLocaleDateString('en', {weekday: 'long'}).toLowerCase();
         
         // 선호 방문 시간대
         const timeOfDay = this.getTimeOfDay(hour);
