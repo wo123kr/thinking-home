@@ -158,7 +158,7 @@ function initializePageExitTracking() {
             "#event_name": eventName,
             "properties": exitData
           }],
-          "#app_id": "cf003f81e4564662955fc0e0d914cef9",
+          "#app_id": "01135534d2e04fa0bbfc5f4adc7f84ca",
           "#flush_time": Date.now()
         });
         
@@ -189,7 +189,7 @@ function initializePageExitTracking() {
           "#event_name": eventName,
           "properties": exitData
         }],
-        "#app_id": "cf003f81e4564662955fc0e0d914cef9",
+        "#app_id": "01135534d2e04fa0bbfc5f4adc7f84ca",
         "#flush_time": Date.now()
       });
       
@@ -206,6 +206,40 @@ function initializePageExitTracking() {
       }
     } catch (e) {
       console.warn(`❌ ${eventName} 동기 전송 실패:`, e);
+    }
+  }
+
+  // 추가 전송 방식: Image 객체 사용
+  function sendImageEvent(eventName, exitData) {
+    try {
+      const payload = JSON.stringify({
+        data: [{
+          "#type": "track",
+          "#time": new Date().toISOString().replace('T', ' ').slice(0, 23),
+          "#distinct_id": window.te ? window.te.getDistinctId() : 'anonymous',
+          "#event_name": eventName,
+          "properties": exitData
+        }],
+        "#app_id": "01135534d2e04fa0bbfc5f4adc7f84ca",
+        "#flush_time": Date.now()
+      });
+      
+      // URL 인코딩
+      const encodedData = encodeURIComponent(payload);
+      const url = `https://te-receiver-naver.thinkingdata.kr/sync_js?data=${encodedData}`;
+      
+      // Image 객체로 전송 (가장 안정적)
+      const img = new Image();
+      img.onload = function() {
+        console.log(`✅ ${eventName} Image 전송 성공`);
+      };
+      img.onerror = function() {
+        console.warn(`❌ ${eventName} Image 전송 실패`);
+      };
+      img.src = url;
+      
+    } catch (e) {
+      console.warn(`❌ ${eventName} Image 전송 실패:`, e);
     }
   }
 
@@ -245,15 +279,23 @@ function initializePageExitTracking() {
       session_number: window.sessionNumber || 0
     };
     
+    // 여러 전송 방식 시도
     sendExitEvent('te_page_exit', exitData);
     
     // 브라우저가 이벤트를 처리할 시간을 주기 위해 약간의 지연
     event.preventDefault();
     event.returnValue = '';
+    
+    // 추가 전송 방식 시도
+    setTimeout(() => {
+      sendImageEvent('te_page_exit', exitData);
+    }, 100);
   });
 
   // unload: 페이지 완전 언로드 (실제 브라우저/탭 종료)
   window.addEventListener('unload', function() {
+    console.log('🚪 unload 이벤트 발생');
+    
     const now = Date.now();
     if (isPageVisible) {
       totalVisibleTime += now - lastVisibilityChange;
@@ -274,11 +316,17 @@ function initializePageExitTracking() {
       session_number: window.sessionNumber || 0
     };
     
+    // 여러 전송 방식 시도
     sendExitEvent('te_browser_exit', exitData);
+    
+    // Image 전송도 시도
+    sendImageEvent('te_browser_exit', exitData);
   });
 
   // pagehide: 모바일에서 더 안정적 (브라우저 캐시 등)
   window.addEventListener('pagehide', function(event) {
+    console.log('🚪 pagehide 이벤트 발생, persisted:', event.persisted);
+    
     const now = Date.now();
     if (isPageVisible) {
       totalVisibleTime += now - lastVisibilityChange;
@@ -303,8 +351,39 @@ function initializePageExitTracking() {
     // 캐시되지 않는 경우만 종료로 간주
     if (!event.persisted) {
       sendExitEvent('te_page_final_exit', exitData);
+      sendImageEvent('te_page_final_exit', exitData);
     } else {
       console.log('🚪 페이지 캐시됨, 종료 이벤트 전송 안함');
+    }
+  });
+
+  // 추가: visibilitychange 이벤트에서도 종료 감지
+  document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState === 'hidden') {
+      console.log('🚪 visibilitychange: hidden - 페이지 종료 감지');
+      
+      const now = Date.now();
+      if (isPageVisible) {
+        totalVisibleTime += now - lastVisibilityChange;
+      }
+      
+      const exitData = {
+        exit_type: 'visibility_hidden',
+        total_visible_time: Math.round(totalVisibleTime / 1000),
+        session_duration: Math.round((now - pageStartTime) / 1000),
+        page_url: window.location.href,
+        page_title: document.title,
+        page_section: getPageSection(),
+        page_category: getPageCategory(),
+        user_engagement_level: getUserEngagementLevel(),
+        scroll_depth: window.maxScrollDepth || 0,
+        interaction_count: window.interactionCount || 0,
+        session_id: (window.sessionId || '') + '',
+        session_number: window.sessionNumber || 0
+      };
+      
+      // visibilitychange는 일반적으로 안정적이므로 즉시 전송
+      sendExitEvent('te_page_visibility_exit', exitData);
     }
   });
 
