@@ -181,7 +181,7 @@ class UserAttributeTracker {
         // 최초 방문 시에만 기록
         this.safeTeCall('userSetOnce', {
             first_utm_source: utmSource,
-            first_utm_campaign: utmCampaign,
+            first_utm_campaign: (utmCampaign || '') + '',
             first_referrer_domain: referrerDomain
         });
         

@@ -57,9 +57,9 @@ function trackPopupEvents() {
       updateSessionActivity();
       trackEvent('te_popup_action', {
         action_type: buttonType,
-        button_text: target.textContent ? target.textContent.trim() : null,
-        element_id: target.id || null,
-        element_class: target.className || null,
+        button_text: (target.textContent ? target.textContent.trim() : '') + '',
+        element_id: (target.id || '') + '',
+        element_class: (target.className || '') + '',
         popup_type: getPopupType(target),
         page_url: window.location.href
       });

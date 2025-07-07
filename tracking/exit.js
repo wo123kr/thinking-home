@@ -118,6 +118,8 @@ function initializePageExitTracking() {
 
   // 페이지 종료 이벤트 전송 (중복 방지)
   function sendExitEvent(eventName, exitData) {
+    console.log(`🚪 ${eventName} 전송 시도:`, exitData);
+    
     if (exitEventsSent.has(eventName)) {
       console.log(`🚪 ${eventName} 이미 전송됨, 중복 방지`);
       return;
@@ -126,12 +128,21 @@ function initializePageExitTracking() {
     exitEventsSent.add(eventName);
     
     try {
+      // 1. 일반 trackEvent 시도
       trackEvent(eventName, exitData);
-      console.log(`🚪 ${eventName} 전송 완료:`, exitData);
+      console.log(`✅ ${eventName} trackEvent 전송 완료`);
     } catch (e) {
-      console.warn(`🚪 ${eventName} 전송 실패:`, e);
-      // 실패 시 Beacon API로 재시도
-      sendBeaconEvent(eventName, exitData);
+      console.warn(`❌ ${eventName} trackEvent 전송 실패:`, e);
+      
+      // 2. Beacon API로 재시도
+      try {
+        sendBeaconEvent(eventName, exitData);
+      } catch (beaconError) {
+        console.warn(`❌ ${eventName} Beacon API 전송 실패:`, beaconError);
+        
+        // 3. 마지막 수단: 동기적 전송 시도
+        sendSyncEvent(eventName, exitData);
+      }
     }
   }
 
@@ -167,11 +178,44 @@ function initializePageExitTracking() {
     }
   }
 
+  // 동기적 전송 (마지막 수단)
+  function sendSyncEvent(eventName, exitData) {
+    try {
+      const payload = JSON.stringify({
+        data: [{
+          "#type": "track",
+          "#time": new Date().toISOString().replace('T', ' ').slice(0, 23),
+          "#distinct_id": window.te ? window.te.getDistinctId() : 'anonymous',
+          "#event_name": eventName,
+          "properties": exitData
+        }],
+        "#app_id": "cf003f81e4564662955fc0e0d914cef9",
+        "#flush_time": Date.now()
+      });
+      
+      // 동기적 XMLHttpRequest 시도
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', 'https://te-receiver-naver.thinkingdata.kr/sync_js', false); // 동기적
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.send(payload);
+      
+      if (xhr.status === 200) {
+        console.log(`✅ ${eventName} 동기 전송 성공`);
+      } else {
+        console.warn(`❌ ${eventName} 동기 전송 실패:`, xhr.status);
+      }
+    } catch (e) {
+      console.warn(`❌ ${eventName} 동기 전송 실패:`, e);
+    }
+  }
+
   // Page Visibility API 사용
   document.addEventListener('visibilitychange', handleVisibilityChange);
 
   // beforeunload: 페이지 떠나기 전 (새로고침, 닫기, 다른 페이지 이동)
-  window.addEventListener('beforeunload', function() {
+  window.addEventListener('beforeunload', function(event) {
+    console.log('🚪 beforeunload 이벤트 발생');
+    
     const now = Date.now();
     if (isPageVisible) {
       totalVisibleTime += now - lastVisibilityChange;
@@ -197,11 +241,15 @@ function initializePageExitTracking() {
       user_engagement_level: getUserEngagementLevel(),
       scroll_depth: window.maxScrollDepth || 0,
       interaction_count: window.interactionCount || 0,
-      session_id: window.sessionId || null,
-      session_number: window.sessionNumber || null
+      session_id: (window.sessionId || '') + '',
+      session_number: window.sessionNumber || 0
     };
     
     sendExitEvent('te_page_exit', exitData);
+    
+    // 브라우저가 이벤트를 처리할 시간을 주기 위해 약간의 지연
+    event.preventDefault();
+    event.returnValue = '';
   });
 
   // unload: 페이지 완전 언로드 (실제 브라우저/탭 종료)
@@ -222,8 +270,8 @@ function initializePageExitTracking() {
       user_engagement_level: getUserEngagementLevel(),
       scroll_depth: window.maxScrollDepth || 0,
       interaction_count: window.interactionCount || 0,
-      session_id: window.sessionId || null,
-      session_number: window.sessionNumber || null
+      session_id: (window.sessionId || '') + '',
+      session_number: window.sessionNumber || 0
     };
     
     sendExitEvent('te_browser_exit', exitData);
@@ -248,8 +296,8 @@ function initializePageExitTracking() {
       user_engagement_level: getUserEngagementLevel(),
       scroll_depth: window.maxScrollDepth || 0,
       interaction_count: window.interactionCount || 0,
-      session_id: window.sessionId || null,
-      session_number: window.sessionNumber || null
+      session_id: (window.sessionId || '') + '',
+      session_number: window.sessionNumber || 0
     };
     
     // 캐시되지 않는 경우만 종료로 간주
@@ -301,19 +349,38 @@ function debugExitTracking() {
 function testExitEvent() {
   console.log('🚪 테스트 종료 이벤트 전송...');
   
+  // 중복 방지 Set 초기화 (테스트용)
+  if (typeof exitEventsSent !== 'undefined') {
+    exitEventsSent.clear();
+  }
+  
   trackEvent('te_test_exit', {
     test_type: 'manual_test',
     page_url: window.location.href,
     page_title: document.title,
-    timestamp: Date.now()
+    timestamp: Date.now(),
+    session_id: window.sessionId || null,
+    session_number: window.sessionNumber || null
   });
   console.log('✅ 테스트 종료 이벤트 전송 완료');
+}
+
+// 추가 테스트 함수
+function testPageExit() {
+  console.log('🚪 페이지 종료 시뮬레이션...');
+  
+  // beforeunload 이벤트 수동 트리거
+  const beforeUnloadEvent = new Event('beforeunload');
+  window.dispatchEvent(beforeUnloadEvent);
+  
+  console.log('✅ 페이지 종료 시뮬레이션 완료');
 }
 
 // 전역 함수로 노출
 window.initializePageExitTracking = initializePageExitTracking;
 window.debugExitTracking = debugExitTracking;
 window.testExitEvent = testExitEvent;
+window.testPageExit = testPageExit;
 
 // DOM 로드 완료 후 자동 실행
 if (document.readyState === 'loading') {

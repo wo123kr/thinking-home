@@ -302,8 +302,8 @@ function updateSuperProperties() {
     // 페이지 정보
     page_host: window.location.hostname,
     page_protocol: window.location.protocol,
-    page_hash: window.location.hash || null,
-    page_query: window.location.search || null,
+    page_hash: (window.location.hash || '') + '',
+    page_query: (window.location.search || '') + '',
     
     // 뷰포트 정보
     viewport_width: window.innerWidth,
@@ -322,13 +322,20 @@ function updateSuperProperties() {
     is_tablet: /iPad|Android|Tablet/i.test(navigator.userAgent) && window.innerWidth >= 768,
     
     // 네트워크 정보
-    connection_type: navigator.connection ? navigator.connection.effectiveType : null,
-    connection_downlink: navigator.connection ? navigator.connection.downlink : null,
+    connection_type: navigator.connection ? navigator.connection.effectiveType : '',
+    connection_downlink: navigator.connection ? navigator.connection.downlink : 0,
     is_online: navigator.onLine,
     
     // 타이밍 정보
     timestamp: Date.now(),
-    local_time: new Date().toISOString()
+    local_time: new Date().toISOString(),
+    
+    // 성능 정보 (의미있는 지표만)
+    dom_ready_state: document.readyState,
+    performance_now: Math.round(performance.now()),
+    connection_rtt: navigator.connection ? navigator.connection.rtt : 0, // 네트워크 지연시간
+    memory_used: performance.memory && performance.memory.usedJSHeapSize ? 
+        Math.round(performance.memory.usedJSHeapSize / 1024 / 1024) : 0 // MB 단위
   };
   
   // UTM 파라미터 추출
@@ -340,7 +347,16 @@ function updateSuperProperties() {
     }
   });
   
+  // 커스텀 추적 ID들
+  ['gclid', 'fbclid', 'msclkid', '_ga'].forEach(function(param) {
+    const value = urlParams.get(param);
+    if (value) {
+      superProperties[param] = value;
+    }
+  });
+  
   window.te.setSuperProperties(superProperties);
+  console.log('✅ Super properties set:', superProperties);
 }
 
 /**
