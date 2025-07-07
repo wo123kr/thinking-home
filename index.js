@@ -4,35 +4,12 @@
  * 
  * 사용법:
  * <script src="https://cdn.jsdelivr.net/gh/[username]/webpage-thinking@main/index.js"></script>
+ * 
+ * 주의: ThinkingData SDK는 Webflow Head에서 먼저 로드되어야 합니다.
  */
 
 (function() {
     'use strict';
-    
-    // ThinkingData SDK 로드
-    function loadThinkingDataSDK() {
-        return new Promise((resolve, reject) => {
-            // 이미 로드된 경우
-            if (window.thinkingdata) {
-                resolve(window.thinkingdata);
-                return;
-            }
-            
-            // SDK 스크립트 로드
-            const script = document.createElement('script');
-            script.src = 'https://cdn.jsdelivr.net/npm/thinkingdata-browser@2.0.3/thinkingdata.umd.min.js';
-            script.async = true;
-            script.onload = () => {
-                if (window.thinkingdata) {
-                    resolve(window.thinkingdata);
-                } else {
-                    reject(new Error('ThinkingData SDK 로드 실패'));
-                }
-            };
-            script.onerror = () => reject(new Error('ThinkingData SDK 로드 실패'));
-            document.head.appendChild(script);
-        });
-    }
     
     // 모듈 로드 함수
     function loadModule(url) {
@@ -48,17 +25,20 @@
     
     // 모든 모듈 로드
     async function loadAllModules() {
-        const baseUrl = 'https://cdn.jsdelivr.net/gh/[username]/webpage-thinking@main';
+        const baseUrl = 'https://cdn.jsdelivr.net/gh/wo123kr/webflow-tracking@main';
         
         try {
-            // 1. ThinkingData SDK 로드
-            await loadThinkingDataSDK();
+            // ThinkingData SDK가 이미 로드되었는지 확인
+            if (!window.thinkingdata) {
+                console.error('❌ ThinkingData SDK가 로드되지 않았습니다. Webflow Head에서 먼저 로드해주세요.');
+                return;
+            }
             
-            // 2. 코어 모듈들 로드
+            // 1. 코어 모듈들 로드
             await loadModule(`${baseUrl}/core/thinking-data-init.js`);
             await loadModule(`${baseUrl}/core/session-manager.js`);
             
-            // 3. 추적 모듈들 로드
+            // 2. 추적 모듈들 로드
             await loadModule(`${baseUrl}/tracking/page-view.js`);
             await loadModule(`${baseUrl}/tracking/click.js`);
             await loadModule(`${baseUrl}/tracking/scroll.js`);
@@ -68,12 +48,12 @@
             await loadModule(`${baseUrl}/tracking/resource.js`);
             await loadModule(`${baseUrl}/tracking/exit.js`);
             
-            // 4. 유저 속성 추적 시스템 로드
+            // 3. 유저 속성 추적 시스템 로드
             await loadModule(`${baseUrl}/user-attributes.js`);
             
             console.log('✅ 모든 모듈 로드 완료');
             
-            // 5. 초기화 실행
+            // 4. 초기화 실행
             initializeTrackingSystem();
             
         } catch (error) {
