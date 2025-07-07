@@ -5,7 +5,7 @@
 
 // ThinkingData 설정
 var config = {
-  appId: "01135534d2e04fa0bbfc5f4adc7f84ca",
+  appId: "b33016b8b26f4798aee67722ed4438be",
   serverUrl: "https://te-receiver-naver.thinkingdata.kr/sync_js",
   autoTrack: {
     pageShow: true,  // 페이지 진입 자동 추적
