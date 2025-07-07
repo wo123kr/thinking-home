@@ -1,35 +1,130 @@
 /**
- * 유튜브 비디오 추적 모듈 (YouTube API 활용)
+ * 비디오 추적 모듈 (YouTube API 활용) - 동적 설정 가능한 구조
  */
 
 // 비디오 세션 추적을 위한 변수들
 let videoSessions = new Map(); // 각 비디오별 세션 추적
+let isVideoTrackingInitialized = false;
 
 function trackVideoEvents() {
   console.log('🎬 비디오 추적 초기화 시작...');
   
-  // YouTube iframe이 있는지 확인
-  const youtubeIframes = document.querySelectorAll('iframe[src*="youtube.com"], iframe[src*="youtu.be"]');
-  console.log(`🎯 YouTube iframe 발견: ${youtubeIframes.length}개`);
+  // 중복 초기화 방지
+  if (isVideoTrackingInitialized) {
+    console.log('ℹ️ 비디오 추적이 이미 초기화됨');
+    return;
+  }
   
-  if (youtubeIframes.length > 0) {
-    // YouTube API 즉시 로드 (더 정확한 추적을 위해)
+  // ThinkingData SDK 확인
+  if (typeof window.te === 'undefined') {
+    console.warn('⚠️ ThinkingData SDK가 로드되지 않음, 3초 후 재시도...');
+    setTimeout(trackVideoEvents, 3000);
+    return;
+  }
+  
+  // 동적 비디오 플랫폼 감지
+  const videoIframes = detectVideoIframes();
+  console.log(`🎯 비디오 iframe 발견: ${videoIframes.length}개`);
+  
+  if (videoIframes.length > 0) {
+    // YouTube API 즉시 로드
     loadYouTubeAPI();
   } else {
-    console.log('ℹ️ YouTube iframe이 없어서 API 로드하지 않음');
+    console.log('ℹ️ 비디오 iframe이 없어서 API 로드하지 않음');
+    // DOM 변경 감지를 위한 MutationObserver 설정
+    setupVideoObserver();
   }
+  
+  isVideoTrackingInitialized = true;
+}
+
+// 동적 비디오 iframe 감지 (설정 가능)
+function detectVideoIframes() {
+  const videoPlatformMappings = window.videoPlatformMappings || {
+    'youtube': {
+      selectors: [
+        'iframe[src*="youtube.com"]',
+        'iframe[src*="youtu.be"]',
+        'iframe[src*="youtube-nocookie.com"]'
+      ],
+      patterns: ['youtube.com', 'youtu.be', 'youtube-nocookie.com']
+    },
+    'vimeo': {
+      selectors: [
+        'iframe[src*="vimeo.com"]',
+        'iframe[src*="player.vimeo.com"]'
+      ],
+      patterns: ['vimeo.com', 'player.vimeo.com']
+    },
+    'dailymotion': {
+      selectors: [
+        'iframe[src*="dailymotion.com"]'
+      ],
+      patterns: ['dailymotion.com']
+    },
+    'wistia': {
+      selectors: [
+        'iframe[src*="wistia.com"]',
+        'iframe[src*="fast.wistia.com"]'
+      ],
+      patterns: ['wistia.com', 'fast.wistia.com']
+    }
+  };
+  
+  let allIframes = [];
+  
+  // 모든 플랫폼의 iframe 수집
+  for (const [platform, config] of Object.entries(videoPlatformMappings)) {
+    const selectors = config.selectors.join(', ');
+    const iframes = document.querySelectorAll(selectors);
+    iframes.forEach(iframe => {
+      iframe.dataset.videoPlatform = platform;
+      allIframes.push(iframe);
+    });
+  }
+  
+  return allIframes;
+}
+
+// DOM 변경 감지로 동적 비디오 iframe 감지
+function setupVideoObserver() {
+  console.log('🔍 비디오 iframe 동적 감지 설정...');
+  
+  const observer = new MutationObserver(function(mutations) {
+    mutations.forEach(function(mutation) {
+      mutation.addedNodes.forEach(function(node) {
+        if (node.nodeType === 1) { // Element node
+          // 새로 추가된 iframe 확인
+          const videoIframes = detectVideoIframes();
+          
+          if (videoIframes.length > 0) {
+            console.log(`🎯 새로운 비디오 iframe 발견: ${videoIframes.length}개`);
+            loadYouTubeAPI();
+            observer.disconnect(); // 한 번 발견하면 관찰 중단
+          }
+        }
+      });
+    });
+  });
+  
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
 }
 
 // YouTube API 동적 로드 (더 정확한 추적을 위해)
 function loadYouTubeAPI() {
   // 이미 로드된 경우 중복 로드 방지
   if (window.YT && window.YT.Player) {
+    console.log('✅ YouTube API 이미 로드됨');
     initializeYouTubePlayers();
     return;
   }
   
   // 이미 스크립트가 있는지 확인
   if (document.querySelector('script[src*="youtube.com/iframe_api"]')) {
+    console.log('ℹ️ YouTube API 스크립트 이미 존재함');
     return;
   }
   
@@ -54,27 +149,29 @@ function loadYouTubeAPI() {
 
 // YouTube 플레이어 초기화
 function initializeYouTubePlayers() {
-  const youtubeIframes = document.querySelectorAll('iframe[src*="youtube.com"], iframe[src*="youtu.be"]');
-  console.log(`🎯 YouTube iframe 발견: ${youtubeIframes.length}개`);
+  const videoIframes = detectVideoIframes();
+  console.log(`🎯 비디오 iframe 발견: ${videoIframes.length}개`);
   
-  youtubeIframes.forEach((iframe, index) => {
+  videoIframes.forEach((iframe, index) => {
     if (!iframe.id) {
-      iframe.id = `youtube_player_${index}`;
+      iframe.id = `video_player_${index}`;
     }
     
-    console.log(`🎬 YouTube 플레이어 초기화: ${iframe.id}`);
+    console.log(`🎬 비디오 플레이어 초기화: ${iframe.id}`);
     
     try {
       const player = new YT.Player(iframe.id, {
         events: {
           'onReady': function(event) {
-            console.log(`✅ YouTube 플레이어 준비 완료: ${iframe.id}`);
+            console.log(`✅ 비디오 플레이어 준비 완료: ${iframe.id}`);
+            
             const videoData = {
-              video_name: event.target.getVideoData().title || `유튜브 동영상_${index + 1}`,
-              label_name: 'Youtube 동영상 플레이어',
+              video_name: event.target.getVideoData().title || `비디오_${index + 1}`,
+              label_name: getVideoLabelName(iframe),
               video_url: `https://www.youtube.com/watch?v=${event.target.getVideoData().video_id}`,
               video_id: iframe.id,
-              platform: 'youtube'
+              platform: iframe.dataset.videoPlatform || 'youtube',
+              video_duration: Math.round(event.target.getDuration() || 0)
             };
             
             videoSessions.set(iframe.id, {
@@ -89,10 +186,7 @@ function initializeYouTubePlayers() {
             });
             
             // 플레이어 준비 완료 이벤트
-            te.track('video_ready', {
-              ...videoData,
-              video_duration: Math.round(event.target.getDuration() || 0)
-            });
+                    trackEvent('video_ready', videoData);
           },
           'onStateChange': function(event) {
             const session = videoSessions.get(iframe.id);
@@ -105,15 +199,19 @@ function initializeYouTubePlayers() {
             const duration = Math.round(session.player.getDuration());
             const completionRate = duration > 0 ? Math.round((currentTime / duration) * 100) : 0;
             
-            console.log(`🎬 YouTube 상태 변경: ${getYouTubeStateText(event.data)} - ${currentTime}/${duration}초 (${completionRate}%)`);
+            console.log(`🎬 비디오 상태 변경: ${getYouTubeStateText(event.data)} - ${currentTime}/${duration}초 (${completionRate}%)`);
+            
+            // 세션 활동 업데이트 (전역 함수 확인)
+            if (typeof window.updateSessionActivity === 'function') {
+              window.updateSessionActivity();
+            }
             
             switch (event.data) {
               case YT.PlayerState.PLAYING:
-                updateSessionActivity();
                 session.start_time = Date.now();
                 session.last_position = currentTime;
                 
-                te.track('video_play', {
+                trackEvent('video_play', {
                   video_name: session.video_name,
                   video_url: session.video_url,
                   video_id: session.video_id,
@@ -121,13 +219,11 @@ function initializeYouTubePlayers() {
                   video_duration: duration,
                   completion_rate: completionRate,
                   is_replay: currentTime > 5,
-                  platform: 'youtube'
+                  platform: session.platform
                 });
                 break;
                 
               case YT.PlayerState.PAUSED:
-                updateSessionActivity();
-                
                 // 시청 시간 계산
                 if (session.start_time) {
                   const watchTime = Math.round((Date.now() - session.start_time) / 1000);
@@ -137,7 +233,7 @@ function initializeYouTubePlayers() {
                 session.pause_count++;
                 session.completion_rate = Math.max(session.completion_rate, completionRate);
                 
-                te.track('video_pause', {
+                trackEvent('video_pause', {
                   video_name: session.video_name,
                   video_url: session.video_url,
                   video_id: session.video_id,
@@ -146,7 +242,7 @@ function initializeYouTubePlayers() {
                   completion_rate: session.completion_rate,
                   pause_count: session.pause_count,
                   total_watch_time: session.total_watch_time,
-                  platform: 'youtube'
+                  platform: session.platform
                 });
                 
                 // 진행률 마일스톤 체크
@@ -160,7 +256,7 @@ function initializeYouTubePlayers() {
                   session.total_watch_time += watchTime;
                 }
                 
-                te.track('video_ended', {
+                trackEvent('video_ended', {
                   video_name: session.video_name,
                   video_url: session.video_url,
                   video_id: session.video_id,
@@ -171,11 +267,11 @@ function initializeYouTubePlayers() {
                   pause_count: session.pause_count,
                   seek_count: session.seek_count,
                   ended_naturally: true,
-                  platform: 'youtube'
+                  platform: session.platform
                 });
                 
                 // 완료 이벤트
-                te.track('video_complete', {
+                trackEvent('video_complete', {
                   video_name: session.video_name,
                   video_url: session.video_url,
                   video_id: session.video_id,
@@ -184,45 +280,59 @@ function initializeYouTubePlayers() {
                   pause_count: session.pause_count,
                   seek_count: session.seek_count,
                   completion_rate: 100,
-                  platform: 'youtube'
+                  platform: session.platform
                 });
                 break;
                 
               case YT.PlayerState.BUFFERING:
-                te.track('video_buffering', {
+                trackEvent('video_buffering', {
                   video_name: session.video_name,
                   video_url: session.video_url,
                   video_id: session.video_id,
                   video_position: currentTime,
                   video_duration: duration,
-                  platform: 'youtube'
+                  platform: session.platform
                 });
                 break;
                 
               case YT.PlayerState.CUED:
-                te.track('video_cued', {
+                trackEvent('video_cued', {
                   video_name: session.video_name,
                   video_url: session.video_url,
                   video_id: session.video_id,
-                  platform: 'youtube'
+                  platform: session.platform
                 });
                 break;
             }
           },
           'onError': function(event) {
-            console.error('❌ YouTube 플레이어 오류:', event.data);
-            te.track('video_error', {
+            console.error('❌ 비디오 플레이어 오류:', event.data);
+            trackEvent('video_error', {
               video_id: iframe.id,
               error_code: event.data,
-              platform: 'youtube'
+              platform: iframe.dataset.videoPlatform || 'youtube'
             });
           }
         }
       });
     } catch (error) {
-      console.error('❌ YouTube 플레이어 생성 실패:', error);
+      console.error('❌ 비디오 플레이어 생성 실패:', error);
     }
   });
+}
+
+// 동적 비디오 라벨 이름 (설정 가능)
+function getVideoLabelName(iframe) {
+  const platform = iframe.dataset.videoPlatform || 'youtube';
+  
+  const labelMappings = window.videoLabelMappings || {
+    'youtube': 'YouTube 동영상 플레이어',
+    'vimeo': 'Vimeo 동영상 플레이어',
+    'dailymotion': 'Dailymotion 동영상 플레이어',
+    'wistia': 'Wistia 동영상 플레이어'
+  };
+  
+  return labelMappings[platform] || `${platform} 동영상 플레이어`;
 }
 
 // YouTube 상태 텍스트 변환
@@ -240,22 +350,99 @@ function getYouTubeStateText(state) {
 
 // 비디오 진행률 마일스톤 체크 함수
 function checkVideoProgress(session, currentRate) {
-  const milestones = [25, 50, 75, 90];
+  const milestones = getVideoProgressMilestones();
   
   milestones.forEach(milestone => {
     if (currentRate >= milestone && session.completion_rate < milestone) {
-      te.track('video_progress', {
+      trackEvent('video_progress', {
         video_name: session.video_name,
         video_url: session.video_url,
         video_id: session.video_id,
         completion_rate: milestone,
         milestone_reached: `${milestone}%`,
         total_watch_time: session.total_watch_time,
-        platform: 'youtube'
+        platform: session.platform
       });
     }
   });
 }
 
+// 동적 비디오 진행률 마일스톤 (설정 가능)
+function getVideoProgressMilestones() {
+  const defaultMilestones = [25, 50, 75, 90];
+  const customMilestones = window.videoProgressMilestones || [];
+  return [...defaultMilestones, ...customMilestones].sort((a, b) => a - b);
+}
+
+// 설정 업데이트 함수 (런타임에 설정 변경 가능)
+function updateVideoTrackingConfig(newConfig) {
+  if (newConfig.videoPlatformMappings) {
+    window.videoPlatformMappings = { ...window.videoPlatformMappings, ...newConfig.videoPlatformMappings };
+  }
+  if (newConfig.videoLabelMappings) {
+    window.videoLabelMappings = { ...window.videoLabelMappings, ...newConfig.videoLabelMappings };
+  }
+  if (newConfig.videoProgressMilestones) {
+    window.videoProgressMilestones = [...(window.videoProgressMilestones || []), ...newConfig.videoProgressMilestones];
+  }
+  
+  console.log('🎬 비디오 추적 설정 업데이트 완료:', newConfig);
+}
+
+// 디버깅용 함수
+function debugVideoTracking() {
+  console.log('🎬 비디오 추적 디버깅 정보:');
+  console.log('- 비디오 플랫폼 매핑:', window.videoPlatformMappings);
+  console.log('- 비디오 라벨 매핑:', window.videoLabelMappings);
+  console.log('- 비디오 진행률 마일스톤:', getVideoProgressMilestones());
+  console.log('- 현재 비디오 세션 수:', videoSessions.size);
+  console.log('- ThinkingData SDK:', typeof window.te !== 'undefined' ? '로드됨' : '로드 안됨');
+  
+  // 현재 페이지의 비디오 요소들 확인
+  const videoIframes = detectVideoIframes();
+  console.log('- 현재 페이지 비디오 iframe 개수:', videoIframes.length);
+  
+  videoIframes.forEach((iframe, index) => {
+    console.log(`  - iframe ${index + 1}:`, {
+      id: iframe.id,
+      src: iframe.src,
+      platform: iframe.dataset.videoPlatform,
+      label: getVideoLabelName(iframe)
+    });
+  });
+}
+
 // 전역 함수로 노출
 window.trackVideoEvents = trackVideoEvents;
+window.updateVideoTrackingConfig = updateVideoTrackingConfig;
+window.debugVideoTracking = debugVideoTracking;
+window.updateSessionActivity = function() {
+  // 세션 활동 업데이트 함수가 있으면 호출
+  if (typeof window.updateSessionActivity === 'function') {
+    window.updateSessionActivity();
+  }
+};
+
+// DOM 로드 완료 후 자동 실행
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', function() {
+    console.log('🎬 DOM 로드 완료, 비디오 추적 시작');
+    setTimeout(trackVideoEvents, 1000); // 1초 지연으로 안정성 확보
+  });
+} else {
+  // DOM이 이미 로드된 경우
+  console.log('🎬 DOM 이미 로드됨, 비디오 추적 시작');
+  setTimeout(trackVideoEvents, 1000);
+}
+
+// ThinkingData 초기화 완료 이벤트 감지
+window.addEventListener('thinkingdata:ready', function() {
+  console.log('🎬 ThinkingData 초기화 완료, 비디오 추적 시작');
+  setTimeout(trackVideoEvents, 500);
+});
+
+// 페이지 로드 완료 후 한 번 더 시도 (동적 콘텐츠 대응)
+window.addEventListener('load', function() {
+  console.log('🎬 페이지 로드 완료, 비디오 추적 재확인');
+  setTimeout(trackVideoEvents, 2000);
+});

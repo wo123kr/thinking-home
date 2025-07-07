@@ -1,153 +1,337 @@
 /**
- * 세션 관리 및 공통 속성 설정
+ * 세션 관리 모듈 - GA4/Amplitude 방식 최적화
  */
 
 // 세션 관리 변수
 let sessionId = null;
 let sessionNumber = parseInt(localStorage.getItem('te_session_number') || '0');
 let sessionStartTime = null;
+let sessionEndTime = null;
 let isEngagedSession = false;
 let interactionCount = 0;
 let lastActivityTime = Date.now();
-const SESSION_TIMEOUT = 30 * 60 * 1000; // 30분 (웹 기준)
+let sessionTimeout = 30 * 60 * 1000; // 30분 (기본값)
+let isSessionTrackingEnabled = true;
 
-// 세션 ID 생성
-function generateSessionId() {
-  return Date.now(); // Epoch 시간 사용 (Amplitude 권장)
+// 세션 이벤트 추적 상태
+let sessionEventsTracked = {
+  session_start: false,
+  session_end: false,
+  session_timeout: false
+};
+
+/**
+ * 세션 초기화 및 시작
+ */
+function initializeSession() {
+  console.log('🔄 세션 초기화 시작...');
+  
+  // ThinkingData SDK 확인
+  if (typeof window.te === 'undefined') {
+    console.warn('⚠️ ThinkingData SDK가 로드되지 않음, 3초 후 재시도...');
+    setTimeout(initializeSession, 3000);
+    return;
+  }
+  
+  const storedSessionId = localStorage.getItem('te_session_id');
+  const storedStartTime = localStorage.getItem('te_session_start_time');
+  const storedLastActivity = localStorage.getItem('te_last_activity_time');
+  
+  // 기존 세션 복원 또는 새 세션 시작
+  if (storedSessionId && storedStartTime && storedLastActivity) {
+    const timeSinceStart = Date.now() - parseInt(storedStartTime);
+    const timeSinceLastActivity = Date.now() - parseInt(storedLastActivity);
+    
+    // 세션 타임아웃 체크
+    if (timeSinceLastActivity < sessionTimeout && timeSinceStart < sessionTimeout * 2) {
+      // 기존 세션 복원
+      restoreSession(storedSessionId, parseInt(storedStartTime));
+    } else {
+      // 세션 만료 - 새 세션 시작
+      startNewSession();
+    }
+  } else {
+    // 최초 방문 - 새 세션 시작
+    startNewSession();
+  }
+  
+  // 세션 타임아웃 체크 주기 설정
+  setInterval(checkSessionTimeout, 60000); // 1분마다 체크
+  
+  // 페이지 종료 시 세션 종료 이벤트 전송
+  setupSessionEndTracking();
+  
+  console.log('✅ 세션 초기화 완료');
 }
 
-// 세션 시작
-function startSession() {
+/**
+ * 새 세션 시작 (GA4/Amplitude 방식)
+ */
+function startNewSession() {
   sessionId = generateSessionId();
   sessionNumber++;
   sessionStartTime = Date.now();
+  sessionEndTime = null;
   isEngagedSession = false;
   interactionCount = 0;
-  localStorage.setItem('te_session_number', sessionNumber.toString());
+  lastActivityTime = Date.now();
+  
+  // 로컬스토리지에 세션 정보 저장
   localStorage.setItem('te_session_id', sessionId.toString());
+  localStorage.setItem('te_session_number', sessionNumber.toString());
   localStorage.setItem('te_session_start_time', sessionStartTime.toString());
+  localStorage.setItem('te_last_activity_time', lastActivityTime.toString());
   
-  // 공통 속성 업데이트 (새 세션 정보 반영)
-  setSuperProperties();
+  // 공통 속성 업데이트
+  updateSuperProperties();
   
-  // 세션 시작 이벤트 전송
-  te.track('te_session_start', {
+  // 세션 시작 이벤트 전송 (GA4/Amplitude 방식)
+  const sessionStartData = {
     session_id: sessionId,
     session_number: sessionNumber,
-    is_engaged_session: isEngagedSession
-  });
+    session_start_time: new Date(sessionStartTime).toISOString(),
+    is_engaged_session: isEngagedSession,
+    interaction_count: interactionCount,
+    page_url: window.location.href,
+    page_title: document.title,
+    referrer: document.referrer || null,
+    user_agent: navigator.userAgent,
+    screen_resolution: `${screen.width}x${screen.height}`,
+    viewport_size: `${window.innerWidth}x${window.innerHeight}`,
+    device_type: getDeviceType(),
+    browser_info: getBrowserInfo(),
+    session_timeout_minutes: Math.round(sessionTimeout / 60000)
+  };
   
-  console.log('✅ Session started:', sessionId, 'Session Number:', sessionNumber);
+  trackEvent('session_start', sessionStartData);
+  sessionEventsTracked.session_start = true;
+  
+  console.log('🔄 새 세션 시작:', {
+    sessionId,
+    sessionNumber,
+    startTime: new Date(sessionStartTime).toLocaleString()
+  });
 }
 
-// 세션 활동 업데이트
+/**
+ * 기존 세션 복원
+ */
+function restoreSession(existingSessionId, existingStartTime) {
+  sessionId = parseInt(existingSessionId);
+  sessionStartTime = existingStartTime;
+  sessionNumber = parseInt(localStorage.getItem('te_session_number') || '1');
+  isEngagedSession = localStorage.getItem('te_is_engaged_session') === 'true';
+  interactionCount = parseInt(localStorage.getItem('te_interaction_count') || '0');
+  lastActivityTime = Date.now();
+  
+  // 로컬스토리지 업데이트
+  localStorage.setItem('te_last_activity_time', lastActivityTime.toString());
+  
+  // 공통 속성 업데이트
+  updateSuperProperties();
+  
+  console.log('🔄 기존 세션 복원:', {
+    sessionId,
+    sessionNumber,
+    startTime: new Date(sessionStartTime).toLocaleString(),
+    isEngaged: isEngagedSession
+  });
+}
+
+/**
+ * 세션 활동 업데이트
+ */
 function updateSessionActivity() {
   lastActivityTime = Date.now();
   interactionCount++;
   
-  // 인게이지 세션 조건: 10초 이상 또는 2회 이상 상호작용
+  // 로컬스토리지 업데이트
+  localStorage.setItem('te_last_activity_time', lastActivityTime.toString());
+  localStorage.setItem('te_interaction_count', interactionCount.toString());
+  
+  // 인게이지 세션 조건 체크 (GA4 방식)
   if (!isEngagedSession) {
     const timeSpent = Date.now() - sessionStartTime;
-    if (timeSpent >= 10000 || interactionCount >= 2) {
+    if (timeSpent >= 10000 || interactionCount >= 2) { // 10초 이상 또는 2회 이상 상호작용
       isEngagedSession = true;
-      console.log('✅ Session became engaged');
+      localStorage.setItem('te_is_engaged_session', 'true');
+      
+      // 인게이지 세션 이벤트 전송
+      trackEvent('session_engaged', {
+        session_id: sessionId,
+        session_number: sessionNumber,
+        engagement_time: Math.round(timeSpent / 1000),
+        interaction_count: interactionCount,
+        engagement_trigger: timeSpent >= 10000 ? 'time_based' : 'interaction_based'
+      });
+      
+      console.log('✅ 세션이 인게이지 상태가 됨');
     }
   }
 }
 
-// 세션 만료 체크
-function checkSessionExpiry() {
-  if (Date.now() - lastActivityTime > SESSION_TIMEOUT) {
-    startSession(); // 새 세션 시작
-  }
-}
-
-// 기존 세션 복원 또는 새 세션 시작
-function initializeSession() {
-  const storedSessionId = localStorage.getItem('te_session_id');
-  const storedStartTime = localStorage.getItem('te_session_start_time');
+/**
+ * 세션 타임아웃 체크
+ */
+function checkSessionTimeout() {
+  if (!isSessionTrackingEnabled) return;
   
-  if (storedSessionId && storedStartTime) {
-    const timeSinceStart = Date.now() - parseInt(storedStartTime);
-    if (timeSinceStart < SESSION_TIMEOUT) {
-      // 기존 세션 복원
-      sessionId = parseInt(storedSessionId);
-      sessionStartTime = parseInt(storedStartTime);
-      sessionNumber = parseInt(localStorage.getItem('te_session_number') || '1');
-      console.log('✅ Session restored:', sessionId, 'Session Number:', sessionNumber);
-    } else {
-      startSession(); // 새 세션 시작
-    }
-  } else {
-    startSession(); // 새 세션 시작
+  const timeSinceLastActivity = Date.now() - lastActivityTime;
+  
+  if (timeSinceLastActivity > sessionTimeout) {
+    console.log('⏰ 세션 타임아웃 발생');
+    endSession('timeout');
+    startNewSession(); // 새 세션 시작
   }
 }
 
-// 공통 속성 설정 (모든 이벤트에 자동 추가)
-function setSuperProperties() {
-  const superProperties = {
-    // 세션 관련 (커스텀)
+/**
+ * 세션 종료
+ */
+function endSession(reason = 'page_exit') {
+  if (!sessionId || sessionEventsTracked.session_end) return;
+  
+  sessionEndTime = Date.now();
+  const sessionDuration = Math.round((sessionEndTime - sessionStartTime) / 1000);
+  
+  const sessionEndData = {
     session_id: sessionId,
     session_number: sessionNumber,
+    session_start_time: new Date(sessionStartTime).toISOString(),
+    session_end_time: new Date(sessionEndTime).toISOString(),
+    session_duration_seconds: sessionDuration,
+    session_duration_minutes: Math.round(sessionDuration / 60 * 100) / 100,
+    is_engaged_session: isEngagedSession,
+    interaction_count: interactionCount,
+    end_reason: reason,
+    page_url: window.location.href,
+    page_title: document.title,
+    time_since_last_activity: Math.round((sessionEndTime - lastActivityTime) / 1000)
+  };
+  
+  trackEvent('session_end', sessionEndData);
+  sessionEventsTracked.session_end = true;
+  
+  console.log('🔚 세션 종료:', {
+    sessionId,
+    duration: sessionDuration + '초',
+    reason,
+    isEngaged: isEngagedSession
+  });
+  
+  // 세션 통계 업데이트
+  updateSessionStatistics(sessionDuration);
+}
+
+/**
+ * 세션 통계 업데이트
+ */
+function updateSessionStatistics(sessionDuration) {
+  // 총 세션 수 증가
+  const totalSessions = parseInt(localStorage.getItem('te_total_sessions') || '0') + 1;
+  localStorage.setItem('te_total_sessions', totalSessions.toString());
+  
+  // 총 세션 시간 누적
+  const totalSessionTime = parseInt(localStorage.getItem('te_total_session_time') || '0') + sessionDuration;
+  localStorage.setItem('te_total_session_time', totalSessionTime.toString());
+  
+  // 평균 세션 시간 계산
+  const averageSessionTime = Math.round(totalSessionTime / totalSessions);
+  localStorage.setItem('te_average_session_time', averageSessionTime.toString());
+  
+  // 최장 세션 시간 업데이트
+  const longestSessionTime = parseInt(localStorage.getItem('te_longest_session_time') || '0');
+  if (sessionDuration > longestSessionTime) {
+    localStorage.setItem('te_longest_session_time', sessionDuration.toString());
+  }
+  
+  // 인게이지 세션 수 업데이트
+  if (isEngagedSession) {
+    const engagedSessions = parseInt(localStorage.getItem('te_engaged_sessions') || '0') + 1;
+    localStorage.setItem('te_engaged_sessions', engagedSessions.toString());
+  }
+}
+
+/**
+ * 세션 종료 추적 설정
+ */
+function setupSessionEndTracking() {
+  // beforeunload: 페이지 떠나기 전
+  window.addEventListener('beforeunload', function() {
+    endSession('page_unload');
+  });
+  
+  // pagehide: 모바일에서 더 안정적
+  window.addEventListener('pagehide', function(event) {
+    if (!event.persisted) { // 브라우저 캐시에 저장되지 않는 경우만
+      endSession('page_hide');
+    }
+  });
+  
+  // visibilitychange: 탭 전환 시
+  document.addEventListener('visibilitychange', function() {
+    if (document.hidden) {
+      // 탭이 숨겨질 때 세션 종료는 하지 않고, 활동 시간만 업데이트
+      lastActivityTime = Date.now();
+      localStorage.setItem('te_last_activity_time', lastActivityTime.toString());
+    }
+  });
+}
+
+/**
+ * 세션 ID 생성 (GA4/Amplitude 방식)
+ */
+function generateSessionId() {
+  return Date.now(); // Epoch 시간 사용
+}
+
+/**
+ * 공통 속성 업데이트
+ */
+function updateSuperProperties() {
+  if (!window.te || typeof window.te.setSuperProperties !== 'function') return;
+  
+  const superProperties = {
+    // 세션 관련
+    session_id: sessionId,
+    session_number: sessionNumber,
+    session_start_time: sessionStartTime,
+    is_engaged_session: isEngagedSession,
+    interaction_count: interactionCount,
     
-    // 페이지 정보 (SDK 자동수집 #url, #url_path, #title과 별개)
+    // 페이지 정보
     page_host: window.location.hostname,
     page_protocol: window.location.protocol,
-    page_hash: window.location.hash || '',
-    page_query: window.location.search || '',
+    page_hash: window.location.hash || null,
+    page_query: window.location.search || null,
     
-    // 뷰포트 정보 (SDK의 #screen_width/height와 다름 - 실제 브라우저 창 크기)
+    // 뷰포트 정보
     viewport_width: window.innerWidth,
     viewport_height: window.innerHeight,
     viewport_ratio: Math.round((window.innerWidth / window.innerHeight) * 100) / 100,
     
-    // 디바이스 정보 (SDK 자동수집 외 추가 정보)
+    // 디바이스 정보
     device_pixel_ratio: window.devicePixelRatio || 1,
     orientation: window.innerHeight > window.innerWidth ? 'portrait' : 'landscape',
+    device_type: getDeviceType(),
+    browser_info: getBrowserInfo(),
     
-    // 환경 감지 (SDK에서 제공하지 않는 정보)
+    // 환경 감지
     is_mobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent),
     is_touch_device: 'ontouchstart' in window || navigator.maxTouchPoints > 0,
     is_tablet: /iPad|Android|Tablet/i.test(navigator.userAgent) && window.innerWidth >= 768,
     
-    // 브라우저 기능 지원 (기술적 제약사항)
-    local_storage_enabled: (function() {
-      try {
-        localStorage.setItem('test', 'test');
-        localStorage.removeItem('test');
-        return true;
-      } catch (e) {
-        return false;
-      }
-    })(),
-    cookies_enabled: navigator.cookieEnabled,
-    webgl_enabled: (function() {
-      try {
-        const canvas = document.createElement('canvas');
-        return !!(canvas.getContext('webgl') || canvas.getContext('experimental-webgl'));
-      } catch (e) {
-        return false;
-      }
-    })(),
-    
-    // 네트워크 정보 (지원하는 브라우저만)
-    connection_type: navigator.connection ? navigator.connection.effectiveType : '',
-    connection_downlink: navigator.connection ? navigator.connection.downlink : '',
+    // 네트워크 정보
+    connection_type: navigator.connection ? navigator.connection.effectiveType : null,
+    connection_downlink: navigator.connection ? navigator.connection.downlink : null,
     is_online: navigator.onLine,
     
     // 타이밍 정보
     timestamp: Date.now(),
-    local_time: new Date().toISOString(),
-    
-    // 성능 정보 (의미있는 지표만)
-    dom_ready_state: document.readyState,
-    performance_now: Math.round(performance.now()),
-    connection_rtt: navigator.connection ? navigator.connection.rtt : '', // 네트워크 지연시간
-    memory_used: performance.memory && performance.memory.usedJSHeapSize ? 
-      Math.round(performance.memory.usedJSHeapSize / 1024 / 1024) : '' // MB 단위
+    local_time: new Date().toISOString()
   };
   
-  // UTM 파라미터 추출 (마케팅 캠페인 추적 - SDK #utm과 별개)
+  // UTM 파라미터 추출
   const urlParams = new URLSearchParams(window.location.search);
   ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'utm_id'].forEach(function(param) {
     const value = urlParams.get(param);
@@ -156,21 +340,130 @@ function setSuperProperties() {
     }
   });
   
-  // 커스텀 추적 ID들
-  ['gclid', 'fbclid', 'msclkid', '_ga'].forEach(function(param) {
-    const value = urlParams.get(param);
-    if (value) {
-      superProperties[param] = value;
-    }
-  });
-  
-  te.setSuperProperties(superProperties);
-  console.log('✅ Super properties set:', superProperties);
+  window.te.setSuperProperties(superProperties);
 }
 
-// 세션 초기화
-initializeSession();
-setSuperProperties();
+/**
+ * 디바이스 타입 감지
+ */
+function getDeviceType() {
+  const userAgent = navigator.userAgent.toLowerCase();
+  
+  if (/mobile|android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent)) {
+    if (/tablet|ipad/i.test(userAgent)) {
+      return 'tablet';
+    }
+    return 'mobile';
+  }
+  
+  return 'desktop';
+}
 
-// 주기적으로 세션 만료 체크
-setInterval(checkSessionExpiry, 60000); // 1분마다 체크
+/**
+ * 브라우저 정보 추출
+ */
+function getBrowserInfo() {
+  const userAgent = navigator.userAgent;
+  let browser = 'unknown';
+  let version = 'unknown';
+  
+  if (userAgent.includes('Chrome')) {
+    browser = 'Chrome';
+    version = userAgent.match(/Chrome\/(\d+)/)?.[1] || 'unknown';
+  } else if (userAgent.includes('Firefox')) {
+    browser = 'Firefox';
+    version = userAgent.match(/Firefox\/(\d+)/)?.[1] || 'unknown';
+  } else if (userAgent.includes('Safari')) {
+    browser = 'Safari';
+    version = userAgent.match(/Version\/(\d+)/)?.[1] || 'unknown';
+  } else if (userAgent.includes('Edge')) {
+    browser = 'Edge';
+    version = userAgent.match(/Edge\/(\d+)/)?.[1] || 'unknown';
+  }
+  
+  return { browser, version };
+}
+
+/**
+ * 세션 설정 업데이트
+ */
+function updateSessionConfig(newConfig) {
+  if (newConfig.sessionTimeout) {
+    sessionTimeout = newConfig.sessionTimeout * 60 * 1000; // 분을 밀리초로 변환
+  }
+  if (newConfig.isSessionTrackingEnabled !== undefined) {
+    isSessionTrackingEnabled = newConfig.isSessionTrackingEnabled;
+  }
+  
+  console.log('🔄 세션 설정 업데이트 완료:', newConfig);
+}
+
+/**
+ * 세션 통계 조회
+ */
+function getSessionStatistics() {
+  return {
+    currentSession: {
+      id: sessionId,
+      number: sessionNumber,
+      startTime: sessionStartTime,
+      duration: sessionStartTime ? Math.round((Date.now() - sessionStartTime) / 1000) : 0,
+      isEngaged: isEngagedSession,
+      interactionCount: interactionCount
+    },
+    historical: {
+      totalSessions: parseInt(localStorage.getItem('te_total_sessions') || '0'),
+      totalSessionTime: parseInt(localStorage.getItem('te_total_session_time') || '0'),
+      averageSessionTime: parseInt(localStorage.getItem('te_average_session_time') || '0'),
+      longestSessionTime: parseInt(localStorage.getItem('te_longest_session_time') || '0'),
+      engagedSessions: parseInt(localStorage.getItem('te_engaged_sessions') || '0')
+    },
+    settings: {
+      sessionTimeout: Math.round(sessionTimeout / 60000),
+      isTrackingEnabled: isSessionTrackingEnabled
+    }
+  };
+}
+
+/**
+ * 디버깅용 함수
+ */
+function debugSession() {
+  console.log('🔄 세션 디버깅 정보:');
+  console.log('- 현재 세션:', {
+    id: sessionId,
+    number: sessionNumber,
+    startTime: sessionStartTime ? new Date(sessionStartTime).toLocaleString() : null,
+    duration: sessionStartTime ? Math.round((Date.now() - sessionStartTime) / 1000) + '초' : null,
+    isEngaged: isEngagedSession,
+    interactionCount: interactionCount
+  });
+  console.log('- 세션 통계:', getSessionStatistics());
+  console.log('- 세션 이벤트 추적 상태:', sessionEventsTracked);
+  console.log('- ThinkingData SDK:', typeof window.te !== 'undefined' ? '로드됨' : '로드 안됨');
+}
+
+// 전역 함수로 노출
+window.initializeSession = initializeSession;
+window.updateSessionActivity = updateSessionActivity;
+window.endSession = endSession;
+window.updateSessionConfig = updateSessionConfig;
+window.getSessionStatistics = getSessionStatistics;
+window.debugSession = debugSession;
+
+// 자동 초기화
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', function() {
+    console.log('🔄 DOM 로드 완료, 세션 초기화 시작');
+    setTimeout(initializeSession, 1000);
+  });
+} else {
+  console.log('🔄 DOM 이미 로드됨, 세션 초기화 시작');
+  setTimeout(initializeSession, 1000);
+}
+
+// ThinkingData 초기화 완료 이벤트 감지
+window.addEventListener('thinkingdata:ready', function() {
+  console.log('🔄 ThinkingData 초기화 완료, 세션 초기화 시작');
+  setTimeout(initializeSession, 500);
+});
