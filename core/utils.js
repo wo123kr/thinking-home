@@ -25,10 +25,14 @@ export function trackEvent(eventName, properties = {}) {
 
 // 세션 활동 업데이트 함수 (세션 관리자에서 실제 구현)
 export function updateSessionActivity() {
-  if (typeof window.updateSessionActivity === 'function') {
+  if (
+    typeof window.updateSessionActivity === 'function' &&
+    window.updateSessionActivity !== updateSessionActivity
+  ) {
     window.updateSessionActivity();
   } else {
-    console.warn('전역 updateSessionActivity 함수를 찾을 수 없습니다.');
+    // 기본 동작 또는 아무것도 안함
+    // 예: window.lastActivityTime = Date.now();
   }
 }
 
