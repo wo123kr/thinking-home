@@ -30,6 +30,64 @@ function updateSessionActivity() {
   }
 }
 
+// 🆕 안전한 시간 형식 통일 함수 (기존 코드와 호환)
+function formatTimestamp(date = new Date()) {
+  try {
+    return date.toISOString().replace('T', ' ').slice(0, 23);
+  } catch (error) {
+    console.warn('시간 형식 변환 실패:', error);
+    return new Date().toISOString().replace('T', ' ').slice(0, 23);
+  }
+}
+
+// 🆕 안전한 텍스트 추출 함수 (null/undefined 안전)
+function safeGetText(element) {
+  try {
+    return element?.textContent?.trim() || '';
+  } catch (error) {
+    console.warn('텍스트 추출 실패:', error);
+    return '';
+  }
+}
+
+// 🆕 안전한 속성 추출 함수
+function safeGetAttribute(element, attribute) {
+  try {
+    return element?.getAttribute?.(attribute) || '';
+  } catch (error) {
+    console.warn(`속성 ${attribute} 추출 실패:`, error);
+    return '';
+  }
+}
+
+// 🆕 안전한 클래스 리스트 추출
+function safeGetClassList(element) {
+  try {
+    return element?.className ? element.className.split(' ').filter(cls => cls.trim()) : [];
+  } catch (error) {
+    console.warn('클래스 리스트 추출 실패:', error);
+    return [];
+  }
+}
+
+// 🆕 중앙화된 에러 핸들러
+function handleError(context, error, fallback = null) {
+  console.error(`[${context}] 오류:`, error);
+  // 에러 로깅 (나중에 외부 서비스 연동 가능)
+  if (window.te && typeof window.te.track === 'function') {
+    try {
+      window.te.track('tracking_error', {
+        context: context,
+        error_message: error?.message || String(error),
+        timestamp: formatTimestamp()
+      });
+    } catch (e) {
+      // 에러 추적도 실패한 경우 조용히 무시
+    }
+  }
+  return fallback;
+}
+
 // 디바이스 타입 감지
 function getDeviceType() {
   const userAgent = navigator.userAgent.toLowerCase();
@@ -229,30 +287,106 @@ function matchPatterns(element, patterns) {
   return '';
 }
 
-// 설정 관리자
-class ConfigManager {
-  constructor() {
-    this.configs = {};
-  }
-  
-  setConfig(module, config) {
-    this.configs[module] = { ...this.configs[module], ...config };
-  }
-  
-  getConfig(module) {
-    return this.configs[module] || {};
-  }
-  
-  updateConfig(module, updates) {
-    this.setConfig(module, updates);
-    console.log(`🔄 ${module} 설정 업데이트 완료:`, updates);
+// 🆕 안전한 패턴 매칭 함수 (개선된 버전)
+function safeMatchPatterns(element, patterns) {
+  try {
+    if (!element || !patterns) return '';
+    
+    const text = safeGetText(element);
+    const href = element.href || '';
+    const classList = safeGetClassList(element);
+    const id = safeGetAttribute(element, 'id');
+    
+    for (const [type, pattern] of Object.entries(patterns)) {
+      if (pattern.text && pattern.text.some(p => text.toLowerCase().includes(p.toLowerCase()))) {
+        return type;
+      }
+      if (pattern.url && pattern.url.some(p => href.toLowerCase().includes(p.toLowerCase()))) {
+        return type;
+      }
+      if (pattern.id && pattern.id.some(p => id.toLowerCase().includes(p.toLowerCase()))) {
+        return type;
+      }
+      if (pattern.class && pattern.class.some(p => classList.some(cls => cls.toLowerCase().includes(p.toLowerCase())))) {
+        return type;
+      }
+    }
+    
+    return '';
+  } catch (error) {
+    return handleError('safeMatchPatterns', error, '');
   }
 }
 
-// 전역 설정 관리자 인스턴스
-window.configManager = new ConfigManager();
+// 🔒 설정 관리자 (중복 선언 방지)
+if (typeof window.ConfigManager === 'undefined') {
+  class ConfigManager {
+    constructor() {
+      this.configs = {};
+    }
+    
+    setConfig(module, config) {
+      this.configs[module] = { ...this.configs[module], ...config };
+    }
+    
+    getConfig(module) {
+      return this.configs[module] || {};
+    }
+    
+    updateConfig(module, updates) {
+      this.setConfig(module, updates);
+      console.log(`🔄 ${module} 설정 업데이트 완료:`, updates);
+    }
+  }
+  
+  // 전역에 클래스와 인스턴스 안전하게 등록
+  window.ConfigManager = ConfigManager;
+  window.configManager = new ConfigManager();
+}
 
-// 전역 함수로 노출
+// 🔒 모듈 상태 관리자 (중복 선언 방지)
+if (typeof window.ModuleStateManager === 'undefined') {
+  class ModuleStateManager {
+    constructor() {
+      this.initialized = new Set();
+      this.pending = new Set();
+      this.failed = new Set();
+    }
+    
+    isInitialized(moduleName) {
+      return this.initialized.has(moduleName);
+    }
+    
+    markInitialized(moduleName) {
+      this.initialized.add(moduleName);
+      this.pending.delete(moduleName);
+      this.failed.delete(moduleName);
+    }
+    
+    markPending(moduleName) {
+      this.pending.add(moduleName);
+    }
+    
+    markFailed(moduleName, error) {
+      this.failed.add(moduleName);
+      this.pending.delete(moduleName);
+      handleError(`ModuleStateManager`, `${moduleName} 초기화 실패: ${error}`);
+    }
+    
+    getStatus(moduleName) {
+      if (this.initialized.has(moduleName)) return 'initialized';
+      if (this.pending.has(moduleName)) return 'pending';
+      if (this.failed.has(moduleName)) return 'failed';
+      return 'not_started';
+    }
+  }
+  
+  // 전역에 클래스와 인스턴스 안전하게 등록
+  window.ModuleStateManager = ModuleStateManager;
+  window.moduleStateManager = new ModuleStateManager();
+}
+
+// 전역 함수로 노출 (기존 + 새로운 안전한 함수들)
 window.safeTeCall = safeTeCall;
 window.trackEvent = trackEvent;
 window.updateSessionActivity = updateSessionActivity;
@@ -270,4 +404,12 @@ window.isElementVisible = isElementVisible;
 window.getPageLoadTime = getPageLoadTime;
 window.matchPatterns = matchPatterns;
 
-console.log('✅ 공통 유틸리티 모듈 로드 완료'); 
+// 🆕 새로운 안전한 함수들 노출
+window.formatTimestamp = formatTimestamp;
+window.safeGetText = safeGetText;
+window.safeGetAttribute = safeGetAttribute;
+window.safeGetClassList = safeGetClassList;
+window.handleError = handleError;
+window.safeMatchPatterns = safeMatchPatterns;
+
+console.log('✅ 공통 유틸리티 모듈 로드 완료 (안전성 강화됨)'); 

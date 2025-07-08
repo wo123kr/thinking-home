@@ -1,11 +1,30 @@
 /**
+ * ⚠️ DEPRECATED - 이 파일은 더 이상 권장되지 않습니다
+ * 
+ * 🚀 대신 이것을 사용하세요:
+ * <script src="https://cdn.jsdelivr.net/gh/wo123kr/webflow-tracking@main/core/thinking-data-init.js"></script>
+ * 
+ * 🎯 이유:
+ * - core/thinking-data-init.js가 이미 모든 기능을 포함
+ * - 더 간단하고 빠른 로딩
+ * - 불필요한 복잡성 제거
+ * - 동일한 기능, 더 나은 성능
+ * 
+ * 이 파일은 하위 호환성을 위해 유지되지만, 새 프로젝트에서는 사용하지 마세요.
+ */
+
+console.warn('⚠️ DEPRECATED: index.js 사용 중지 예정');
+console.warn('🚀 대신 사용하세요: core/thinking-data-init.js');
+console.warn('📖 자세한 정보: https://github.com/wo123kr/webflow-tracking#readme');
+
+/**
  * ThinkingData 웹 추적 시스템 - 메인 진입점
  * Webflow용 CDN 배포 버전
  * 
  * 사용법:
  * <script src="https://cdn.jsdelivr.net/gh/[username]/webflow-tracking@main/index.js"></script>
  * 
- * 주의: thinking-data-init.js가 먼저 로드되어야 합니다.
+ * 주의: core/thinking-data-init.js가 먼저 로드되어야 합니다.
  */
 
 (function() {
@@ -30,15 +49,15 @@
         try {
             // ThinkingData SDK가 이미 로드되었는지 확인
             if (!window.thinkingdata) {
-                console.error('❌ ThinkingData SDK가 로드되지 않았습니다. thinking-data-init.js를 먼저 로드해주세요.');
+                console.error('❌ ThinkingData SDK가 로드되지 않았습니다. core/thinking-data-init.js를 먼저 로드해주세요.');
                 return;
             }
             
-            // thinking-data-init.js가 이미 로드되었는지 확인
+            // core/thinking-data-init.js가 이미 로드되었는지 확인
             if (window.thinkingDataInitialized) {
-                console.log('ℹ️ thinking-data-init.js가 이미 로드되어 있음, 추가 모듈만 로드');
+                console.log('ℹ️ core/thinking-data-init.js가 이미 로드되어 있음, 추가 모듈만 로드');
             } else {
-                console.log('⚠️ thinking-data-init.js가 로드되지 않음, 직접 초기화 시도...');
+                console.log('⚠️ core/thinking-data-init.js가 로드되지 않음, 직접 초기화 시도...');
                 // 직접 ThinkingData 초기화 시도
                 initializeThinkingDataDirectly();
                 return;
@@ -156,13 +175,13 @@
         console.log('✅ 추가 추적 모듈 초기화 완료');
     }
     
-    // thinking-data-init.js가 로드되었는지 확인 후 모듈 로드 시작
+    // core/thinking-data-init.js가 로드되었는지 확인 후 모듈 로드 시작
     function checkAndLoadModules() {
         if (window.thinkingDataInitialized) {
-            console.log('✅ thinking-data-init.js 감지됨, 추가 모듈 로드 시작');
+            console.log('✅ core/thinking-data-init.js 감지됨, 추가 모듈 로드 시작');
             loadAllModules();
         } else {
-            console.log('⏳ thinking-data-init.js 대기 중...');
+            console.log('⏳ core/thinking-data-init.js 대기 중...');
             setTimeout(checkAndLoadModules, 1000);
         }
     }

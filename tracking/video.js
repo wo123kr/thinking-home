@@ -2,9 +2,12 @@
  * 비디오 추적 모듈 (YouTube API 활용) - 동적 설정 가능한 구조
  */
 
-// 비디오 세션 추적을 위한 변수들
-let videoSessions = new Map(); // 각 비디오별 세션 추적
+// 🔒 안전한 비디오 세션 추적 변수들 (중복 선언 방지)
+let videoSessions = window.videoSessions || new Map(); // 각 비디오별 세션 추적
 let isVideoTrackingInitialized = false;
+
+// ✅ 전역에 안전하게 등록
+window.videoSessions = videoSessions;
 
 function trackVideoEvents() {
   console.log('🎬 비디오 추적 초기화 시작...');

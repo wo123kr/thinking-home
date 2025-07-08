@@ -17,24 +17,16 @@ ThinkingData SDK를 활용한 완전한 웹사이트 사용자 행동 추적 시
 
 ## 🚀 빠른 시작
 
-### Webflow 사용자
+### ✅ Webflow 사용자 (간단한 설정)
 
-**1단계: Head Code 추가**
+**Head Code에 추가**
 ```html
-<!-- Google Tag Manager -->
-<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-})(window,document,'script','dataLayer','GTM-PQLVHLN5');</script>
-<!-- End Google Tag Manager -->
-
 <!-- ThinkingData SDK -->
 <script src="https://cdn.jsdelivr.net/npm/thinkingdata-browser@2.0.3/thinkingdata.umd.min.js"></script>
 <script src="https://te-receiver-naver.thinkingdata.kr/te-sdk/latest/ta.js"></script>
 
-<!-- ThinkingData 트래킹 코드 (최신 버전) -->
-<script defer src="https://cdn.jsdelivr.net/gh/wo123kr/webflow-tracking@0fd140c/core/thinking-data-init.js"></script>
+<!-- 🚀 모든 추적 기능이 포함된 하나의 파일 -->
+<script defer src="https://cdn.jsdelivr.net/gh/wo123kr/webflow-tracking@main/core/thinking-data-init.js"></script>
 
 <!-- 네이버 전환 추적 및 폼 제출 성공 이벤트 -->
 <script defer>
@@ -95,13 +87,9 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 </script>
 ```
 
-**2단계: Footer Code 추가**
-```html
-<!-- Webflow 추적 시스템 (최신 버전) -->
-<script src="https://cdn.jsdelivr.net/gh/wo123kr/webflow-tracking@0fd140c/index.js"></script>
-```
+**끝!** 🎉 이것만으로 모든 추적이 자동 시작됩니다.
 
-### 일반 웹사이트 사용자
+### ✅ 일반 웹사이트 사용자
 
 ```html
 <!DOCTYPE html>
@@ -111,8 +99,8 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     <script src="https://cdn.jsdelivr.net/npm/thinkingdata-browser@2.0.3/thinkingdata.umd.min.js"></script>
     <script src="https://te-receiver-naver.thinkingdata.kr/te-sdk/latest/ta.js"></script>
     
-    <!-- 추적 시스템 (최신 버전) -->
-    <script src="https://cdn.jsdelivr.net/gh/wo123kr/webflow-tracking@0fd140c/index.js"></script>
+    <!-- 🚀 모든 추적 기능이 포함된 하나의 파일 -->
+    <script src="https://cdn.jsdelivr.net/gh/wo123kr/webflow-tracking@main/core/thinking-data-init.js"></script>
 </head>
 <body>
     <!-- 웹사이트 콘텐츠 -->
@@ -160,26 +148,33 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
 ## 🔧 설치 방법
 
-### 1. CDN 방식 (권장)
+### ✅ 간단한 CDN 방식 (권장)
 ```html
-<script src="https://cdn.jsdelivr.net/gh/wo123kr/webflow-tracking@0fd140c/index.js"></script>
+<!-- ThinkingData SDK -->
+<script src="https://cdn.jsdelivr.net/npm/thinkingdata-browser@2.0.3/thinkingdata.umd.min.js"></script>
+<script src="https://te-receiver-naver.thinkingdata.kr/te-sdk/latest/ta.js"></script>
+
+<!-- 🚀 모든 추적 기능이 포함된 하나의 파일 -->
+<script src="https://cdn.jsdelivr.net/gh/wo123kr/webflow-tracking@main/core/thinking-data-init.js"></script>
 ```
 
-### 2. 특정 모듈만 로드
-```html
-<!-- 코어 모듈 -->
-<script src="https://cdn.jsdelivr.net/gh/wo123kr/webflow-tracking@0fd140c/core/thinking-data-init.js"></script>
+### 🎯 포함된 모든 기능
+- ✅ **자동 페이지뷰 추적** (ta_page_show, ta_page_hide)
+- ✅ **클릭 이벤트 추적** (버튼, 링크, CTA)
+- ✅ **폼 제출 추적** (데모 신청, 문의하기)
+- ✅ **외부 링크 추적** (아웃바운드 클릭)
+- ✅ **스크롤 깊이 추적** (25%, 50%, 75%, 100%)
+- ✅ **비디오 상호작용 추적** (YouTube 플레이, 완료)
+- ✅ **팝업 상호작용 추적** (표시, 닫기)
+- ✅ **리소스 다운로드 추적** (PDF, 문서 등)
+- ✅ **페이지 종료 추적** (이탈, 세션 시간)
+- ✅ **사용자 속성 추적** (참여도, 선호도 등)
 
-<!-- 개별 추적 모듈 -->
-<script src="https://cdn.jsdelivr.net/gh/wo123kr/webflow-tracking@0fd140c/tracking/page-view.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/wo123kr/webflow-tracking@0fd140c/tracking/click.js"></script>
-```
-
-### 3. 로컬 설치
+### 🛠️ 로컬 개발용 설치
 ```bash
 git clone https://github.com/wo123kr/webflow-tracking.git
 cd webflow-tracking
-# 파일들을 웹사이트에 복사
+# core/thinking-data-init.js 파일을 사용
 ```
 
 ---

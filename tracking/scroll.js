@@ -2,9 +2,14 @@
  * 스크롤 깊이 추적 모듈 - 동적 설정 가능한 구조
  */
 
-let scrollDepthTracked = new Set();
-let maxScrollDepth = 0;
+// 🔒 안전한 스크롤 깊이 추적 변수 (중복 선언 방지)
+let scrollDepthTracked = window.scrollDepthTracked || new Set();
+let maxScrollDepth = window.maxScrollDepth || 0;
 let isScrollTrackingInitialized = false;
+
+// ✅ 전역에 안전하게 등록
+window.scrollDepthTracked = scrollDepthTracked;
+window.maxScrollDepth = maxScrollDepth;
 
 function trackScrollDepth() {
   console.log('📜 스크롤 추적 초기화 시작...');

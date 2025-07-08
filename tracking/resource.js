@@ -51,7 +51,9 @@ function trackResourceDownloads() {
           file_size: getFileSize(link.href)
         };
         
-        trackEvent('te_resource_download', downloadData);
+        if (typeof window.te !== 'undefined' && typeof window.te.track === 'function') {
+          window.te.track('te_resource_download', downloadData);
+        }
         
         console.log('📥 리소스 다운로드 추적:', resourceType, downloadData.download_filename);
       }
@@ -204,15 +206,22 @@ function getFileSize(url) {
   }
 }
 
-// 세션 활동 업데이트 (전역 함수 사용)
+// 세션 활동 업데이트 (안전한 호출)
 function updateSessionActivity() {
-  // 전역 updateSessionActivity 함수가 있으면 호출
+  // 전역 세션 관리자가 있는지 확인
   if (typeof window.updateSessionActivity === 'function') {
-    try {
-      window.updateSessionActivity();
-    } catch (e) {
-      console.warn('📥 세션 활동 업데이트 오류:', e);
+    // 무한 재귀 방지: 함수가 다른 경우에만 호출
+    const globalFunction = window.updateSessionActivity;
+    if (globalFunction !== updateSessionActivity) {
+      try {
+        globalFunction();
+      } catch (e) {
+        console.warn('📥 세션 활동 업데이트 오류:', e);
+      }
     }
+  } else {
+    // 전역 함수가 없으면 기본 동작
+    console.log('📥 세션 활동 업데이트 (로컬)');
   }
 }
 
