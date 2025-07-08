@@ -42,14 +42,14 @@ export function initFormTracking() {
     const formSubmitData = {
       form_id: form.id || form.name || 'unknown_form',
       form_name: getFormName(form),
-      form_type: formType, // 'demo_request', 'contact_inquiry', 'other'
+      form_type: getFormType(form), // 'demo_request', 'contact_inquiry', 'gameplus', 'other'
       form_url: window.location.href,
       form_page_title: document.title,
       form_fields_submitted_info: {
-        name: maskName(formData.get('name') || formData.get('이름')),
-        email: maskEmail(formData.get('email') || formData.get('이메일')),
-        phone: maskPhone(formData.get('phone') || formData.get('연락처')),
-        company_name: formData.get('company') || formData.get('회사명') || '',
+        name: maskName(formData.get('name') || formData.get('이름') || formData.get('gameplus_Name')),
+        email: maskEmail(formData.get('email') || formData.get('이메일') || formData.get('gameplus_email')),
+        phone: maskPhone(formData.get('phone') || formData.get('연락처') || formData.get('gameplus_phone')),
+        company_name: formData.get('company') || formData.get('회사명') || formData.get('gameplus_company') || '',
         inquiry_source: formData.get('source') || formData.get('알게된경로') || '',
         message_length: (formData.get('message') || formData.get('문의사항') || '').length
       },
@@ -274,9 +274,10 @@ console.log('✅ 폼 추적 초기화 완료');
 // ThinkingData 폼인지 확인
 function isThinkingDataForm(form) {
   const url = window.location.href;
-  return url.includes('/form-demo') || url.includes('/form-ask') || 
-         form.id === 'demo-form' || form.id === 'contact-form' ||
-         form.action && (form.action.includes('form-demo') || form.action.includes('form-ask'));
+  return url.includes('/form-demo') || url.includes('/form-ask') || url.includes('/form-gameplus') ||
+         form.id?.includes('demo') || form.id?.includes('contact') || form.id?.includes('ask') || form.id?.includes('gameplus') ||
+         form.name?.includes('demo') || form.name?.includes('contact') || form.name?.includes('ask') || form.name?.includes('gameplus') ||
+         (form.action && (form.action.includes('form-demo') || form.action.includes('form-ask') || form.action.includes('form-gameplus')));
 }
 
 // 개인정보 필드 판단 (ThinkingData 폼 구조에 맞춤)
@@ -296,6 +297,8 @@ function isPersonalInfo(fieldName) {
 function getFormName(form) {
   if (window.location.href.includes('/form-demo')) return '데모 신청 폼';
   if (window.location.href.includes('/form-ask')) return '문의하기 폼';
+  if (window.location.href.includes('/form-gameplus')) return '게임더하기 폼';
+  if (form.id?.includes('gameplus') || form.name?.includes('gameplus')) return '게임더하기 폼';
   return (
     form.title ||
     form.getAttribute('data-form-name') ||
@@ -307,10 +310,9 @@ function getFormName(form) {
 // ThinkingData 공식 폼 타입 구분 (실제 URL 구조 기반)
 function getFormType(form) {
   const url = window.location.href;
-  if (url.includes('/form-demo')) return 'demo_request';
-  if (url.includes('/form-ask')) return 'contact_inquiry';
-  if (form.id?.includes('demo')) return 'demo_request';
-  if (form.id?.includes('contact') || form.id?.includes('ask')) return 'contact_inquiry';
+  if (url.includes('/form-demo') || form.id?.includes('demo')) return 'demo_request';
+  if (url.includes('/form-ask') || form.id?.includes('contact') || form.id?.includes('ask')) return 'contact_inquiry';
+  if (url.includes('/form-gameplus') || form.id?.includes('gameplus') || form.name?.includes('gameplus')) return 'gameplus';
   return 'other';
 }
 
