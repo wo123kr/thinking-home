@@ -25,8 +25,8 @@ ThinkingData SDK를 활용한 완전한 웹사이트 사용자 행동 추적 시
 <script src="https://cdn.jsdelivr.net/npm/thinkingdata-browser@2.0.3/thinkingdata.umd.min.js"></script>
 <script src="https://te-receiver-naver.thinkingdata.kr/te-sdk/latest/ta.js"></script>
 
-<!-- 🚀 모든 추적 기능이 포함된 하나의 파일 -->
-<script defer src="https://cdn.jsdelivr.net/gh/wo123kr/webflow-tracking@main/core/thinking-data-init.js"></script>
+<!-- 🚀 모든 추적 기능이 포함된 하나의 파일 (안정화 버전) -->
+<script defer src="https://cdn.jsdelivr.net/gh/wo123kr/webflow-tracking@43a3452/core/thinking-data-init.js"></script>
 
 <!-- 네이버 전환 추적 및 폼 제출 성공 이벤트 -->
 <script defer>
@@ -99,8 +99,8 @@ ThinkingData SDK를 활용한 완전한 웹사이트 사용자 행동 추적 시
     <script src="https://cdn.jsdelivr.net/npm/thinkingdata-browser@2.0.3/thinkingdata.umd.min.js"></script>
     <script src="https://te-receiver-naver.thinkingdata.kr/te-sdk/latest/ta.js"></script>
     
-    <!-- 🚀 모든 추적 기능이 포함된 하나의 파일 -->
-    <script src="https://cdn.jsdelivr.net/gh/wo123kr/webflow-tracking@main/core/thinking-data-init.js"></script>
+    <!-- 🚀 모든 추적 기능이 포함된 하나의 파일 (안정화 버전) -->
+<script src="https://cdn.jsdelivr.net/gh/wo123kr/webflow-tracking@43a3452/core/thinking-data-init.js"></script>
 </head>
 <body>
     <!-- 웹사이트 콘텐츠 -->
@@ -154,8 +154,8 @@ ThinkingData SDK를 활용한 완전한 웹사이트 사용자 행동 추적 시
 <script src="https://cdn.jsdelivr.net/npm/thinkingdata-browser@2.0.3/thinkingdata.umd.min.js"></script>
 <script src="https://te-receiver-naver.thinkingdata.kr/te-sdk/latest/ta.js"></script>
 
-<!-- 🚀 모든 추적 기능이 포함된 하나의 파일 -->
-<script src="https://cdn.jsdelivr.net/gh/wo123kr/webflow-tracking@main/core/thinking-data-init.js"></script>
+<!-- 🚀 모든 추적 기능이 포함된 하나의 파일 (안정화 버전) -->
+<script src="https://cdn.jsdelivr.net/gh/wo123kr/webflow-tracking@43a3452/core/thinking-data-init.js"></script>
 ```
 
 ### 🎯 포함된 모든 기능
@@ -176,6 +176,25 @@ git clone https://github.com/wo123kr/webflow-tracking.git
 cd webflow-tracking
 # core/thinking-data-init.js 파일을 사용
 ```
+
+### 📌 **버전 관리 (중요!)**
+
+#### ✅ **안정화 버전 사용 (권장)**
+```html
+<!-- 🔒 특정 커밋 해시 사용 (안정성 보장) -->
+<script src="https://cdn.jsdelivr.net/gh/wo123kr/webflow-tracking@43a3452/core/thinking-data-init.js"></script>
+```
+
+#### ⚠️ **최신 버전 사용 (주의)**
+```html
+<!-- ⚠️ 개발/테스트용만 사용 (프로덕션 비권장) -->
+<script src="https://cdn.jsdelivr.net/gh/wo123kr/webflow-tracking@main/core/thinking-data-init.js"></script>
+```
+
+#### 🔄 **버전 업데이트 방법**
+1. [GitHub 릴리스](https://github.com/wo123kr/webflow-tracking/commits/main)에서 최신 커밋 확인
+2. 새 커밋 해시로 URL 변경
+3. 테스트 환경에서 검증 후 프로덕션 적용
 
 ---
 
@@ -221,7 +240,7 @@ cd webflow-tracking
 ```javascript
 // ThinkingData 설정
 var config = {
-  appId: "f43e15b9fb634d278845480f02c822f7",
+  appId: "dc61b4c238a048fb953b77b1fa1329c3",
   serverUrl: "https://te-receiver-naver.thinkingdata.kr/sync_js",
   autoTrack: {
     pageShow: true,
@@ -315,7 +334,7 @@ console.log('현재 설정:', window.te ? window.te.getSuperProperties() : '설�
   - 모든 시간 속성을 ISO 문자열 형식으로 통일
   - null/undefined 값을 빈 문자열 또는 0으로 수정
   - session_id를 문자열로 통일
-- ✅ **appId 업데이트**: `f43e15b9fb634d278845480f02c822f7`
+- ✅ **appId 업데이트**: `dc61b4c238a048fb953b77b1fa1329c3`
 - ✅ **무한 재귀 호출 수정**: resource.js 문제 해결
 - ✅ **중복 추적 방지**: 모든 모듈에 안전장치 추가
 
@@ -362,6 +381,6 @@ MIT License - 자유롭게 사용, 수정, 배포 가능
 
 ---
 
-**최신 버전**: `0fd140c` (2025-02-24)  
+**최신 안정화 버전**: `43a3452` (2025-01-08)  
 **ThinkingData SDK**: v2.0.3  
-**지원 환경**: 모든 모던 브라우저 (IE 9+) // Cache invalidation - #오후
+**지원 환경**: 모든 모던 브라우저 (IE 9+)

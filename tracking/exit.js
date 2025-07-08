@@ -158,7 +158,7 @@ function initializePageExitTracking() {
             "#event_name": eventName,
             "properties": exitData
           }],
-          "#app_id": "f43e15b9fb634d278845480f02c822f7",
+          "#app_id": "dc61b4c238a048fb953b77b1fa1329c3",
           "#flush_time": Date.now()
         });
         
@@ -189,7 +189,7 @@ function initializePageExitTracking() {
           "#event_name": eventName,
           "properties": exitData
         }],
-        "#app_id": "f43e15b9fb634d278845480f02c822f7",
+        "#app_id": "dc61b4c238a048fb953b77b1fa1329c3",
         "#flush_time": Date.now()
       });
       
@@ -220,7 +220,7 @@ function initializePageExitTracking() {
           "#event_name": eventName,
           "properties": exitData
         }],
-        "#app_id": "f43e15b9fb634d278845480f02c822f7",
+        "#app_id": "dc61b4c238a048fb953b77b1fa1329c3",
         "#flush_time": Date.now()
       });
       
@@ -438,7 +438,7 @@ function testExitEvent() {
     page_url: window.location.href,
     page_title: document.title,
     timestamp: new Date().toISOString().replace('T', ' ').slice(0, 23),
-          session_id: window.sessionId || '',
+          session_id: (window.sessionId || '').toString(),
       session_number: window.sessionNumber || 0
   });
   console.log('✅ 테스트 종료 이벤트 전송 완료');

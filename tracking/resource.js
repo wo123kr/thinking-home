@@ -209,20 +209,16 @@ function getFileSize(url) {
 // 세션 활동 업데이트 (안전한 호출)
 function updateSessionActivity() {
   // 전역 세션 관리자가 있는지 확인
-  if (typeof window.updateSessionActivity === 'function') {
-    // 무한 재귀 방지: 함수가 다른 경우에만 호출
-    const globalFunction = window.updateSessionActivity;
-    if (globalFunction !== updateSessionActivity) {
-      try {
-        globalFunction();
-      } catch (e) {
-        console.warn('📥 세션 활동 업데이트 오류:', e);
-      }
+  if (
+    typeof window.updateSessionActivity === 'function' &&
+    window.updateSessionActivity !== updateSessionActivity
+  ) {
+    try {
+      window.updateSessionActivity();
+    } catch (e) {
+      console.warn('📥 세션 활동 업데이트 오류:', e);
     }
-  } else {
-    // 전역 함수가 없으면 기본 동작
-    console.log('📥 세션 활동 업데이트 (로컬)');
-  }
+  } // else: 아무 동작도 하지 않음 (무한 재귀 방지)
 }
 
 // 설정 업데이트 함수 (런타임에 설정 변경 가능)

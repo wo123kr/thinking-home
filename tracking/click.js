@@ -285,7 +285,7 @@ if (window.moduleStateManager && window.moduleStateManager.isInitialized('click-
       };
       
       // 이벤트 전송
-      safeTrackEvent('element_click', clickData);
+      safeTrackEvent('te_element_click', clickData);
       
       console.log('🖱️ 클릭 이벤트 추적:', elementData.element_pattern, elementData.element_text);
       

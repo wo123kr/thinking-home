@@ -5,7 +5,7 @@
 
 // ThinkingData 설정
 var config = {
-  appId: "f43e15b9fb634d278845480f02c822f7",
+  appId: "dc61b4c238a048fb953b77b1fa1329c3",
   serverUrl: "https://te-receiver-naver.thinkingdata.kr/sync_js",
   autoTrack: {
     pageShow: true,  // 페이지 진입 자동 추적
@@ -87,7 +87,7 @@ function setupAutoEventTracking() {
           elementText = elementText.substring(0, 2000);
         }
         
-        window.te.track('element_click', {
+                    window.te.track('te_element_click', {
           page_section: getPageSection(),
           page_type: getPageType(),
           name: elementText,
@@ -188,7 +188,7 @@ function setupAutoEventTracking() {
               linkText = linkText.substring(0, 2000);
             }
             
-            window.te.track('outbound_link_click', {
+            window.te.track('te_outbound_link_click', {
               link_destination: "external",
               page_url: window.location.href,
               outbound_url: url,

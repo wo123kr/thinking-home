@@ -163,8 +163,8 @@ if (window.moduleStateManager && window.moduleStateManager.isInitialized('sessio
       session_timeout_minutes: Math.round(sessionTimeout / 60000)
     };
     
-    safeTrackEvent('session_start', sessionStartData);
-    sessionEventsTracked.session_start = true;
+          safeTrackEvent('te_session_start', sessionStartData);
+      sessionEventsTracked.session_start = true;
     
     console.log('🔄 새 세션 시작:', {
       sessionId,
@@ -273,8 +273,8 @@ if (window.moduleStateManager && window.moduleStateManager.isInitialized('sessio
       time_since_last_activity: Math.round((sessionEndTime - lastActivityTime) / 1000)
     };
     
-    safeTrackEvent('session_end', sessionEndData);
-    sessionEventsTracked.session_end = true;
+          safeTrackEvent('te_session_end', sessionEndData);
+      sessionEventsTracked.session_end = true;
     
     console.log('🔚 세션 종료:', {
       sessionId,

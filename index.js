@@ -2,7 +2,7 @@
  * ⚠️ DEPRECATED - 이 파일은 더 이상 권장되지 않습니다
  * 
  * 🚀 대신 이것을 사용하세요:
- * <script src="https://cdn.jsdelivr.net/gh/wo123kr/webflow-tracking@main/core/thinking-data-init.js"></script>
+ * <script src="https://cdn.jsdelivr.net/gh/wo123kr/webflow-tracking@43a3452/core/thinking-data-init.js"></script>
  * 
  * 🎯 이유:
  * - core/thinking-data-init.js가 이미 모든 기능을 포함
@@ -208,7 +208,7 @@ console.warn('📖 자세한 정보: https://github.com/wo123kr/webflow-tracking
             
             // SDK 초기화
             const config = {
-                appId: "f43e15b9fb634d278845480f02c822f7",
+                appId: "dc61b4c238a048fb953b77b1fa1329c3",
                 serverUrl: "https://te-receiver-naver.thinkingdata.kr/sync_js",
                 autoTrack: {
                     pageShow: true,
