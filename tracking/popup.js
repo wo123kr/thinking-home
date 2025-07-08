@@ -306,7 +306,7 @@ function isElementVisible(element) {
 // 세션 활동 업데이트 (직접 전역 함수 호출)
 function updateSessionActivity() {
   // 전역 함수가 정의되어 있고, 자기 자신이 아닌 경우에만 호출
-  if (typeof window.updateSessionActivity === 'function' && window.updateSessionActivity !== arguments.callee) {
+  if (typeof window.updateSessionActivity === 'function' && window.updateSessionActivity !== updateSessionActivity) {
     try {
       window.updateSessionActivity();
     } catch (e) {

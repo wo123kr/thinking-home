@@ -187,12 +187,16 @@ if (window.userAttributeTrackerInitialized) {
                 return;
             }
             
-            // 전역 중복 방지 플래그 확인
-            if (window.userAttributeInitialized) {
+            // 전역 중복 방지 플래그 확인 (강화된 체크)
+            if (window.userAttributeInitialized || localStorage.getItem('te_user_initialized')) {
                 console.log('ℹ️ 다른 인스턴스에서 이미 초기화됨, 스킵');
                 this.isInitialized = true;
                 return;
             }
+            
+            // 초기화 플래그 설정 (즉시 설정)
+            window.userAttributeInitialized = true;
+            localStorage.setItem('te_user_initialized', 'true');
             
             const now = Date.now();
             const today = new Date().toISOString().split('T')[0];
