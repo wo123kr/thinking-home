@@ -2,7 +2,7 @@ import config from './config.js';
 import { initSDK, isSDKInitialized } from './core/thinking-data-init.js';
 import { initSession } from './core/session-manager.js';
 import { registerGlobalUtils } from './core/utils.js';
-import { trackClicks } from './tracking/click.js';
+import { initClickTracking } from './tracking/click.js';
 import { initExitTracking } from './tracking/exit.js';
 import { initScrollTracking } from './tracking/scroll.js';
 import { initFormTracking } from './tracking/form.js';
@@ -30,7 +30,7 @@ async function main() {
     await initSession(config.session);
     
     // 4. 각 트래킹 모듈 초기화
-    if (config.modules.click) trackClicks();
+    if (config.modules.click) initClickTracking();
     if (config.modules.exit) initExitTracking();
     if (config.modules.scroll) initScrollTracking();
     if (config.modules.form) initFormTracking();
