@@ -7,7 +7,6 @@ import { initExitTracking } from './tracking/exit.js';
 import { initScrollTracking } from './tracking/scroll.js';
 import { initFormTracking } from './tracking/form.js';
 import { initPopupTracking } from './tracking/popup.js';
-import { trackVideo } from './tracking/video.js';
 import { initResourceTracking } from './tracking/resource.js';
 import { initUserAttributes } from './user-attributes.js';
 import { trackPageView } from './tracking/pageview.js';
@@ -35,12 +34,27 @@ async function main() {
     if (config.modules.scroll) initScrollTracking();
     if (config.modules.form) initFormTracking();
     if (config.modules.popup) initPopupTracking();
-    if (config.modules.video) trackVideo();
     if (config.modules.resource) initResourceTracking();
     if (config.modules.userAttributes) initUserAttributes();
 
-    // 5. 페이지 진입 시 pageview 이벤트 전송
-    document.addEventListener('DOMContentLoaded', () => trackPageView());
+    // 5. 페이지 진입 시 pageview 이벤트 전송 (SDK가 완전히 준비된 후 1회만 전송)
+    let pageviewSent = false;
+    function sendPageviewOnce() {
+      if (!pageviewSent) {
+        trackPageView();
+        pageviewSent = true;
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // SDK가 이미 준비된 경우 바로 전송
+      if (window.ta && typeof window.ta.quick === 'function') {
+        sendPageviewOnce();
+      } else {
+        // SDK 준비 이벤트가 오면 전송
+        window.addEventListener('thinkingdata:ready', sendPageviewOnce, { once: true });
+      }
+    });
 
     console.log('✅ 모든 트래킹 모듈 초기화 완료');
   } catch (error) {

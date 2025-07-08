@@ -6,7 +6,7 @@
 const config = {
   // ThinkingData SDK 설정
   thinkingData: {
-    appId: 'dc61b4c238a048fb953b77b1fa1329c3', // 실제 APP_ID
+    appId: '79ed7051fc51493798b16328c0ebd0bc', // 실제 APP_ID
     serverUrl: 'https://te-receiver-naver.thinkingdata.kr/sync_js', // 실제 서버 URL
     autoTrack: {
       pageShow: true,
