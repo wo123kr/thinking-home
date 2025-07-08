@@ -222,13 +222,23 @@ function getTimeSpentOnPage() {
   return Math.round((Date.now() - window.pageLoadTime) / 1000); // 초 단위
 }
 
-// 세션 활동 업데이트 (전역 함수 호출)
+// 세션 활동 업데이트 (직접 전역 함수 호출)
 function updateSessionActivity() {
-  if (typeof window.updateSessionActivity === 'function') {
+  // 전역 함수가 정의되어 있고, 자기 자신이 아닌 경우에만 호출
+  if (typeof window.updateSessionActivity === 'function' && window.updateSessionActivity !== arguments.callee) {
     try {
       window.updateSessionActivity();
     } catch (e) {
       console.warn('📜 세션 활동 업데이트 오류:', e);
+    }
+  } else {
+    // 전역 함수가 없거나 자기 자신인 경우 기본 동작
+    try {
+      if (window.lastActivityTime) {
+        window.lastActivityTime = Date.now();
+      }
+    } catch (e) {
+      console.warn('📜 기본 세션 활동 업데이트 오류:', e);
     }
   }
 }

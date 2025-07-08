@@ -158,7 +158,6 @@ if (window.moduleStateManager && window.moduleStateManager.isInitialized('sessio
       interaction_count: interactionCount,
       page_url: window.location.href,
       page_title: document.title,
-      referrer: document.referrer || '',
       user_agent: navigator.userAgent,
       screen_resolution: `${screen.width}x${screen.height}`,
       viewport_size: `${window.innerWidth}x${window.innerHeight}`,
@@ -166,6 +165,11 @@ if (window.moduleStateManager && window.moduleStateManager.isInitialized('sessio
       browser_info: getBrowserInfo(),
       session_timeout_minutes: Math.round(sessionTimeout / 60000)
     };
+    
+    // referrer 정보가 있을 때만 추가
+    if (document.referrer && document.referrer.trim() !== '') {
+      sessionStartData.referrer = document.referrer;
+    }
     
           safeTrackEvent('te_session_start', sessionStartData);
       sessionEventsTracked.session_start = true;
