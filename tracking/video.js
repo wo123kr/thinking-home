@@ -43,11 +43,12 @@ function detectVideoIframes() {
   const videoPlatformMappings = window.videoPlatformMappings || {
     'youtube': {
       selectors: [
-        'iframe[src*="youtube.com"]',
+        'iframe[src*="youtube.com/embed"]',
+        'iframe[src*="youtube.com/watch"]',
         'iframe[src*="youtu.be"]',
         'iframe[src*="youtube-nocookie.com"]'
       ],
-      patterns: ['youtube.com', 'youtu.be', 'youtube-nocookie.com']
+      patterns: ['youtube.com/embed', 'youtube.com/watch', 'youtu.be', 'youtube-nocookie.com']
     },
     'vimeo': {
       selectors: [
@@ -424,12 +425,24 @@ function debugVideoTracking() {
   console.log('- YouTube API:', typeof window.YT !== 'undefined' ? '로드됨' : '로드 안됨');
   console.log('- 비디오 추적 초기화:', isVideoTrackingInitialized);
   
+  // 모든 iframe 확인 (YouTube 감지용)
+  const allIframes = document.querySelectorAll('iframe');
+  console.log('- 전체 iframe 개수:', allIframes.length);
+  allIframes.forEach((iframe, index) => {
+    console.log(`  - iframe ${index + 1}:`, {
+      id: iframe.id,
+      src: iframe.src,
+      title: iframe.title,
+      isYouTube: iframe.src.includes('youtube.com')
+    });
+  });
+  
   // 현재 페이지의 비디오 요소들 확인
   const videoIframes = detectVideoIframes();
-  console.log('- 현재 페이지 비디오 iframe 개수:', videoIframes.length);
+  console.log('- 감지된 비디오 iframe 개수:', videoIframes.length);
   
   videoIframes.forEach((iframe, index) => {
-    console.log(`  - iframe ${index + 1}:`, {
+    console.log(`  - 비디오 iframe ${index + 1}:`, {
       id: iframe.id,
       src: iframe.src,
       platform: iframe.dataset.videoPlatform,
