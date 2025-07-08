@@ -6,6 +6,10 @@
 // 전역 초기화 플래그
 if (window.userAttributeTrackerInitialized) {
     console.log('ℹ️ 유저 속성 추적 시스템이 이미 초기화됨');
+    // 이미 초기화된 경우에도 인스턴스가 없으면 다시 생성
+    if (!window.userTracker) {
+        window.userTracker = new UserAttributeTracker();
+    }
 } else {
     window.userAttributeTrackerInitialized = true;
 
@@ -813,30 +817,38 @@ window.debugUserAttributes = function() {
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function() {
         console.log('👤 DOM 로드 완료, 유저 속성 추적 시작');
-        setTimeout(window.initializeUserAttributeTracker, 1000);
+        if (!window.userTracker) {
+            window.userTracker = new UserAttributeTracker();
+        }
     });
 } else {
     // DOM이 이미 로드된 경우
     console.log('👤 DOM 이미 로드됨, 유저 속성 추적 시작');
-    setTimeout(window.initializeUserAttributeTracker, 1000);
+    if (!window.userTracker) {
+        window.userTracker = new UserAttributeTracker();
+    }
 }
 
 // ThinkingData 초기화 완료 이벤트 감지
 window.addEventListener('thinkingdata:ready', function() {
     console.log('👤 ThinkingData 초기화 완료, 유저 속성 추적 시작');
-    setTimeout(window.initializeUserAttributeTracker, 500);
+    if (!window.userTracker) {
+        window.userTracker = new UserAttributeTracker();
+    }
 });
 
 // 페이지 로드 완료 후 한 번 더 시도
 window.addEventListener('load', function() {
     console.log('👤 페이지 로드 완료, 유저 속성 추적 재확인');
-    setTimeout(window.initializeUserAttributeTracker, 2000);
+    if (!window.userTracker) {
+        window.userTracker = new UserAttributeTracker();
+    }
 });
 
 // 10초 후 한 번 더 시도 (안전장치)
 setTimeout(function() {
     if (typeof window.te !== 'undefined' && !window.userTracker) {
         console.log('👤 안전장치: 유저 속성 추적 재시도');
-        window.initializeUserAttributeTracker();
+        window.userTracker = new UserAttributeTracker();
     }
 }, 10000); 

@@ -142,11 +142,12 @@
             console.log('✅ 페이지 종료 추적 초기화 완료');
         }
         
-        // 유저 속성 추적 초기화
-        if (typeof window.initializeUserAttributeTracker === 'function' && !window.userAttributeTrackingInitialized) {
-            window.initializeUserAttributeTracker();
+        // 유저 속성 추적 초기화 (user-attributes.js에서 자동 생성됨)
+        if (window.userTracker && !window.userAttributeTrackingInitialized) {
             window.userAttributeTrackingInitialized = true;
-            console.log('✅ 유저 속성 추적 초기화 완료');
+            console.log('✅ 유저 속성 추적 초기화 완료 (자동 생성됨)');
+        } else if (!window.userTracker) {
+            console.log('⚠️ 유저 속성 추적기가 아직 생성되지 않음');
         }
         
         // 중복 방지 플래그 설정
