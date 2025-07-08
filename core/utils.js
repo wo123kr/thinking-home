@@ -3,35 +3,37 @@
  * 모든 추적 모듈에서 공통으로 사용하는 함수들
  */
 
-// ThinkingData SDK 안전한 호출 래퍼
-function safeTeCall(method, ...args) {
-  if (window.te && typeof window.te[method] === 'function') {
-    try {
+// 안전한 ThinkingData SDK 호출
+export function safeTeCall(method, ...args) {
+  try {
+    if (typeof window.te !== 'undefined' && window.te[method]) {
       return window.te[method](...args);
-    } catch (error) {
-      console.warn(`ThinkingData ${method} 호출 실패:`, error);
-      return '';
+    } else {
+      console.warn(`ThinkingData SDK의 ${method} 메서드를 사용할 수 없습니다.`);
+      return false;
     }
-  } else {
-    console.warn(`ThinkingData SDK의 ${method} 메서드를 사용할 수 없습니다.`);
-    return '';
+  } catch (error) {
+    console.error(`ThinkingData SDK ${method} 호출 실패:`, error);
+    return false;
   }
 }
 
-// 이벤트 추적 래퍼
-function trackEvent(eventName, properties = {}) {
+// 안전한 이벤트 전송
+export function trackEvent(eventName, properties = {}) {
   return safeTeCall('track', eventName, properties);
 }
 
-// 세션 활동 업데이트 (중앙 집중화)
-function updateSessionActivity() {
+// 세션 활동 업데이트 함수 (세션 관리자에서 실제 구현)
+export function updateSessionActivity() {
   if (typeof window.updateSessionActivity === 'function') {
     window.updateSessionActivity();
+  } else {
+    console.warn('전역 updateSessionActivity 함수를 찾을 수 없습니다.');
   }
 }
 
-// 🆕 안전한 시간 형식 통일 함수 (기존 코드와 호환)
-function formatTimestamp(date = new Date()) {
+// 안전한 시간 형식 통일 함수
+export function formatTimestamp(date = new Date()) {
   try {
     return date.toISOString().replace('T', ' ').slice(0, 23);
   } catch (error) {
@@ -40,8 +42,8 @@ function formatTimestamp(date = new Date()) {
   }
 }
 
-// 🆕 안전한 텍스트 추출 함수 (null/undefined 안전)
-function safeGetText(element) {
+// 안전한 텍스트 추출 함수 (null/undefined 안전)
+export function safeGetText(element) {
   try {
     return element?.textContent?.trim() || '';
   } catch (error) {
@@ -50,8 +52,8 @@ function safeGetText(element) {
   }
 }
 
-// 🆕 안전한 속성 추출 함수
-function safeGetAttribute(element, attribute) {
+// 안전한 속성 추출 함수
+export function safeGetAttribute(element, attribute) {
   try {
     return element?.getAttribute?.(attribute) || '';
   } catch (error) {
@@ -60,8 +62,8 @@ function safeGetAttribute(element, attribute) {
   }
 }
 
-// 🆕 안전한 클래스 리스트 추출
-function safeGetClassList(element) {
+// 안전한 클래스 리스트 추출
+export function safeGetClassList(element) {
   try {
     return element?.className ? element.className.split(' ').filter(cls => cls.trim()) : [];
   } catch (error) {
@@ -70,8 +72,8 @@ function safeGetClassList(element) {
   }
 }
 
-// 🆕 중앙화된 에러 핸들러
-function handleError(context, error, fallback = null) {
+// 중앙화된 에러 핸들러
+export function handleError(context, error, fallback = null) {
   console.error(`[${context}] 오류:`, error);
   // 에러 로깅 (나중에 외부 서비스 연동 가능)
   if (window.te && typeof window.te.track === 'function') {
@@ -89,7 +91,7 @@ function handleError(context, error, fallback = null) {
 }
 
 // 디바이스 타입 감지
-function getDeviceType() {
+export function getDeviceType() {
   const userAgent = navigator.userAgent.toLowerCase();
   
   if (/mobile|android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent)) {
@@ -103,7 +105,7 @@ function getDeviceType() {
 }
 
 // 브라우저 정보 추출
-function getBrowserInfo() {
+export function getBrowserInfo() {
   const userAgent = navigator.userAgent;
   let browser = 'unknown';
   let version = 'unknown';
@@ -126,7 +128,7 @@ function getBrowserInfo() {
 }
 
 // 간단한 해시 함수
-function simpleHash(str) {
+export function simpleHash(str) {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     const char = str.charCodeAt(i);
@@ -137,7 +139,7 @@ function simpleHash(str) {
 }
 
 // 텍스트 기반 ID 생성
-function generateTextBasedId(text) {
+export function generateTextBasedId(text) {
   if (!text) return 'no_text';
   
   const cleanText = text.replace(/[^a-zA-Z0-9가-힣]/g, '').toLowerCase();
@@ -147,7 +149,7 @@ function generateTextBasedId(text) {
 }
 
 // 클래스 기반 ID 생성
-function generateClassBasedId(classList) {
+export function generateClassBasedId(classList) {
   if (!classList || classList.length === 0) return 'no_class';
   
   const meaningfulClassPatterns = window.meaningfulClassPatterns || [
@@ -167,7 +169,7 @@ function generateClassBasedId(classList) {
 }
 
 // 위치 기반 ID 생성
-function generatePositionBasedId(element) {
+export function generatePositionBasedId(element) {
   const rect = element.getBoundingClientRect();
   const pageY = window.pageYOffset + rect.top;
   const pageX = window.pageXOffset + rect.left;
@@ -178,7 +180,7 @@ function generatePositionBasedId(element) {
 }
 
 // 외부 링크 판단
-function isExternalLink(url) {
+export function isExternalLink(url) {
   try {
     const linkHost = new URL(url).hostname;
     const currentHost = window.location.hostname;
@@ -189,7 +191,7 @@ function isExternalLink(url) {
 }
 
 // 개인정보 마스킹 함수들
-function maskEmail(email) {
+export function maskEmail(email) {
   if (!email || typeof email !== 'string') return '';
   
   const parts = email.split('@');
@@ -206,7 +208,7 @@ function maskEmail(email) {
   return maskedLocal + '@' + maskedDomain;
 }
 
-function maskPhone(phone) {
+export function maskPhone(phone) {
   if (!phone || typeof phone !== 'string') return '';
   
   const numbers = phone.replace(/\D/g, '');
@@ -220,7 +222,7 @@ function maskPhone(phone) {
   }
 }
 
-function maskName(name) {
+export function maskName(name) {
   if (!name || typeof name !== 'string') return '';
   
   const trimmed = name.trim();
@@ -234,7 +236,7 @@ function maskName(name) {
 }
 
 // 요소 가시성 확인
-function isElementVisible(element) {
+export function isElementVisible(element) {
   if (!element) return false;
   
   const rect = element.getBoundingClientRect();
@@ -249,7 +251,7 @@ function isElementVisible(element) {
 }
 
 // 페이지 로드 시간 측정
-function getPageLoadTime() {
+export function getPageLoadTime() {
   if (performance && performance.timing) {
     const timing = performance.timing;
     return timing.loadEventEnd - timing.navigationStart;
@@ -262,33 +264,8 @@ function getPageLoadTime() {
   return 0;
 }
 
-// 동적 패턴 매칭 함수
-function matchPatterns(element, patterns) {
-  const text = element.textContent ? element.textContent.trim() : '';
-  const href = element.href || '';
-  const classList = element.className ? element.className.split(' ') : [];
-  const id = element.id || '';
-  
-  for (const [type, pattern] of Object.entries(patterns)) {
-    if (pattern.text && pattern.text.some(p => text.toLowerCase().includes(p.toLowerCase()))) {
-      return type;
-    }
-    if (pattern.url && pattern.url.some(p => href.toLowerCase().includes(p.toLowerCase()))) {
-      return type;
-    }
-    if (pattern.id && pattern.id.some(p => id.toLowerCase().includes(p.toLowerCase()))) {
-      return type;
-    }
-    if (pattern.class && pattern.class.some(p => classList.some(cls => cls.toLowerCase().includes(p.toLowerCase())))) {
-      return type;
-    }
-  }
-  
-  return '';
-}
-
-// 🆕 안전한 패턴 매칭 함수 (개선된 버전)
-function safeMatchPatterns(element, patterns) {
+// 안전한 패턴 매칭 함수
+export function safeMatchPatterns(element, patterns) {
   try {
     if (!element || !patterns) return '';
     
@@ -318,98 +295,96 @@ function safeMatchPatterns(element, patterns) {
   }
 }
 
-// 🔒 설정 관리자 (중복 선언 방지)
-if (typeof window.ConfigManager === 'undefined') {
-  class ConfigManager {
-    constructor() {
-      this.configs = {};
-    }
-    
-    setConfig(module, config) {
-      this.configs[module] = { ...this.configs[module], ...config };
-    }
-    
-    getConfig(module) {
-      return this.configs[module] || {};
-    }
-    
-    updateConfig(module, updates) {
-      this.setConfig(module, updates);
-      console.log(`🔄 ${module} 설정 업데이트 완료:`, updates);
-    }
+// 설정 관리자 클래스
+export class ConfigManager {
+  constructor() {
+    this.configs = {};
   }
   
-  // 전역에 클래스와 인스턴스 안전하게 등록
-  window.ConfigManager = ConfigManager;
-  window.configManager = new ConfigManager();
-}
-
-// 🔒 모듈 상태 관리자 (중복 선언 방지)
-if (typeof window.ModuleStateManager === 'undefined') {
-  class ModuleStateManager {
-    constructor() {
-      this.initialized = new Set();
-      this.pending = new Set();
-      this.failed = new Set();
-    }
-    
-    isInitialized(moduleName) {
-      return this.initialized.has(moduleName);
-    }
-    
-    markInitialized(moduleName) {
-      this.initialized.add(moduleName);
-      this.pending.delete(moduleName);
-      this.failed.delete(moduleName);
-    }
-    
-    markPending(moduleName) {
-      this.pending.add(moduleName);
-    }
-    
-    markFailed(moduleName, error) {
-      this.failed.add(moduleName);
-      this.pending.delete(moduleName);
-      handleError(`ModuleStateManager`, `${moduleName} 초기화 실패: ${error}`);
-    }
-    
-    getStatus(moduleName) {
-      if (this.initialized.has(moduleName)) return 'initialized';
-      if (this.pending.has(moduleName)) return 'pending';
-      if (this.failed.has(moduleName)) return 'failed';
-      return 'not_started';
-    }
+  setConfig(module, config) {
+    this.configs[module] = { ...this.configs[module], ...config };
   }
   
-  // 전역에 클래스와 인스턴스 안전하게 등록
-  window.ModuleStateManager = ModuleStateManager;
-  window.moduleStateManager = new ModuleStateManager();
+  getConfig(module) {
+    return this.configs[module] || {};
+  }
+  
+  updateConfig(module, updates) {
+    this.setConfig(module, updates);
+    console.log(`🔄 ${module} 설정 업데이트 완료:`, updates);
+  }
 }
 
-// 전역 함수로 노출 (기존 + 새로운 안전한 함수들)
-window.safeTeCall = safeTeCall;
-window.trackEvent = trackEvent;
-window.updateSessionActivity = updateSessionActivity;
-window.getDeviceType = getDeviceType;
-window.getBrowserInfo = getBrowserInfo;
-window.simpleHash = simpleHash;
-window.generateTextBasedId = generateTextBasedId;
-window.generateClassBasedId = generateClassBasedId;
-window.generatePositionBasedId = generatePositionBasedId;
-window.isExternalLink = isExternalLink;
-window.maskEmail = maskEmail;
-window.maskPhone = maskPhone;
-window.maskName = maskName;
-window.isElementVisible = isElementVisible;
-window.getPageLoadTime = getPageLoadTime;
-window.matchPatterns = matchPatterns;
+// 모듈 상태 관리자 클래스
+export class ModuleStateManager {
+  constructor() {
+    this.initialized = new Set();
+    this.pending = new Set();
+    this.failed = new Set();
+  }
+  
+  isInitialized(moduleName) {
+    return this.initialized.has(moduleName);
+  }
+  
+  markInitialized(moduleName) {
+    this.initialized.add(moduleName);
+    this.pending.delete(moduleName);
+    this.failed.delete(moduleName);
+  }
+  
+  markPending(moduleName) {
+    this.pending.add(moduleName);
+  }
+  
+  markFailed(moduleName, error) {
+    this.failed.add(moduleName);
+    this.pending.delete(moduleName);
+    handleError(`ModuleStateManager`, `${moduleName} 초기화 실패: ${error}`);
+  }
+  
+  getStatus(moduleName) {
+    if (this.initialized.has(moduleName)) return 'initialized';
+    if (this.pending.has(moduleName)) return 'pending';
+    if (this.failed.has(moduleName)) return 'failed';
+    return 'not_started';
+  }
+}
 
-// 🆕 새로운 안전한 함수들 노출
-window.formatTimestamp = formatTimestamp;
-window.safeGetText = safeGetText;
-window.safeGetAttribute = safeGetAttribute;
-window.safeGetClassList = safeGetClassList;
-window.handleError = handleError;
-window.safeMatchPatterns = safeMatchPatterns;
+// 전역 객체에 유틸리티 함수 등록 (하위 호환성 유지)
+export function registerGlobalUtils() {
+  // 중복 등록 방지
+  if (window.utilsRegistered) return;
+  
+  // 주요 함수들을 전역 객체에 등록
+  const utils = {
+    safeTeCall, trackEvent, updateSessionActivity, formatTimestamp,
+    safeGetText, safeGetAttribute, safeGetClassList, handleError,
+    getDeviceType, getBrowserInfo, simpleHash,
+    generateTextBasedId, generateClassBasedId, generatePositionBasedId,
+    isExternalLink, maskEmail, maskPhone, maskName,
+    isElementVisible, getPageLoadTime, safeMatchPatterns
+  };
+  
+  // 전역 객체에 등록
+  Object.entries(utils).forEach(([name, func]) => {
+    window[name] = func;
+  });
+  
+  // 클래스 인스턴스 생성 및 등록
+  if (!window.configManager) {
+    window.ConfigManager = ConfigManager;
+    window.configManager = new ConfigManager();
+  }
+  
+  if (!window.moduleStateManager) {
+    window.ModuleStateManager = ModuleStateManager;
+    window.moduleStateManager = new ModuleStateManager();
+  }
+  
+  window.utilsRegistered = true;
+  console.log('✅ 공통 유틸리티 함수 전역 등록 완료');
+}
 
-console.log('✅ 공통 유틸리티 모듈 로드 완료 (안전성 강화됨)'); 
+// 전역 함수 등록 (선택적으로 호출 가능)
+// registerGlobalUtils(); 

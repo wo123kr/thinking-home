@@ -1,125 +1,209 @@
 /**
- * 리소스 다운로드 추적 모듈 - 동적 설정 가능한 구조
+ * 리소스 다운로드 추적 모듈
+ * ThinkingData SDK와 연동하여 파일 다운로드 이벤트 추적
  */
 
-// 리소스 다운로드 추적 초기화 플래그
-let resourceTrackingInitialized = false;
+import { updateSessionActivity } from '../core/session-manager.js';
 
-// 리소스 다운로드 추적 함수
+const DOWNLOAD_EXTENSIONS = [
+  '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
+  '.zip', '.rar', '.7z', '.tar', '.gz',
+  '.mp3', '.mp4', '.avi', '.mov', '.wmv',
+  '.jpg', '.jpeg', '.png', '.gif', '.bmp', '.svg',
+  '.txt', '.csv', '.json', '.xml',
+  '.exe', '.msi', '.dmg', '.pkg',
+  '.apk', '.ipa'
+];
+
+function getFileExtension(url) {
+  const filename = url.split('/').pop();
+  const lastDotIndex = filename.lastIndexOf('.');
+  return lastDotIndex > 0 ? filename.substring(lastDotIndex).toLowerCase() : '';
+}
+
+function getFileSize(url) {
+  try {
+    const urlParams = new URLSearchParams(url.split('?')[1] || '');
+    const size = urlParams.get('size') || urlParams.get('filesize');
+    return size ? parseInt(size) : 0;
+  } catch (e) {
+    return 0;
+  }
+}
+
+export function initResourceTracking() {
+  document.addEventListener('click', (event) => {
+    const target = event.target;
+    const link = target.closest('a');
+    if (!link || !link.href) return;
+
+    const url = link.href.toLowerCase();
+    const extension = getFileExtension(url);
+
+    if (!DOWNLOAD_EXTENSIONS.includes(extension)) return;
+
+    if (typeof updateSessionActivity === 'function') updateSessionActivity();
+
+    const eventData = {
+      page_name: document.title,
+      page_url: window.location.href,
+      download_url: link.href,
+      download_filename: link.href.split('/').pop(),
+      file_extension: extension,
+      file_size_bytes: getFileSize(url),
+      download_success: true,
+      link_text: link.textContent ? link.textContent.trim() : '',
+      link_id: link.id || null,
+      link_class_list: Array.from(link.classList),
+      click_coordinates: { x: event.pageX, y: event.pageY }
+    };
+
+    if (window.te && typeof window.te.track === 'function') {
+      window.te.track('resource_download', eventData);
+    }
+  });
+}
+
+/**
+ * 리소스 다운로드 추적 시작
+ */
 function trackResourceDownloads() {
-  // 중복 초기화 방지
-  if (window.resourceTrackingInitialized) {
-    console.log('ℹ️ 리소스 추적이 이미 초기화됨');
+  if (resourceTrackingInitialized) {
     return;
   }
-  
-  console.log('📥 리소스 다운로드 추적 초기화 시작...');
-  
-  // 초기화 플래그 설정
-  window.resourceTrackingInitialized = true;
-  
-  // ThinkingData SDK 확인
-  if (typeof window.te === 'undefined') {
-    console.warn('⚠️ ThinkingData SDK가 로드되지 않음, 3초 후 재시도...');
-    setTimeout(trackResourceDownloads, 3000);
-    return;
-  }
-  
+
+  console.log('📥 리소스 다운로드 추적 초기화...');
+
+  // 다운로드 확장자 목록
+  const downloadExtensions = getDownloadExtensions();
+
+  // 클릭 이벤트 리스너 등록
   document.addEventListener('click', function(event) {
     const target = event.target;
     const link = target.closest('a');
-    
+
     if (link && link.href) {
       const url = link.href.toLowerCase();
-      const downloadExtensions = getDownloadExtensions();
-      
-      // 동적 리소스 타입 감지
-      const resourceType = getResourceType(link);
-      
-      if (downloadExtensions.some(ext => url.includes(ext)) || resourceType !== 'general') {
-        updateSessionActivity();
-        
-        const downloadData = {
+      const extension = getFileExtension(url);
+
+      // 다운로드 확장자 확인
+      if (downloadExtensions.includes(extension)) {
+        // 세션 활동 업데이트 (전역 함수 호출)
+        if (typeof window.updateSessionActivity === 'function') {
+          window.updateSessionActivity();
+        }
+
+        // 리소스 타입 감지
+        const resourceType = getResourceType(link);
+        const fileSize = getFileSize(url);
+
+        // 이벤트 데이터 구성
+        const eventData = {
           page_name: document.title,
           page_url: window.location.href,
           download_url: link.href,
           download_filename: link.href.split('/').pop(),
+          file_extension: extension,
           resource_type: resourceType,
+          file_size_bytes: fileSize,
           download_success: true, // 클릭 시점에서는 true로 설정
           link_text: link.textContent ? link.textContent.trim() : '',
-          link_id: link.id || '',
-          link_class_list: link.className ? link.className.split(' ') : [],
-          file_extension: getFileExtension(link.href),
-          file_size: getFileSize(link.href)
+          link_id: link.id || null,
+          link_class_list: Array.from(link.classList),
+          click_coordinates: {
+            x: event.pageX,
+            y: event.pageY
+          }
         };
-        
-        if (typeof window.te !== 'undefined' && typeof window.te.track === 'function') {
-          window.te.track('te_resource_download', downloadData);
+
+        // ThinkingData 이벤트 전송
+        if (typeof window.te !== 'undefined' && window.te.track) {
+          window.te.track('resource_download', eventData);
+          console.log('📥 리소스 다운로드 이벤트 전송:', eventData);
+        } else {
+          console.warn('📥 ThinkingData SDK가 로드되지 않음');
         }
-        
-        console.log('📥 리소스 다운로드 추적:', resourceType, downloadData.download_filename);
       }
     }
   });
-  
+
+  resourceTrackingInitialized = true;
   console.log('✅ 리소스 다운로드 추적 초기화 완료');
 }
 
-// 동적 다운로드 확장자 (설정 가능)
+/**
+ * 다운로드 확장자 목록 반환
+ */
 function getDownloadExtensions() {
-  const defaultExtensions = [
-    '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', 
-    '.zip', '.rar', '.csv', '.txt', '.rtf'
+  return [
+    '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
+    '.zip', '.rar', '.7z', '.tar', '.gz',
+    '.mp3', '.mp4', '.avi', '.mov', '.wmv',
+    '.jpg', '.jpeg', '.png', '.gif', '.bmp', '.svg',
+    '.txt', '.csv', '.json', '.xml',
+    '.exe', '.msi', '.dmg', '.pkg',
+    '.apk', '.ipa'
   ];
-  
-  const customExtensions = window.downloadExtensions || [];
-  return [...defaultExtensions, ...customExtensions];
 }
 
-// 동적 리소스 타입 감지 (설정 가능)
+/**
+ * 리소스 타입 감지
+ */
 function getResourceType(link) {
   const url = link.href.toLowerCase();
-  const text = link.textContent ? link.textContent.trim() : '';
-  const classList = link.className ? link.className.split(' ') : [];
-  const id = link.id || '';
-  
-  // 동적 리소스 타입 매핑 (설정 가능)
-  const resourceTypeMappings = window.resourceTypeMappings || {
-    'pdf_document': {
-      extensions: ['.pdf'],
-      text: ['pdf', '문서', 'document'],
-      class: ['pdf-link', 'document-link'],
-      id: ['pdf', 'document']
+  const text = link.textContent ? link.textContent.toLowerCase() : '';
+  const classList = Array.from(link.classList).map(cls => cls.toLowerCase());
+  const id = link.id ? link.id.toLowerCase() : '';
+
+  // 리소스 타입 매핑
+  const resourceTypeMappings = {
+    'document': {
+      extensions: ['.pdf', '.doc', '.docx', '.txt'],
+      text: ['문서', 'document', 'pdf', 'doc'],
+      class: ['document-link', 'pdf-link', 'doc-link'],
+      id: ['document', 'pdf', 'doc']
     },
-    'word_document': {
-      extensions: ['.doc', '.docx'],
-      text: ['word', '문서', 'document'],
-      class: ['word-link', 'document-link'],
-      id: ['word', 'document']
+    'spreadsheet': {
+      extensions: ['.xls', '.xlsx', '.csv'],
+      text: ['엑셀', '스프레드시트', 'excel', 'spreadsheet', 'csv'],
+      class: ['excel-link', 'spreadsheet-link', 'csv-link'],
+      id: ['excel', 'spreadsheet', 'csv']
     },
-    'excel_document': {
-      extensions: ['.xls', '.xlsx'],
-      text: ['excel', '스프레드시트', 'spreadsheet'],
-      class: ['excel-link', 'spreadsheet-link'],
-      id: ['excel', 'spreadsheet']
-    },
-    'powerpoint_document': {
+    'presentation': {
       extensions: ['.ppt', '.pptx'],
-      text: ['powerpoint', '프레젠테이션', 'presentation'],
-      class: ['powerpoint-link', 'presentation-link'],
-      id: ['powerpoint', 'presentation']
+      text: ['파워포인트', '프레젠테이션', 'powerpoint', 'presentation'],
+      class: ['ppt-link', 'presentation-link'],
+      id: ['ppt', 'presentation']
     },
-    'compressed_file': {
+    'archive': {
       extensions: ['.zip', '.rar', '.7z', '.tar', '.gz'],
-      text: ['압축', 'compressed', 'zip', 'rar'],
-      class: ['compressed-link', 'archive-link'],
-      id: ['compressed', 'archive']
+      text: ['압축', 'zip', 'rar', 'archive'],
+      class: ['zip-link', 'archive-link'],
+      id: ['zip', 'archive']
     },
-    'csv_data': {
-      extensions: ['.csv'],
-      text: ['csv', '데이터', 'data'],
-      class: ['csv-link', 'data-link'],
-      id: ['csv', 'data']
+    'media': {
+      extensions: ['.mp3', '.mp4', '.avi', '.mov', '.wmv'],
+      text: ['동영상', '비디오', '오디오', 'video', 'audio', 'media'],
+      class: ['video-link', 'audio-link', 'media-link'],
+      id: ['video', 'audio', 'media']
+    },
+    'image': {
+      extensions: ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.svg'],
+      text: ['이미지', '사진', 'image', 'photo', 'picture'],
+      class: ['image-link', 'photo-link'],
+      id: ['image', 'photo']
+    },
+    'software': {
+      extensions: ['.exe', '.msi', '.dmg', '.pkg', '.apk', '.ipa'],
+      text: ['소프트웨어', '프로그램', '앱', 'software', 'app', 'program'],
+      class: ['software-link', 'app-link'],
+      id: ['software', 'app']
+    },
+    'data': {
+      extensions: ['.csv', '.json', '.xml'],
+      text: ['데이터', 'data'],
+      class: ['data-link'],
+      id: ['data']
     },
     'api_documentation': {
       text: ['개발문서', 'API', 'api', 'docs', 'documentation'],
@@ -158,75 +242,36 @@ function getResourceType(link) {
       id: ['contact', 'inquiry']
     }
   };
-  
+
   // 동적 매핑으로 리소스 타입 감지
   for (const [type, patterns] of Object.entries(resourceTypeMappings)) {
     // 확장자 기반 감지
     if (patterns.extensions && patterns.extensions.some(ext => url.includes(ext))) {
       return type;
     }
-    
+
     // 텍스트 기반 감지
-    if (patterns.text && patterns.text.some(pattern => text.toLowerCase().includes(pattern.toLowerCase()))) {
+    if (patterns.text && patterns.text.some(pattern => text.includes(pattern))) {
       return type;
     }
-    
+
     // URL 기반 감지
     if (patterns.url && patterns.url.some(pattern => url.includes(pattern))) {
       return type;
     }
-    
+
     // 클래스 기반 감지
-    if (patterns.class && patterns.class.some(pattern => classList.some(cls => cls.toLowerCase().includes(pattern.toLowerCase())))) {
+    if (patterns.class && patterns.class.some(pattern => classList.some(cls => cls.includes(pattern)))) {
       return type;
     }
-    
+
     // ID 기반 감지
-    if (patterns.id && patterns.id.some(pattern => id.toLowerCase().includes(pattern.toLowerCase()))) {
+    if (patterns.id && patterns.id.some(pattern => id.includes(pattern))) {
       return type;
     }
   }
-  
+
   return 'general';
-}
-
-// 파일 확장자 추출
-function getFileExtension(url) {
-  const filename = url.split('/').pop();
-  const lastDotIndex = filename.lastIndexOf('.');
-  return lastDotIndex > 0 ? filename.substring(lastDotIndex).toLowerCase() : '';
-}
-
-// 파일 크기 추정 (URL 파라미터에서)
-function getFileSize(url) {
-  try {
-    const urlParams = new URLSearchParams(url.split('?')[1] || '');
-    const size = urlParams.get('size') || urlParams.get('filesize');
-    return size ? parseInt(size) : 0;
-  } catch (e) {
-    return 0;
-  }
-}
-
-// 세션 활동 업데이트 (전역 함수 호출)
-function updateSessionActivity() {
-  // 전역 함수가 정의되어 있고, 자기 자신이 아닌 경우에만 호출
-  if (typeof window.updateSessionActivity === 'function' && window.updateSessionActivity !== updateSessionActivity) {
-    try {
-      window.updateSessionActivity();
-    } catch (e) {
-      console.warn('📥 세션 활동 업데이트 오류:', e);
-    }
-  } else {
-    // 전역 함수가 없거나 자기 자신인 경우 기본 동작
-    try {
-      if (window.lastActivityTime) {
-        window.lastActivityTime = Date.now();
-      }
-    } catch (e) {
-      console.warn('📥 기본 세션 활동 업데이트 오류:', e);
-    }
-  }
 }
 
 // 설정 업데이트 함수 (런타임에 설정 변경 가능)
@@ -237,7 +282,7 @@ function updateResourceTrackingConfig(newConfig) {
   if (newConfig.resourceTypeMappings) {
     window.resourceTypeMappings = { ...window.resourceTypeMappings, ...newConfig.resourceTypeMappings };
   }
-  
+
   console.log('📥 리소스 추적 설정 업데이트 완료:', newConfig);
 }
 
@@ -247,14 +292,14 @@ function debugResourceTracking() {
   console.log('- 다운로드 확장자:', getDownloadExtensions());
   console.log('- 리소스 타입 매핑:', window.resourceTypeMappings);
   console.log('- ThinkingData SDK:', typeof window.te !== 'undefined' ? '로드됨' : '로드 안됨');
-  
+
   // 현재 페이지의 다운로드 링크들 확인
   const downloadExtensions = getDownloadExtensions();
   const downloadSelectors = downloadExtensions.map(ext => `a[href*="${ext}"]`).join(', ');
   const downloadLinks = document.querySelectorAll(downloadSelectors);
-  
+
   console.log('- 현재 페이지 다운로드 링크 개수:', downloadLinks.length);
-  
+
   downloadLinks.forEach((link, index) => {
     console.log(`  - 링크 ${index + 1}:`, {
       href: link.href,
@@ -275,7 +320,7 @@ function initializeResourceTracking() {
   if (resourceTrackingInitialized) {
     return;
   }
-  
+
   // DOM 로드 완료 후 자동 실행
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function() {
@@ -284,7 +329,7 @@ function initializeResourceTracking() {
     });
   } else {
     // DOM이 이미 로드된 경우
-    console.log('📥 DOM 이미 로드됨, 리소스 다운로드 추적 시작');
+    console.log('�� DOM 이미 로드됨, 리소스 다운로드 추적 시작');
     trackResourceDownloads();
   }
 }
@@ -308,7 +353,7 @@ if (!window.thinkingDataResourceListenerAdded) {
 if (!window.loadResourceListenerAdded) {
   window.loadResourceListenerAdded = true;
   window.addEventListener('load', function() {
-    console.log('📥 페이지 로드 완료, 리소스 다운로드 추적 확인');
+    console.log('�� 페이지 로드 완료, 리소스 다운로드 추적 확인');
     // 이미 초기화되었으면 재실행하지 않음
     if (!resourceTrackingInitialized) {
       trackResourceDownloads();
