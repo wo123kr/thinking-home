@@ -206,9 +206,21 @@ function getFileSize(url) {
 
 // 세션 활동 업데이트
 function updateSessionActivity() {
+  // 중복 호출 방지
+  if (window.resourceSessionActivityUpdating) {
+    return;
+  }
+  
+  window.resourceSessionActivityUpdating = true;
+  
   if (typeof window.updateSessionActivity === 'function') {
     window.updateSessionActivity();
   }
+  
+  // 짧은 지연 후 플래그 리셋
+  setTimeout(() => {
+    window.resourceSessionActivityUpdating = false;
+  }, 100);
 }
 
 // 설정 업데이트 함수 (런타임에 설정 변경 가능)
