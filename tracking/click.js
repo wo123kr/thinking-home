@@ -382,3 +382,20 @@ if (window.moduleStateManager && window.moduleStateManager.isInitialized('click-
 
   console.log('🖱️ 클릭 추적 모듈 로드 완료 (안전성 강화)');
 }
+
+// 클릭 이벤트 추적 (SDK 자동 수집 사용으로 비활성화)
+function trackClickEvents() {
+  // 중복 초기화 방지
+  if (window.clickTrackingInitialized) {
+    console.log('ℹ️ 클릭 추적이 이미 초기화됨');
+    return;
+  }
+  
+  console.log('🖱️ 클릭 추적 - SDK 자동 수집 사용으로 비활성화됨');
+  
+  // 초기화 플래그 설정
+  window.clickTrackingInitialized = true;
+  
+  // SDK 자동 수집을 사용하므로 커스텀 클릭 추적은 비활성화
+  // ta.trackLink() 기능이 SDK에서 제공됨
+}

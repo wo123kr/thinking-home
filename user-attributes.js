@@ -3,7 +3,7 @@
  * 사용자 행동 패턴, 생명주기, 참여도 등을 추적 (중복 전송 최소화)
  */
 
-// 전역 초기화 플래그
+// 전역 초기화 플래그 (강화된 중복 방지)
 if (window.userAttributeTrackerInitialized) {
     console.log('ℹ️ 유저 속성 추적 시스템이 이미 초기화됨');
     // 이미 초기화된 경우에도 인스턴스가 없으면 다시 생성
@@ -40,6 +40,28 @@ if (window.userAttributeTrackerInitialized) {
             this.lastUpdateTime = 0; // 마지막 업데이트 시간
             this.batchTimer = null; // 배치 처리 타이머
             
+            // 중복 방지를 위한 세션 키 생성 (더 강력한 중복 방지)
+            this.sessionKey = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            this.initKey = `te_init_${this.sessionKey}`;
+            
+            // 이미 초기화된 세션인지 확인 (강화된 체크)
+            if (localStorage.getItem(this.initKey)) {
+                console.log('ℹ️ 이미 이 세션에서 초기화됨, 스킵');
+                this.isInitialized = true;
+                return;
+            }
+            
+            // 전역 중복 방지 플래그 확인
+            if (window.userTrackerSessionInitialized) {
+                console.log('ℹ️ 다른 세션에서 이미 초기화됨, 스킵');
+                this.isInitialized = true;
+                return;
+            }
+            
+            // 초기화 플래그 설정
+            localStorage.setItem(this.initKey, 'true');
+            window.userTrackerSessionInitialized = true;
+            
             // ThinkingData 홈페이지 섹션 매핑
             this.sectionMapping = {
                 '/': 'home',
@@ -63,9 +85,6 @@ if (window.userAttributeTrackerInitialized) {
                 'solution': '솔루션',
                 'user_case': '고객사례'
             };
-            
-            // 중복 방지를 위한 세션 키 생성
-            this.sessionKey = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
             
             this.initializeUser();
         }
@@ -160,23 +179,29 @@ if (window.userAttributeTrackerInitialized) {
             this.safeTeCall(method, data);
         }
         
-        // 사용자 초기화 (대폭 최적화됨)
+        // 사용자 초기화 (대폭 최적화됨 - 중복 방지 강화)
         initializeUser() {
-            const now = Date.now();
-            const today = new Date().toISOString().split('T')[0];
+            // 이미 초기화된 경우 스킵
+            if (this.isInitialized) {
+                console.log('ℹ️ 이미 초기화됨, 스킵');
+                return;
+            }
             
-            // 중복 초기화 방지 체크
-            const lastInitKey = 'te_last_init_session';
-            const lastInitSession = localStorage.getItem(lastInitKey);
-            
-            if (lastInitSession === this.sessionKey) {
-                console.log('ℹ️ 이미 이 세션에서 초기화됨, 스킵');
+            // 전역 중복 방지 플래그 확인
+            if (window.userAttributeInitialized) {
+                console.log('ℹ️ 다른 인스턴스에서 이미 초기화됨, 스킵');
                 this.isInitialized = true;
                 return;
             }
             
-            // 세션 키 저장
-            localStorage.setItem(lastInitKey, this.sessionKey);
+            const now = Date.now();
+            const today = new Date().toISOString().split('T')[0];
+            
+            console.log('👤 유저 속성 초기화 시작...');
+            
+            // 전역 플래그 설정
+            window.userAttributeInitialized = true;
+            this.isInitialized = true;
             
             // 1. 최초 방문 시점 기록 (한 번만)
             if (!this.attributes.first_visit_timestamp) {
@@ -186,14 +211,17 @@ if (window.userAttributeTrackerInitialized) {
                 this.attributes.first_visit_timestamp = now;
             }
             
-            // 2. 세션 수 증가 (즉시 전송)
-            this.sendImmediate('userAdd', { total_sessions: 1 });
-            this.attributes.total_sessions = (this.attributes.total_sessions || 0) + 1;
+            // 2. 세션 수 증가 (즉시 전송) - 중복 방지
+            if (!this.attributes.session_incremented) {
+                this.sendImmediate('userAdd', { total_sessions: 1 });
+                this.attributes.total_sessions = (this.attributes.total_sessions || 0) + 1;
+                this.attributes.session_incremented = true;
+            }
             
             // 3. 오늘 세션 수 (날짜가 바뀌면 리셋)
             const lastVisitDate = this.attributes.last_visit_date;
             if (lastVisitDate !== today) {
-                this.queueUpdate('userSet', { session_count_today: 1 });
+                this.sendImmediate('userSet', { session_count_today: 1 });
                 this.attributes.session_count_today = 1;
                 this.attributes.last_visit_date = today;
             } else {
@@ -201,29 +229,20 @@ if (window.userAttributeTrackerInitialized) {
                 this.attributes.session_count_today = (this.attributes.session_count_today || 0) + 1;
             }
             
-            // 4. 재방문자 체크 (2번째 세션부터, 한 번만 설정)
-            if (this.attributes.total_sessions >= 2 && !this.attributes.is_returning_visitor) {
-                this.queueUpdate('userSet', { is_returning_visitor: true });
+            // 4. 재방문자 체크 (2번째 세션부터)
+            if (this.attributes.total_sessions >= 2) {
+                this.sendImmediate('userSet', { is_returning_visitor: true });
                 this.attributes.is_returning_visitor = true;
             }
             
             // 5. 최초 유입 정보 기록 (한 번만)
             this.recordFirstVisitSource();
             
-            // 6. 기본 시간 정보 업데이트 (변경된 경우만)
+            // 6. 기본 시간 정보 업데이트
             this.updateTimeAttributes();
             
-            // 7. ThinkingData 홈페이지 특화 정보 설정 (변경된 경우만)
-            this.setThinkingDataSpecificAttributes();
-            
-            // 배치 업데이트 즉시 전송
-            setTimeout(() => {
-                this.flushUpdates();
-            }, 100);
-            
             this.saveAttributes();
-            this.isInitialized = true;
-            console.log('✅ 유저 속성 초기화 완료 (최적화됨):', Object.keys(this.attributes).length, '개 속성');
+            console.log('✅ 유저 속성 초기화 완료:', this.attributes);
         }
         
         // ThinkingData 홈페이지 특화 속성 설정 (최적화됨)
@@ -990,4 +1009,42 @@ window.addEventListener('load', function() {
     if (!window.userTracker) {
         window.userTracker = new UserAttributeTracker();
     }
-}); 
+});
+
+// 전역 초기화 함수 (모듈 시스템과 연동) - 중복 방지 강화
+window.initializeUserAttributeTracker = function() {
+  // 중복 초기화 방지 (강화된 체크)
+  if (window.userAttributeTrackingInitialized) {
+    console.log('ℹ️ 유저 속성 추적이 이미 초기화됨');
+    return;
+  }
+  
+  // 전역 중복 방지 플래그 확인
+  if (window.userAttributeInitialized) {
+    console.log('ℹ️ 다른 인스턴스에서 이미 초기화됨');
+    return;
+  }
+  
+  // 5초 내 재실행 방지
+  const now = Date.now();
+  if (window.userAttributeLastInitTime && (now - window.userAttributeLastInitTime) < 5000) {
+    console.log('ℹ️ 유저 속성 추적이 최근에 초기화됨, 스킵');
+    return;
+  }
+  
+  console.log('👤 유저 속성 추적 시스템 시작...');
+  
+  // 초기화 플래그 설정
+  window.userAttributeTrackingInitialized = true;
+  window.userAttributeLastInitTime = now;
+  
+  // 유저 속성 추적기 인스턴스 생성 (중복 방지)
+  if (!window.userTracker) {
+    window.userTracker = new UserAttributeTracker();
+  } else {
+    console.log('ℹ️ 유저 속성 추적기 인스턴스가 이미 존재함');
+  }
+  
+  // 초기화 완료 이벤트 발생
+  window.dispatchEvent(new CustomEvent('userAttributeTracker:ready'));
+}; 

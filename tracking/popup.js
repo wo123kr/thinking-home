@@ -4,6 +4,12 @@
 
 // 팝업 관련 추적
 function trackPopupEvents() {
+  // 중복 초기화 방지
+  if (window.popupTrackingInitialized) {
+    console.log('ℹ️ 팝업 추적이 이미 초기화됨');
+    return;
+  }
+  
   console.log('🎪 팝업 추적 초기화 시작...');
   
   // ThinkingData SDK 확인
@@ -12,6 +18,9 @@ function trackPopupEvents() {
     setTimeout(trackPopupEvents, 3000);
     return;
   }
+  
+  // 초기화 플래그 설정
+  window.popupTrackingInitialized = true;
   
   // 기존 팝업 감지 (페이지 로드 시 이미 존재하는 팝업)
   detectExistingPopups();
@@ -294,10 +303,14 @@ function isElementVisible(element) {
          element.offsetHeight > 0;
 }
 
-// 세션 활동 업데이트
+// 세션 활동 업데이트 (전역 함수 호출)
 function updateSessionActivity() {
   if (typeof window.updateSessionActivity === 'function') {
-    window.updateSessionActivity();
+    try {
+      window.updateSessionActivity();
+    } catch (e) {
+      console.warn('🎪 세션 활동 업데이트 오류:', e);
+    }
   }
 }
 

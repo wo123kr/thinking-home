@@ -3,7 +3,16 @@
  */
 
 function trackFormSubmissions() {
+  // 중복 초기화 방지
+  if (window.formTrackingInitialized) {
+    console.log('ℹ️ 폼 추적이 이미 초기화됨');
+    return;
+  }
+  
   console.log('📝 폼 추적 초기화 시작...');
+  
+  // 초기화 플래그 설정
+  window.formTrackingInitialized = true;
   
   // ThinkingData SDK 확인
   if (typeof window.te === 'undefined') {
@@ -353,10 +362,14 @@ function getThinkingDataFormInfo(form) {
 
 // 마스킹 함수들은 utils.js에서 가져와서 사용
 
-// 세션 활동 업데이트
+// 세션 활동 업데이트 (전역 함수 호출)
 function updateSessionActivity() {
   if (typeof window.updateSessionActivity === 'function') {
-    window.updateSessionActivity();
+    try {
+      window.updateSessionActivity();
+    } catch (e) {
+      console.warn('📝 세션 활동 업데이트 오류:', e);
+    }
   }
 }
 

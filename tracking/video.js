@@ -10,13 +10,16 @@ let isVideoTrackingInitialized = false;
 window.videoSessions = videoSessions;
 
 function trackVideoEvents() {
-  console.log('🎬 비디오 추적 초기화 시작...');
-  
   // 중복 초기화 방지
-  if (isVideoTrackingInitialized) {
+  if (window.videoTrackingInitialized) {
     console.log('ℹ️ 비디오 추적이 이미 초기화됨');
     return;
   }
+  
+  console.log('🎬 비디오 추적 초기화 시작...');
+  
+  // 초기화 플래그 설정
+  window.videoTrackingInitialized = true;
   
   // ThinkingData SDK 확인
   if (typeof window.te === 'undefined') {
@@ -37,8 +40,6 @@ function trackVideoEvents() {
     // DOM 변경 감지를 위한 MutationObserver 설정
     setupVideoObserver();
   }
-  
-  isVideoTrackingInitialized = true;
 }
 
 // 동적 비디오 iframe 감지 (설정 가능)

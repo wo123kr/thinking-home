@@ -7,14 +7,16 @@ let resourceTrackingInitialized = false;
 
 // 리소스 다운로드 추적 함수
 function trackResourceDownloads() {
-  // 중복 실행 방지
-  if (resourceTrackingInitialized) {
-    console.log('📥 리소스 추적 이미 초기화됨, 중복 실행 방지');
+  // 중복 초기화 방지
+  if (window.resourceTrackingInitialized) {
+    console.log('ℹ️ 리소스 추적이 이미 초기화됨');
     return;
   }
   
-  resourceTrackingInitialized = true;
   console.log('📥 리소스 다운로드 추적 초기화 시작...');
+  
+  // 초기화 플래그 설정
+  window.resourceTrackingInitialized = true;
   
   // ThinkingData SDK 확인
   if (typeof window.te === 'undefined') {
@@ -206,19 +208,15 @@ function getFileSize(url) {
   }
 }
 
-// 세션 활동 업데이트 (안전한 호출)
+// 세션 활동 업데이트 (전역 함수 호출)
 function updateSessionActivity() {
-  // 전역 세션 관리자가 있는지 확인
-  if (
-    typeof window.updateSessionActivity === 'function' &&
-    window.updateSessionActivity !== updateSessionActivity
-  ) {
+  if (typeof window.updateSessionActivity === 'function') {
     try {
       window.updateSessionActivity();
     } catch (e) {
       console.warn('📥 세션 활동 업데이트 오류:', e);
     }
-  } // else: 아무 동작도 하지 않음 (무한 재귀 방지)
+  }
 }
 
 // 설정 업데이트 함수 (런타임에 설정 변경 가능)

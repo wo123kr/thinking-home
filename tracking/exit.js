@@ -4,7 +4,16 @@
 
 // 페이지 종료 추적 초기화
 function initializePageExitTracking() {
+  // 중복 초기화 방지
+  if (window.exitTrackingInitialized) {
+    console.log('ℹ️ 페이지 종료 추적이 이미 초기화됨');
+    return;
+  }
+  
   console.log('🚪 페이지 종료 추적 초기화 시작...');
+  
+  // 초기화 플래그 설정
+  window.exitTrackingInitialized = true;
   
   // ThinkingData SDK 확인
   if (typeof window.te === 'undefined') {

@@ -12,13 +12,16 @@ window.scrollDepthTracked = scrollDepthTracked;
 window.maxScrollDepth = maxScrollDepth;
 
 function trackScrollDepth() {
-  console.log('📜 스크롤 추적 초기화 시작...');
-  
   // 중복 초기화 방지
-  if (isScrollTrackingInitialized) {
+  if (window.scrollTrackingInitialized) {
     console.log('ℹ️ 스크롤 추적이 이미 초기화됨');
     return;
   }
+  
+  console.log('📜 스크롤 추적 초기화 시작...');
+  
+  // 초기화 플래그 설정
+  window.scrollTrackingInitialized = true;
   
   // ThinkingData SDK 확인
   if (typeof window.te === 'undefined') {
@@ -93,7 +96,6 @@ window.addEventListener('scroll', function() {
     scrollTimeout = setTimeout(handleScroll, debounceDelay);
   });
   
-  isScrollTrackingInitialized = true;
   console.log('✅ 스크롤 추적 초기화 완료');
 }
 
@@ -220,10 +222,14 @@ function getTimeSpentOnPage() {
   return Math.round((Date.now() - window.pageLoadTime) / 1000); // 초 단위
 }
 
-// 세션 활동 업데이트
+// 세션 활동 업데이트 (전역 함수 호출)
 function updateSessionActivity() {
   if (typeof window.updateSessionActivity === 'function') {
-    window.updateSessionActivity();
+    try {
+      window.updateSessionActivity();
+    } catch (e) {
+      console.warn('📜 세션 활동 업데이트 오류:', e);
+    }
   }
 }
 

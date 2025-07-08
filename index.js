@@ -19,7 +19,7 @@ console.warn('📖 자세한 정보: https://github.com/wo123kr/webflow-tracking
 
 /**
  * ThinkingData 웹 추적 시스템 - 메인 진입점
- * Webflow용 CDN 배포 버전
+ * Webflow용 CDN 배포 버전 (중복 초기화 방지 강화)
  * 
  * 사용법:
  * <script src="https://cdn.jsdelivr.net/gh/[username]/webflow-tracking@main/index.js"></script>
@@ -30,9 +30,23 @@ console.warn('📖 자세한 정보: https://github.com/wo123kr/webflow-tracking
 (function() {
     'use strict';
     
-    // 모듈 로드 함수
+    // 전역 중복 방지 플래그 (강화)
+    if (window.indexJSInitialized) {
+        console.log('ℹ️ index.js가 이미 초기화됨');
+        return;
+    }
+    window.indexJSInitialized = true;
+    
+    // 모듈 로드 함수 (중복 방지)
     function loadModule(url) {
         return new Promise((resolve, reject) => {
+            // 이미 로드된 모듈인지 확인
+            if (document.querySelector(`script[src="${url}"]`)) {
+                console.log(`ℹ️ 모듈이 이미 로드됨: ${url}`);
+                resolve();
+                return;
+            }
+            
             const script = document.createElement('script');
             script.src = url;
             script.async = true;
@@ -42,8 +56,15 @@ console.warn('📖 자세한 정보: https://github.com/wo123kr/webflow-tracking
         });
     }
     
-    // 모든 모듈 로드 (thinking-data-init.js 제외)
+    // 모든 모듈 로드 (thinking-data-init.js 제외) - 중복 방지 강화
     async function loadAllModules() {
+        // 중복 실행 방지
+        if (window.modulesLoadingInProgress) {
+            console.log('ℹ️ 모듈 로드가 이미 진행 중임');
+            return;
+        }
+        window.modulesLoadingInProgress = true;
+        
         const baseUrl = 'https://cdn.jsdelivr.net/gh/wo123kr/webflow-tracking@main';
         
         try {
@@ -87,11 +108,19 @@ console.warn('📖 자세한 정보: https://github.com/wo123kr/webflow-tracking
             
         } catch (error) {
             console.error('❌ 모듈 로드 실패:', error);
+        } finally {
+            window.modulesLoadingInProgress = false;
         }
     }
     
-    // 추가 추적 초기화 (중복 방지)
+    // 추가 추적 초기화 (중복 방지 강화)
     function initializeAdditionalTracking() {
+        // 중복 실행 방지
+        if (window.additionalTrackingInitialized) {
+            console.log('ℹ️ 추가 추적이 이미 초기화됨');
+            return;
+        }
+        
         // DOM 로드 완료 후 이벤트 추적 시작
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', function() {
@@ -105,39 +134,64 @@ console.warn('📖 자세한 정보: https://github.com/wo123kr/webflow-tracking
         }
     }
     
-    // 추가 추적 시작 (중복 방지)
+    // 추가 추적 시작 (중복 방지 강화)
     function startAdditionalTracking() {
-        // 중복 실행 방지 플래그 확인
+        // 중복 실행 방지 플래그 확인 (강화된 체크)
         if (window.additionalTrackingInitialized) {
             console.log('ℹ️ 추가 추적이 이미 초기화됨');
             return;
         }
         
+        // 5초 내 재실행 방지
+        const now = Date.now();
+        if (window.additionalTrackingLastInitTime && (now - window.additionalTrackingLastInitTime) < 5000) {
+            console.log('ℹ️ 추가 추적이 최근에 초기화됨, 스킵');
+            return;
+        }
+        
         console.log('🔄 추가 추적 모듈 초기화 시작...');
         
-        // 각 모듈의 초기화 함수 호출 (중복 방지)
+        // 초기화 플래그 설정
+        window.additionalTrackingInitialized = true;
+        window.additionalTrackingLastInitTime = now;
+        
+        let initializedCount = 0;
+        
+        // 각 모듈의 초기화 함수 호출 (중복 방지 강화)
         if (typeof window.trackPopupEvents === 'function' && !window.popupTrackingInitialized) {
             window.trackPopupEvents();
             window.popupTrackingInitialized = true;
+            initializedCount++;
             console.log('✅ 팝업 추적 초기화 완료');
+        } else if (window.popupTrackingInitialized) {
+            console.log('ℹ️ 팝업 추적이 이미 초기화됨');
         }
         
         if (typeof window.trackClickEvents === 'function' && !window.clickTrackingInitialized) {
             window.trackClickEvents();
             window.clickTrackingInitialized = true;
+            initializedCount++;
             console.log('✅ 클릭 추적 초기화 완료');
+        } else if (window.clickTrackingInitialized) {
+            console.log('ℹ️ 클릭 추적이 이미 초기화됨');
         }
         
         if (typeof window.trackScrollDepth === 'function' && !window.scrollTrackingInitialized) {
             window.trackScrollDepth();
             window.scrollTrackingInitialized = true;
+            initializedCount++;
             console.log('✅ 스크롤 추적 초기화 완료');
+        } else if (window.scrollTrackingInitialized) {
+            console.log('ℹ️ 스크롤 추적이 이미 초기화됨');
         }
         
         if (typeof window.trackFormSubmissions === 'function' && !window.formTrackingInitialized) {
             window.trackFormSubmissions();
             window.formTrackingInitialized = true;
+            initializedCount++;
             console.log('✅ 폼 추적 초기화 완료');
+        } else if (window.formTrackingInitialized) {
+            console.log('ℹ️ 폼 추적이 이미 초기화됨');
         }
         
         // thinking-data-init.js에서 이미 초기화되었는지 확인
@@ -146,33 +200,42 @@ console.warn('📖 자세한 정보: https://github.com/wo123kr/webflow-tracking
         } else if (typeof window.trackVideoEvents === 'function' && !window.videoTrackingInitialized) {
             window.trackVideoEvents();
             window.videoTrackingInitialized = true;
+            initializedCount++;
             console.log('✅ 비디오 추적 초기화 완료 (index.js에서)');
+        } else if (window.videoTrackingInitialized) {
+            console.log('ℹ️ 비디오 추적이 이미 초기화됨');
         }
         
         if (typeof window.trackResourceDownloads === 'function' && !window.resourceTrackingInitialized) {
             window.trackResourceDownloads();
             window.resourceTrackingInitialized = true;
+            initializedCount++;
             console.log('✅ 리소스 추적 초기화 완료');
+        } else if (window.resourceTrackingInitialized) {
+            console.log('ℹ️ 리소스 추적이 이미 초기화됨');
         }
         
         if (typeof window.initializePageExitTracking === 'function' && !window.exitTrackingInitialized) {
             window.initializePageExitTracking();
             window.exitTrackingInitialized = true;
+            initializedCount++;
             console.log('✅ 페이지 종료 추적 초기화 완료');
+        } else if (window.exitTrackingInitialized) {
+            console.log('ℹ️ 페이지 종료 추적이 이미 초기화됨');
         }
         
         // 유저 속성 추적 초기화 (user-attributes.js에서 자동 생성됨)
         if (window.userTracker && !window.userAttributeTrackingInitialized) {
             window.userAttributeTrackingInitialized = true;
+            initializedCount++;
             console.log('✅ 유저 속성 추적 초기화 완료 (자동 생성됨)');
         } else if (!window.userTracker) {
             console.log('⚠️ 유저 속성 추적기가 아직 생성되지 않음');
+        } else if (window.userAttributeTrackingInitialized) {
+            console.log('ℹ️ 유저 속성 추적이 이미 초기화됨');
         }
         
-        // 중복 방지 플래그 설정
-        window.additionalTrackingInitialized = true;
-        
-        console.log('✅ 추가 추적 모듈 초기화 완료');
+        console.log(`✅ 추가 추적 모듈 초기화 완료 (${initializedCount}개 모듈)`);
     }
     
     // core/thinking-data-init.js가 로드되었는지 확인 후 모듈 로드 시작

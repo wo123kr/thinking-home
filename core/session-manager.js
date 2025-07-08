@@ -64,11 +64,15 @@ if (window.moduleStateManager && window.moduleStateManager.isInitialized('sessio
   // 🆕 안전한 ThinkingData 호출 (이미 utils.js에 있지만 독립성 보장)
   function safeTrackEvent(eventName, properties = {}) {
     try {
+      console.log(`🔧 이벤트 전송: ${eventName}`, properties);
+      
       if (window.te && typeof window.te.track === 'function') {
         window.te.track(eventName, properties);
+        console.log(`✅ 이벤트 전송 완료: ${eventName}`);
         return true;
       } else if (window.trackEvent && typeof window.trackEvent === 'function') {
         window.trackEvent(eventName, properties);
+        console.log(`✅ 이벤트 전송 완료: ${eventName}`);
         return true;
       } else {
         console.warn(`ThinkingData SDK를 사용할 수 없습니다: ${eventName}`);
@@ -218,7 +222,7 @@ if (window.moduleStateManager && window.moduleStateManager.isInitialized('sessio
           safeSetItem('te_is_engaged_session', 'true');
           
           // 인게이지 세션 이벤트 전송
-          safeTrackEvent('session_engaged', {
+          safeTrackEvent('te_session_engaged', {
             session_id: sessionId.toString(), // 문자열로 전송
             session_number: sessionNumber,
             engagement_time: Math.round(timeSpent / 1000),
