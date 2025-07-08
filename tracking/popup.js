@@ -68,9 +68,9 @@ function trackPopupEvents() {
   });
   
   // ESC 키로 팝업 닫기 감지
-  document.addEventListener('keydown', function(event) {
-    if (event.key === 'Escape') {
-      updateSessionActivity();
+document.addEventListener('keydown', function(event) {
+  if (event.key === 'Escape') {
+    updateSessionActivity();
       trackEvent('te_popup_action', {
         action_type: 'popup_close',
         close_method: 'escape_key',
@@ -89,7 +89,7 @@ function trackPopupEvents() {
     if (isPopupOutsideClick(target)) {
       updateSessionActivity();
       trackEvent('te_popup_action', {
-        action_type: 'popup_close',
+      action_type: 'popup_close',
         close_method: 'outside_click',
         popup_type: getCurrentPopupType(),
         page_url: window.location.href

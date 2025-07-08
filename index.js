@@ -38,8 +38,9 @@
     if (window.thinkingDataInitialized) {
         console.log('ℹ️ thinking-data-init.js가 이미 로드되어 있음, 추가 모듈만 로드');
     } else {
-        console.log('⚠️ thinking-data-init.js가 로드되지 않음, 3초 후 재시도...');
-        setTimeout(loadAllModules, 3000);
+        console.log('⚠️ thinking-data-init.js가 로드되지 않음, 직접 초기화 시도...');
+        // 직접 ThinkingData 초기화 시도
+        initializeThinkingDataDirectly();
         return;
     }
             
@@ -120,10 +121,13 @@
             console.log('✅ 폼 추적 초기화 완료');
         }
         
-        if (typeof window.trackVideoEvents === 'function' && !window.videoTrackingInitialized) {
+        // thinking-data-init.js에서 이미 초기화되었는지 확인
+        if (window.thinkingDataInitialized && window.videoTrackingInitialized) {
+            console.log('ℹ️ 비디오 추적이 이미 초기화됨 (thinking-data-init.js에서)');
+        } else if (typeof window.trackVideoEvents === 'function' && !window.videoTrackingInitialized) {
             window.trackVideoEvents();
             window.videoTrackingInitialized = true;
-            console.log('✅ 비디오 추적 초기화 완료');
+            console.log('✅ 비디오 추적 초기화 완료 (index.js에서)');
         }
         
         if (typeof window.trackResourceDownloads === 'function' && !window.resourceTrackingInitialized) {
@@ -159,6 +163,48 @@
         } else {
             console.log('⏳ thinking-data-init.js 대기 중...');
             setTimeout(checkAndLoadModules, 1000);
+        }
+    }
+    
+    // ThinkingData 직접 초기화 함수
+    function initializeThinkingDataDirectly() {
+        // 중복 실행 방지
+        if (window.te && window.te.getDistinctId) {
+            console.log('ℹ️ ThinkingData SDK가 이미 초기화됨');
+            loadAllModules();
+            return;
+        }
+        
+        try {
+            // thinkingdata 객체 확인
+            if (typeof thinkingdata === 'undefined') {
+                console.warn('⚠️ ThinkingData SDK가 로드되지 않음, 1초 후 재시도...');
+                setTimeout(initializeThinkingDataDirectly, 1000);
+                return;
+            }
+            
+            // 전역 객체 설정
+            window.te = thinkingdata;
+            
+            // SDK 초기화
+            const config = {
+                appId: "f43e15b9fb634d278845480f02c822f7",
+                serverUrl: "https://te-receiver-naver.thinkingdata.kr/sync_js",
+                autoTrack: {
+                    pageShow: true,
+                    pageHide: true
+                }
+            };
+            
+            te.init(config);
+            console.log("🎯 ThinkingData SDK 직접 초기화 완료:", config);
+            
+            // 초기화 완료 후 모듈 로드 시작
+            loadAllModules();
+            
+        } catch (error) {
+            console.error('❌ ThinkingData SDK 직접 초기화 실패:', error);
+            setTimeout(initializeThinkingDataDirectly, 3000);
         }
     }
     

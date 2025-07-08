@@ -213,7 +213,8 @@ function updateSessionActivity() {
   
   window.resourceSessionActivityUpdating = true;
   
-  if (typeof window.updateSessionActivity === 'function') {
+  // 전역 updateSessionActivity 함수가 있고, 현재 함수와 다른 경우에만 호출
+  if (typeof window.updateSessionActivity === 'function' && window.updateSessionActivity !== updateSessionActivity) {
     window.updateSessionActivity();
   }
   

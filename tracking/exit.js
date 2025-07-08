@@ -159,7 +159,7 @@ function initializePageExitTracking() {
             "properties": exitData
           }],
           "#app_id": "f43e15b9fb634d278845480f02c822f7",
-          "#flush_time": new Date().toISOString().replace('T', ' ').slice(0, 23)
+          "#flush_time": Date.now()
         });
         
         const success = navigator.sendBeacon(
@@ -190,7 +190,7 @@ function initializePageExitTracking() {
           "properties": exitData
         }],
         "#app_id": "f43e15b9fb634d278845480f02c822f7",
-        "#flush_time": new Date().toISOString().replace('T', ' ').slice(0, 23)
+        "#flush_time": Date.now()
       });
       
       // 동기적 XMLHttpRequest 시도
@@ -221,7 +221,7 @@ function initializePageExitTracking() {
           "properties": exitData
         }],
         "#app_id": "f43e15b9fb634d278845480f02c822f7",
-        "#flush_time": new Date().toISOString().replace('T', ' ').slice(0, 23)
+        "#flush_time": Date.now()
       });
       
       // URL 인코딩

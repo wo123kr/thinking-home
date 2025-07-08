@@ -87,9 +87,9 @@ function startNewSession() {
   
   // 세션 시작 이벤트 전송 (GA4/Amplitude 방식)
   const sessionStartData = {
-    session_id: sessionId.toString(),
+    session_id: sessionId.toString(), // 문자열로 전송
     session_number: sessionNumber,
-    session_start_time: new Date(sessionStartTime).toISOString().replace('T', ' ').slice(0, 23),
+    session_start_time: new Date(sessionStartTime).toISOString().replace('T', ' ').slice(0, 23), // "YYYY-MM-DD HH:mm:ss.SSS" 형식
     is_engaged_session: isEngagedSession,
     interaction_count: interactionCount,
     page_url: window.location.href,
@@ -158,7 +158,7 @@ function updateSessionActivity() {
       
       // 인게이지 세션 이벤트 전송
       trackEvent('session_engaged', {
-        session_id: sessionId.toString(),
+        session_id: sessionId.toString(), // 문자열로 전송
         session_number: sessionNumber,
         engagement_time: Math.round(timeSpent / 1000),
         interaction_count: interactionCount,
@@ -195,10 +195,10 @@ function endSession(reason = 'page_exit') {
   const sessionDuration = Math.round((sessionEndTime - sessionStartTime) / 1000);
   
   const sessionEndData = {
-    session_id: sessionId.toString(),
+    session_id: sessionId.toString(), // 문자열로 전송
     session_number: sessionNumber,
-    session_start_time: new Date(sessionStartTime).toISOString().replace('T', ' ').slice(0, 23),
-    session_end_time: new Date(sessionEndTime).toISOString().replace('T', ' ').slice(0, 23),
+    session_start_time: new Date(sessionStartTime).toISOString().replace('T', ' ').slice(0, 23), // "YYYY-MM-DD HH:mm:ss.SSS" 형식
+    session_end_time: new Date(sessionEndTime).toISOString().replace('T', ' ').slice(0, 23), // "YYYY-MM-DD HH:mm:ss.SSS" 형식
     session_duration_seconds: sessionDuration,
     session_duration_minutes: Math.round(sessionDuration / 60 * 100) / 100,
     is_engaged_session: isEngagedSession,
@@ -293,9 +293,9 @@ function updateSuperProperties() {
   
   const superProperties = {
     // 세션 관련
-    session_id: sessionId,
+    session_id: sessionId ? sessionId.toString() : '', // 문자열로 전송
     session_number: sessionNumber,
-    session_start_time: sessionStartTime,
+    session_start_time: sessionStartTime ? new Date(sessionStartTime).toISOString().replace('T', ' ').slice(0, 23) : '', // "YYYY-MM-DD HH:mm:ss.SSS" 형식
     is_engaged_session: isEngagedSession,
     interaction_count: interactionCount,
     

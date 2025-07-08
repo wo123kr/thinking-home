@@ -405,6 +405,8 @@ function debugVideoTracking() {
   console.log('- 비디오 진행률 마일스톤:', getVideoProgressMilestones());
   console.log('- 현재 비디오 세션 수:', videoSessions.size);
   console.log('- ThinkingData SDK:', typeof window.te !== 'undefined' ? '로드됨' : '로드 안됨');
+  console.log('- YouTube API:', typeof window.YT !== 'undefined' ? '로드됨' : '로드 안됨');
+  console.log('- 비디오 추적 초기화:', isVideoTrackingInitialized);
   
   // 현재 페이지의 비디오 요소들 확인
   const videoIframes = detectVideoIframes();
@@ -418,17 +420,32 @@ function debugVideoTracking() {
       label: getVideoLabelName(iframe)
     });
   });
+  
+  // 수동으로 비디오 추적 실행
+  console.log('🎬 수동으로 비디오 추적 실행...');
+  trackVideoEvents();
 }
 
 // 전역 함수로 노출
 window.trackVideoEvents = trackVideoEvents;
 window.updateVideoTrackingConfig = updateVideoTrackingConfig;
 window.debugVideoTracking = debugVideoTracking;
+window.videoSessions = videoSessions;
+window.isVideoTrackingInitialized = isVideoTrackingInitialized;
+
+// 세션 활동 업데이트 함수
 window.updateSessionActivity = function() {
   // 세션 활동 업데이트 함수가 있으면 호출
   if (typeof window.updateSessionActivity === 'function') {
     window.updateSessionActivity();
   }
+};
+
+// 수동 비디오 추적 실행 함수
+window.forceVideoTracking = function() {
+  console.log('🎬 강제 비디오 추적 실행...');
+  isVideoTrackingInitialized = false; // 초기화 플래그 리셋
+  trackVideoEvents();
 };
 
 // DOM 로드 완료 후 자동 실행
@@ -449,11 +466,23 @@ window.addEventListener('load', function() {
   setTimeout(trackVideoEvents, 2000);
 });
 
+// 추가: 3초 후 한 번 더 시도
+setTimeout(function() {
+  console.log('🎬 3초 후 비디오 추적 재확인');
+  trackVideoEvents();
+}, 3000);
+
 // 추가: 5초 후 한 번 더 시도 (동적 콘텐츠 대응)
 setTimeout(function() {
   console.log('🎬 5초 후 비디오 추적 재확인');
   trackVideoEvents();
 }, 5000);
+
+// 추가: 10초 후 한 번 더 시도 (최종 시도)
+setTimeout(function() {
+  console.log('🎬 10초 후 비디오 추적 최종 시도');
+  trackVideoEvents();
+}, 10000);
 
 // ThinkingData 초기화 완료 이벤트 감지
 window.addEventListener('thinkingdata:ready', function() {
