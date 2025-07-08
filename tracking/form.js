@@ -254,7 +254,7 @@ document.addEventListener('input', function(event) {
   }
 });
 
-// �� 통합된 포커스 추적 (최적화된 시스템과 연동)
+// 🎯 통합된 포커스 추적 (최적화된 시스템과 연동)
 document.addEventListener('focusin', function(event) {
   const field = event.target;
   if (field.tagName === 'INPUT' || field.tagName === 'TEXTAREA') {
@@ -357,27 +357,6 @@ function getThinkingDataFormInfo(form) {
 }
 
 // 마스킹 함수들은 utils.js에서 가져와서 사용
-
-// 세션 활동 업데이트 (직접 전역 함수 호출)
-function updateSessionActivity() {
-  // 전역 함수가 정의되어 있고, 자기 자신이 아닌 경우에만 호출
-  if (typeof window.updateSessionActivity === 'function' && window.updateSessionActivity !== updateSessionActivity) {
-    try {
-      window.updateSessionActivity();
-    } catch (e) {
-      console.warn('📝 세션 활동 업데이트 오류:', e);
-    }
-  } else {
-    // 전역 함수가 없거나 자기 자신인 경우 기본 동작
-    try {
-      if (window.lastActivityTime) {
-        window.lastActivityTime = Date.now();
-      }
-    } catch (e) {
-      console.warn('📝 기본 세션 활동 업데이트 오류:', e);
-    }
-  }
-}
 
 // 디버깅용 함수
 function debugFormTracking() {
