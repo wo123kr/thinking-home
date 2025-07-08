@@ -157,10 +157,18 @@ function initializeYouTubePlayers() {
       iframe.id = `video_player_${index}`;
     }
     
+    // 접근성 개선을 위한 iframe 속성 설정
+    iframe.setAttribute('title', 'YouTube video player');
+    iframe.setAttribute('aria-label', 'YouTube video player');
+    
     console.log(`🎬 비디오 플레이어 초기화: ${iframe.id}`);
     
     try {
       const player = new YT.Player(iframe.id, {
+        // 접근성 개선을 위한 설정
+        host: 'https://www.youtube-nocookie.com', // 개인정보 보호 강화
+        rel: 0, // 관련 동영상 표시 안함
+        modestbranding: 1, // YouTube 로고 최소화
         events: {
           'onReady': function(event) {
             console.log(`✅ 비디오 플레이어 준비 완료: ${iframe.id}`);
@@ -434,6 +442,18 @@ if (document.readyState === 'loading') {
   console.log('🎬 DOM 이미 로드됨, 비디오 추적 시작');
   setTimeout(trackVideoEvents, 1000);
 }
+
+// 추가: 페이지 로드 완료 후 한 번 더 시도
+window.addEventListener('load', function() {
+  console.log('🎬 페이지 로드 완료, 비디오 추적 재확인');
+  setTimeout(trackVideoEvents, 2000);
+});
+
+// 추가: 5초 후 한 번 더 시도 (동적 콘텐츠 대응)
+setTimeout(function() {
+  console.log('🎬 5초 후 비디오 추적 재확인');
+  trackVideoEvents();
+}, 5000);
 
 // ThinkingData 초기화 완료 이벤트 감지
 window.addEventListener('thinkingdata:ready', function() {

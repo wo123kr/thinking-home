@@ -33,8 +33,8 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 <script src="https://cdn.jsdelivr.net/npm/thinkingdata-browser@2.0.3/thinkingdata.umd.min.js"></script>
 <script src="https://te-receiver-naver.thinkingdata.kr/te-sdk/latest/ta.js"></script>
 
-<!-- ThinkingData 트래킹 코드 -->
-<script defer src="https://cdn.jsdelivr.net/gh/wo123kr/webflow-tracking@main/core/thinking-data-init.js"></script>
+<!-- ThinkingData 트래킹 코드 (최신 버전) -->
+<script defer src="https://cdn.jsdelivr.net/gh/wo123kr/webflow-tracking@0fd140c/core/thinking-data-init.js"></script>
 
 <!-- 네이버 전환 추적 및 폼 제출 성공 이벤트 -->
 <script defer>
@@ -64,7 +64,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                     form_name: formName,
                     title: formTitle,
                     page_url: window.location.href,
-                    timestamp: Date.now()
+                    timestamp: new Date().toISOString().replace('T', ' ').slice(0, 23)
                 });
             }
             loadNaverConversionScript(conversionType);
@@ -97,8 +97,8 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
 **2단계: Footer Code 추가**
 ```html
-<!-- Webflow 추적 시스템 -->
-<script src="https://cdn.jsdelivr.net/gh/wo123kr/webflow-tracking@main/index.js"></script>
+<!-- Webflow 추적 시스템 (최신 버전) -->
+<script src="https://cdn.jsdelivr.net/gh/wo123kr/webflow-tracking@0fd140c/index.js"></script>
 ```
 
 ### 일반 웹사이트 사용자
@@ -111,8 +111,8 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     <script src="https://cdn.jsdelivr.net/npm/thinkingdata-browser@2.0.3/thinkingdata.umd.min.js"></script>
     <script src="https://te-receiver-naver.thinkingdata.kr/te-sdk/latest/ta.js"></script>
     
-    <!-- 추적 시스템 -->
-    <script src="https://cdn.jsdelivr.net/gh/wo123kr/webflow-tracking@main/index.js"></script>
+    <!-- 추적 시스템 (최신 버전) -->
+    <script src="https://cdn.jsdelivr.net/gh/wo123kr/webflow-tracking@0fd140c/index.js"></script>
 </head>
 <body>
     <!-- 웹사이트 콘텐츠 -->
@@ -162,17 +162,17 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
 ### 1. CDN 방식 (권장)
 ```html
-<script src="https://cdn.jsdelivr.net/gh/wo123kr/webflow-tracking@main/index.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/wo123kr/webflow-tracking@0fd140c/index.js"></script>
 ```
 
 ### 2. 특정 모듈만 로드
 ```html
 <!-- 코어 모듈 -->
-<script src="https://cdn.jsdelivr.net/gh/wo123kr/webflow-tracking@main/core/thinking-data-init.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/wo123kr/webflow-tracking@0fd140c/core/thinking-data-init.js"></script>
 
 <!-- 개별 추적 모듈 -->
-<script src="https://cdn.jsdelivr.net/gh/wo123kr/webflow-tracking@main/tracking/page-view.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/wo123kr/webflow-tracking@main/tracking/click.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/wo123kr/webflow-tracking@0fd140c/tracking/page-view.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/wo123kr/webflow-tracking@0fd140c/tracking/click.js"></script>
 ```
 
 ### 3. 로컬 설치
@@ -200,55 +200,60 @@ cd webflow-tracking
 | `te_form_submit` | 폼 제출 | `form_name`, `form_type`, `page_url` |
 | `te_scroll_depth` | 스크롤 깊이 | `scroll_depth_percentage`, `page_name` |
 | `te_video_play` | 비디오 재생 | `video_name`, `video_url`, `platform` |
-| `te_video_complete` | 비디오 완료 | `video_name`, `completion_rate`, `total_watch_time` |
+| `te_video_complete` | 비디오 완료 | `video_duration`, `total_watch_time` |
 | `te_popup_shown` | 팝업 표시 | `popup_type`, `popup_id` |
-| `te_popup_action` | 팝업 상호작용 | `action_type`, `close_method` |
-| `te_resource_download` | 리소스 다운로드 | `download_url`, `download_filename` |
-| `te_page_exit` | 페이지 종료 | `exit_type`, `total_visible_time`, `session_duration` |
+| `te_resource_download` | 리소스 다운로드 | `download_url`, `resource_type` |
+| `te_page_exit` | 페이지 종료 | `exit_type`, `total_visible_time` |
+| `te_session_start` | 세션 시작 | `session_id`, `session_start_time` |
+| `te_session_end` | 세션 종료 | `session_duration_seconds`, `end_reason` |
 
 ### 유저 속성
 | 속성명 | 설명 | 타입 |
 |--------|------|------|
-| `first_visit_timestamp` | 최초 방문 시점 | Number |
+| `first_visit_timestamp` | 최초 방문 시점 | String (ISO) |
 | `total_sessions` | 총 세션 수 | Number |
 | `is_returning_visitor` | 재방문자 여부 | Boolean |
-| `visitor_lifecycle_stage` | 생명주기 단계 | String |
 | `engagement_level` | 참여도 수준 | String |
-| `most_visited_section` | 가장 많이 방문한 섹션 | String |
+| `visitor_lifecycle_stage` | 생명주기 단계 | String |
 | `interested_topics` | 관심 주제 | Array |
+| `most_visited_section` | 가장 많이 방문한 섹션 | String |
 
 ---
 
 ## 🎛️ 설정 옵션
 
-### ThinkingData SDK 설정
+### 기본 설정
 ```javascript
+// ThinkingData 설정
 var config = {
-    appId: "b33016b8b26f4798aee67722ed4438be",
-    serverUrl: "https://te-receiver-naver.thinkingdata.kr/sync_js",
-    autoTrack: {
-        pageShow: true,  // 페이지 진입 자동 추적
-        pageHide: true   // 페이지 이탈 자동 추적
-    }
+  appId: "f43e15b9fb634d278845480f02c822f7",
+  serverUrl: "https://te-receiver-naver.thinkingdata.kr/sync_js",
+  autoTrack: {
+    pageShow: true,
+    pageHide: true
+  }
 };
 ```
 
-### 커스텀 설정
+### 세션 설정
 ```javascript
-// 페이지 분류 함수 커스터마이징
-window.getPageSection = function() {
-    const path = window.location.pathname;
-    if (path.includes('/product')) return 'product';
-    if (path.includes('/blog')) return 'blog';
-    return 'other';
-};
+// 세션 타임아웃 설정 (기본: 30분)
+window.sessionTimeout = 30 * 60 * 1000;
 
-// 폼 타입 분류 커스터마이징
-window.getFormType = function() {
-    const path = window.location.pathname;
-    if (path.includes('/contact')) return 'contact';
-    if (path.includes('/demo')) return 'demo';
-    return 'other';
+// 세션 추적 활성화/비활성화
+window.isSessionTrackingEnabled = true;
+```
+
+### 이벤트 필터링
+```javascript
+// 특정 이벤트만 수집
+window.trackingConfig = {
+  enableClickTracking: true,
+  enableScrollTracking: true,
+  enableFormTracking: true,
+  enableVideoTracking: true,
+  enablePopupTracking: true,
+  enableResourceTracking: true
 };
 ```
 
@@ -257,58 +262,73 @@ window.getFormType = function() {
 ## 🐛 디버깅
 
 ### 콘솔 로그 확인
-브라우저 개발자 도구 → Console에서 다음 메시지들을 확인하세요:
-
-```
-✅ ThinkingData SDK initialized
-🚀 Webflow Tracking System 시작...
-✅ 모든 모듈 로드 완료
-✅ All tracking events initialized
-```
-
-### 디버깅 함수 사용
 ```javascript
-// 비디오 추적 디버깅
-window.debugVideoTracking();
+// 디버깅 정보 출력
+window.debugTracking();
 
-// 팝업 추적 디버깅
-window.debugPopupTracking();
+// 세션 정보 확인
+window.debugSession();
 
-// 페이지 종료 추적 디버깅
-window.debugExitTracking();
-
-// 테스트 이벤트 전송
-window.testExitEvent();
+// 유저 속성 확인
+window.debugUserAttributes();
 ```
 
-### 네트워크 탭 확인
-- **URL**: `te-receiver-naver.thinkingdata.kr`
-- **메서드**: POST
-- **상태**: 200 OK
+### 이벤트 테스트
+```javascript
+// 테스트 이벤트 전송
+window.testTracking();
+
+// 페이지 종료 시뮬레이션
+window.testPageExit();
+```
+
+### ThinkingData SDK 상태 확인
+```javascript
+// SDK 로드 상태
+console.log('ThinkingData SDK:', typeof window.te !== 'undefined' ? '로드됨' : '로드 안됨');
+
+// 현재 설정 확인
+console.log('현재 설정:', window.te ? window.te.getSuperProperties() : '설정 없음');
+```
 
 ---
 
 ## 📈 성능 최적화
 
 ### 1. 모듈별 로딩
-필요한 모듈만 선택적으로 로드:
 ```html
-<!-- 기본 추적만 -->
-<script src="https://cdn.jsdelivr.net/gh/wo123kr/webflow-tracking@main/core/thinking-data-init.js"></script>
-
-<!-- 비디오 추적 추가 -->
-<script src="https://cdn.jsdelivr.net/gh/wo123kr/webflow-tracking@main/tracking/video.js"></script>
+<!-- 필요한 모듈만 로드 -->
+<script src="https://cdn.jsdelivr.net/gh/wo123kr/webflow-tracking@0fd140c/core/thinking-data-init.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/wo123kr/webflow-tracking@0fd140c/tracking/page-view.js"></script>
 ```
 
-### 2. 이벤트 중복 방지
-- SDK 자동 이벤트와 커스텀 이벤트 중복 방지
-- 동일한 이벤트의 중복 전송 방지
-- 페이지 종료 이벤트의 다중 전송 방식
+### 2. 이벤트 디바운싱
+- 스크롤 이벤트: 100ms 디바운싱
+- 클릭 이벤트: 즉시 처리
+- 페이지 종료: 다중 전송 방식으로 안정성 확보
 
-### 3. 메모리 최적화
-- 이벤트 리스너 정리
-- 불필요한 DOM 관찰자 해제
-- 주기적 메모리 정리
+### 3. 중복 실행 방지
+- 모든 모듈에 중복 실행 방지 플래그 적용
+- 무한 재귀 호출 방지 시스템
+
+---
+
+## 🔧 최근 업데이트
+
+### v2.1.0 (2025-02-24)
+- ✅ **데이터 타입 오류 완전 해결**
+  - 모든 시간 속성을 ISO 문자열 형식으로 통일
+  - null/undefined 값을 빈 문자열 또는 0으로 수정
+  - session_id를 문자열로 통일
+- ✅ **appId 업데이트**: `f43e15b9fb634d278845480f02c822f7`
+- ✅ **무한 재귀 호출 수정**: resource.js 문제 해결
+- ✅ **중복 추적 방지**: 모든 모듈에 안전장치 추가
+
+### v2.0.0 (2025-02-23)
+- ✅ **ThinkingData SDK v2.0.3 통합**
+- ✅ **자동 이벤트 수집 시스템**
+- ✅ **유저 속성 추적 시스템**
+- ✅ **페이지 종료 추적 강화**
 
 ---
 
@@ -316,18 +336,28 @@ window.testExitEvent();
 
 ### 버그 리포트
 1. GitHub Issues에서 버그 리포트
-2. 브라우저 콘솔 로그 첨부
-3. 재현 단계 상세 설명
+2. 콘솔 로그와 함께 상세한 설명 제공
+3. 재현 가능한 단계 명시
 
-### 기능 제안
-1. GitHub Issues에서 기능 제안
-2. 사용 사례 및 요구사항 설명
-3. 구현 우선순위 논의
+### 기능 요청
+1. 새로운 추적 기능 제안
+2. 기존 기능 개선 아이디어
+3. 성능 최적화 제안
 
-### 코드 기여
-1. Fork 후 개발 브랜치 생성
-2. 코드 작성 및 테스트
-3. Pull Request 생성
+### 개발 환경 설정
+```bash
+git clone https://github.com/wo123kr/webflow-tracking.git
+cd webflow-tracking
+# 로컬 서버에서 테스트
+```
+
+---
+
+## 📞 지원
+
+- **GitHub Issues**: [이슈 리포트](https://github.com/wo123kr/webflow-tracking/issues)
+- **문서**: 이 README 파일 참조
+- **예시**: 코드 내 주석 및 예시 참조
 
 ---
 
@@ -337,17 +367,6 @@ MIT License - 자유롭게 사용, 수정, 배포 가능
 
 ---
 
-## 🔗 관련 링크
-
-- [ThinkingData 공식 문서](https://docs.thinkingdata.cn/)
-- [JavaScript SDK 가이드](https://docs.thinkingdata.cn/ta-manual/latest/installation/installation_menu/client_sdk/js_sdk_installation/js_sdk_installation.html)
-- [GitHub 저장소](https://github.com/wo123kr/webflow-tracking)
-
----
-
-## 📞 지원
-
-문제가 있으시면 GitHub Issues를 통해 문의해주세요!
-
-**마지막 업데이트**: 2025년 2월 24일
-**버전**: 2.1.1 
+**최신 버전**: `0fd140c` (2025-02-24)  
+**ThinkingData SDK**: v2.0.3  
+**지원 환경**: 모든 모던 브라우저 (IE 9+) 

@@ -34,13 +34,14 @@
                 return;
             }
             
-            // thinking-data-init.js가 이미 로드되었는지 확인
-            if (window.thinkingDataInitialized) {
-                console.log('ℹ️ thinking-data-init.js가 이미 로드되어 있음, 추가 모듈만 로드');
-            } else {
-                console.log('⚠️ thinking-data-init.js가 로드되지 않음, Head에서 먼저 로드해주세요.');
-                return;
-            }
+                // thinking-data-init.js가 이미 로드되었는지 확인
+    if (window.thinkingDataInitialized) {
+        console.log('ℹ️ thinking-data-init.js가 이미 로드되어 있음, 추가 모듈만 로드');
+    } else {
+        console.log('⚠️ thinking-data-init.js가 로드되지 않음, 3초 후 재시도...');
+        setTimeout(loadAllModules, 3000);
+        return;
+    }
             
             // 1. 코어 모듈들 로드 (thinking-data-init.js 제외)
             await loadModule(`${baseUrl}/core/utils.js`);
@@ -197,6 +198,22 @@ window.debugVideoTracking = function() {
     YT: typeof window.YT,
     YTPlayer: window.YT ? typeof window.YT.Player : 'N/A'
   });
+  
+  // 비디오 추적 모듈 상태 확인
+  console.log('🎬 비디오 추적 모듈 상태:', {
+    trackVideoEvents: typeof window.trackVideoEvents,
+    videoSessions: window.videoSessions ? window.videoSessions.size : 'N/A',
+    isVideoTrackingInitialized: window.isVideoTrackingInitialized
+  });
+  
+  // 수동으로 비디오 추적 실행
+  if (typeof window.trackVideoEvents === 'function') {
+    console.log('🎬 수동으로 비디오 추적 실행...');
+    window.trackVideoEvents();
+  } else {
+    console.error('❌ trackVideoEvents 함수를 찾을 수 없음');
+  }
+};
   
   // 비디오 세션 상태 확인
   if (window.videoSessions) {
