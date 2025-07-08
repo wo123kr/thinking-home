@@ -31,6 +31,8 @@ function getFileSize(url) {
   }
 }
 
+let resourceTrackingInitialized = false;
+
 export function initResourceTracking() {
   document.addEventListener('click', (event) => {
     const target = event.target;
@@ -68,9 +70,8 @@ export function initResourceTracking() {
  * 리소스 다운로드 추적 시작
  */
 function trackResourceDownloads() {
-  if (resourceTrackingInitialized) {
-    return;
-  }
+  if (resourceTrackingInitialized) return;
+  resourceTrackingInitialized = true;
 
   console.log('📥 리소스 다운로드 추적 초기화...');
 
@@ -127,7 +128,6 @@ function trackResourceDownloads() {
     }
   });
 
-  resourceTrackingInitialized = true;
   console.log('✅ 리소스 다운로드 추적 초기화 완료');
 }
 
@@ -329,7 +329,7 @@ function initializeResourceTracking() {
     });
   } else {
     // DOM이 이미 로드된 경우
-    console.log('�� DOM 이미 로드됨, 리소스 다운로드 추적 시작');
+    console.log('📥 DOM 이미 로드됨, 리소스 다운로드 추적 시작');
     trackResourceDownloads();
   }
 }
@@ -353,7 +353,7 @@ if (!window.thinkingDataResourceListenerAdded) {
 if (!window.loadResourceListenerAdded) {
   window.loadResourceListenerAdded = true;
   window.addEventListener('load', function() {
-    console.log('�� 페이지 로드 완료, 리소스 다운로드 추적 확인');
+    console.log('📥 페이지 로드 완료, 리소스 다운로드 추적 확인');
     // 이미 초기화되었으면 재실행하지 않음
     if (!resourceTrackingInitialized) {
       trackResourceDownloads();
