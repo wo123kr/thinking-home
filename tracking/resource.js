@@ -204,24 +204,16 @@ function getFileSize(url) {
   }
 }
 
-// 세션 활동 업데이트
+// 세션 활동 업데이트 (전역 함수 사용)
 function updateSessionActivity() {
-  // 중복 호출 방지
-  if (window.resourceSessionActivityUpdating) {
-    return;
+  // 전역 updateSessionActivity 함수가 있으면 호출
+  if (typeof window.updateSessionActivity === 'function') {
+    try {
+      window.updateSessionActivity();
+    } catch (e) {
+      console.warn('📥 세션 활동 업데이트 오류:', e);
+    }
   }
-  
-  window.resourceSessionActivityUpdating = true;
-  
-  // 전역 updateSessionActivity 함수가 있고, 현재 함수와 다른 경우에만 호출
-  if (typeof window.updateSessionActivity === 'function' && window.updateSessionActivity !== updateSessionActivity) {
-    window.updateSessionActivity();
-  }
-  
-  // 짧은 지연 후 플래그 리셋
-  setTimeout(() => {
-    window.resourceSessionActivityUpdating = false;
-  }, 100);
 }
 
 // 설정 업데이트 함수 (런타임에 설정 변경 가능)

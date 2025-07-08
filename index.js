@@ -5,7 +5,7 @@
  * 사용법:
  * <script src="https://cdn.jsdelivr.net/gh/[username]/webflow-tracking@main/index.js"></script>
  * 
- * 주의: ThinkingData SDK는 Webflow Head에서 먼저 로드되어야 합니다.
+ * 주의: thinking-data-init.js가 먼저 로드되어야 합니다.
  */
 
 (function() {
@@ -30,19 +30,19 @@
         try {
             // ThinkingData SDK가 이미 로드되었는지 확인
             if (!window.thinkingdata) {
-                console.error('❌ ThinkingData SDK가 로드되지 않았습니다. Webflow Head에서 먼저 로드해주세요.');
+                console.error('❌ ThinkingData SDK가 로드되지 않았습니다. thinking-data-init.js를 먼저 로드해주세요.');
                 return;
             }
             
-                // thinking-data-init.js가 이미 로드되었는지 확인
-    if (window.thinkingDataInitialized) {
-        console.log('ℹ️ thinking-data-init.js가 이미 로드되어 있음, 추가 모듈만 로드');
-    } else {
-        console.log('⚠️ thinking-data-init.js가 로드되지 않음, 직접 초기화 시도...');
-        // 직접 ThinkingData 초기화 시도
-        initializeThinkingDataDirectly();
-        return;
-    }
+            // thinking-data-init.js가 이미 로드되었는지 확인
+            if (window.thinkingDataInitialized) {
+                console.log('ℹ️ thinking-data-init.js가 이미 로드되어 있음, 추가 모듈만 로드');
+            } else {
+                console.log('⚠️ thinking-data-init.js가 로드되지 않음, 직접 초기화 시도...');
+                // 직접 ThinkingData 초기화 시도
+                initializeThinkingDataDirectly();
+                return;
+            }
             
             // 1. 코어 모듈들 로드 (thinking-data-init.js 제외)
             await loadModule(`${baseUrl}/core/utils.js`);
@@ -142,11 +142,12 @@
             console.log('✅ 페이지 종료 추적 초기화 완료');
         }
         
-        // 유저 속성 추적 초기화
-        if (typeof window.initializeUserAttributeTracker === 'function' && !window.userAttributeTrackingInitialized) {
-            window.initializeUserAttributeTracker();
+        // 유저 속성 추적 초기화 (user-attributes.js에서 자동 생성됨)
+        if (window.userTracker && !window.userAttributeTrackingInitialized) {
             window.userAttributeTrackingInitialized = true;
-            console.log('✅ 유저 속성 추적 초기화 완료');
+            console.log('✅ 유저 속성 추적 초기화 완료 (자동 생성됨)');
+        } else if (!window.userTracker) {
+            console.log('⚠️ 유저 속성 추적기가 아직 생성되지 않음');
         }
         
         // 중복 방지 플래그 설정
@@ -215,7 +216,7 @@
 
 console.log('🚀 Webflow Additional Tracking System 시작...');
 
-// 전역 디버깅 함수
+// 전역 디버깅 함수들
 window.debugVideoTracking = function() {
   console.log('🔍 비디오 추적 디버깅 시작...');
   
@@ -260,23 +261,8 @@ window.debugVideoTracking = function() {
     console.error('❌ trackVideoEvents 함수를 찾을 수 없음');
   }
 };
-  
-  // 비디오 세션 상태 확인
-  if (window.videoSessions) {
-    console.log('🎬 비디오 세션:', window.videoSessions.size);
-    window.videoSessions.forEach((session, key) => {
-      console.log(`  - ${key}:`, session);
-    });
-  }
-  
-  // 수동으로 비디오 추적 재시작
-  if (typeof window.trackVideoEvents === 'function') {
-    console.log('🔄 비디오 추적 재시작...');
-    window.trackVideoEvents();
-  }
-};
 
-// 팝업 추적 디버깅 함수 추가
+// 팝업 추적 디버깅 함수
 window.debugPopupTracking = function() {
   console.log('🎪 팝업 추적 디버깅 시작...');
   
@@ -298,25 +284,6 @@ window.debugPopupTracking = function() {
       visible: isElementVisible(popup),
       tracked: popup.dataset.tracked || 'false'
     });
-    
-    // 혜택 확인하기 버튼 확인
-    const benefitButton = popup.querySelector('a[href*="thinkingdata-onestore-special-promotion"], .button-3');
-    if (benefitButton) {
-      console.log(`  - 혜택 확인하기 버튼:`, {
-        text: benefitButton.textContent ? benefitButton.textContent.trim() : '',
-        href: benefitButton.href,
-        classList: Array.from(benefitButton.classList)
-      });
-    }
-    
-    // 닫기 버튼 확인
-    const closeButton = popup.querySelector('.link-block-2, .close, .modal-close');
-    if (closeButton) {
-      console.log(`  - 닫기 버튼:`, {
-        text: closeButton.textContent ? closeButton.textContent.trim() : '',
-        classList: Array.from(closeButton.classList)
-      });
-    }
   });
   
   // 수동으로 팝업 추적 재시작
@@ -326,7 +293,7 @@ window.debugPopupTracking = function() {
   }
 };
 
-// 클릭 추적 디버깅 함수 추가
+// 클릭 추적 디버깅 함수
 window.debugClickTracking = function() {
   console.log('🖱️ 클릭 추적 디버깅 시작...');
   
@@ -341,17 +308,6 @@ window.debugClickTracking = function() {
   const clickableElements = document.querySelectorAll('a, button, [role="button"], .btn, .button, .w-button, .link-block');
   console.log('🖱️ 클릭 가능한 요소 발견:', clickableElements.length);
   
-  // ThinkingData 특화 버튼들 확인
-  const demoButtons = document.querySelectorAll('a[href*="demo"], button:contains("데모")');
-  const contactButtons = document.querySelectorAll('a[href*="contact"], button:contains("문의")');
-  const learnMoreButtons = document.querySelectorAll('a:contains("자세히 알아보기"), button:contains("자세히")');
-  
-  console.log('🖱️ 특화 버튼들:', {
-    demo: demoButtons.length,
-    contact: contactButtons.length,
-    learnMore: learnMoreButtons.length
-  });
-  
   // 수동으로 클릭 추적 재시작
   if (typeof window.trackClickEvents === 'function') {
     console.log('🔄 클릭 추적 재시작...');
@@ -359,7 +315,7 @@ window.debugClickTracking = function() {
   }
 };
 
-// 리소스 다운로드 추적 디버깅 함수 추가
+// 리소스 다운로드 추적 디버깅 함수
 window.debugResourceTracking = function() {
   console.log('📥 리소스 다운로드 추적 디버깅 시작...');
   
@@ -377,20 +333,9 @@ window.debugResourceTracking = function() {
   downloadLinks.forEach((link, index) => {
     console.log(`📥 다운로드 링크 ${index + 1}:`, {
       href: link.href,
-              text: link.textContent ? link.textContent.trim() : '',
+      text: link.textContent ? link.textContent.trim() : '',
       filename: link.href.split('/').pop()
     });
-  });
-  
-  // ThinkingData 특화 리소스 확인
-  const apiDocs = document.querySelectorAll('a[href*="api"], a[href*="docs"]');
-  const guides = document.querySelectorAll('a[href*="guide"], a[href*="onboarding"]');
-  const cases = document.querySelectorAll('a[href*="case"], a[href*="example"]');
-  
-  console.log('📥 특화 리소스들:', {
-    apiDocs: apiDocs.length,
-    guides: guides.length,
-    cases: cases.length
   });
   
   // 수동으로 리소스 추적 재시작
@@ -400,7 +345,7 @@ window.debugResourceTracking = function() {
   }
 };
 
-// 스크롤 추적 디버깅 함수 추가
+// 스크롤 추적 디버깅 함수
 window.debugScrollTracking = function() {
   console.log('📜 스크롤 추적 디버깅 시작...');
   
@@ -489,7 +434,4 @@ window.addEventListener('load', function() {
     console.log('🔍 자동 디버깅 정보:');
     window.debugVideoTracking();
   }, 5000);
-});
-
-// 전역 함수로 노출
-window.debugVideoTracking = window.debugVideoTracking; 
+}); 

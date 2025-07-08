@@ -194,7 +194,9 @@ function initializeYouTubePlayers() {
             });
             
             // 플레이어 준비 완료 이벤트
-            trackEvent('te_video_ready', videoData);
+            if (typeof window.te !== 'undefined' && typeof window.te.track === 'function') {
+              window.te.track('te_video_ready', videoData);
+            }
           },
           'onStateChange': function(event) {
             const session = videoSessions.get(iframe.id);
@@ -219,16 +221,18 @@ function initializeYouTubePlayers() {
                 session.start_time = Date.now();
                 session.last_position = currentTime;
                 
-                trackEvent('te_video_play', {
-                  video_name: session.video_name,
-                  video_url: session.video_url,
-                  video_id: session.video_id,
-                  video_position: currentTime,
-                  video_duration: duration,
-                  completion_rate: completionRate,
-                  is_replay: currentTime > 5,
-                  platform: session.platform
-                });
+                if (typeof window.te !== 'undefined' && typeof window.te.track === 'function') {
+                  window.te.track('te_video_play', {
+                    video_name: session.video_name,
+                    video_url: session.video_url,
+                    video_id: session.video_id,
+                    video_position: currentTime,
+                    video_duration: duration,
+                    completion_rate: completionRate,
+                    is_replay: currentTime > 5,
+                    platform: session.platform
+                  });
+                }
                 break;
                 
               case YT.PlayerState.PAUSED:
@@ -241,17 +245,19 @@ function initializeYouTubePlayers() {
                 session.pause_count++;
                 session.completion_rate = Math.max(session.completion_rate, completionRate);
                 
-                trackEvent('te_video_pause', {
-                  video_name: session.video_name,
-                  video_url: session.video_url,
-                  video_id: session.video_id,
-                  video_position: currentTime,
-                  video_duration: duration,
-                  completion_rate: session.completion_rate,
-                  pause_count: session.pause_count,
-                  total_watch_time: session.total_watch_time,
-                  platform: session.platform
-                });
+                if (typeof window.te !== 'undefined' && typeof window.te.track === 'function') {
+                  window.te.track('te_video_pause', {
+                    video_name: session.video_name,
+                    video_url: session.video_url,
+                    video_id: session.video_id,
+                    video_position: currentTime,
+                    video_duration: duration,
+                    completion_rate: session.completion_rate,
+                    pause_count: session.pause_count,
+                    total_watch_time: session.total_watch_time,
+                    platform: session.platform
+                  });
+                }
                 
                 // 진행률 마일스톤 체크
                 checkVideoProgress(session, completionRate);
@@ -264,62 +270,70 @@ function initializeYouTubePlayers() {
                   session.total_watch_time += watchTime;
                 }
                 
-                trackEvent('te_video_ended', {
-                  video_name: session.video_name,
-                  video_url: session.video_url,
-                  video_id: session.video_id,
-                  video_position: currentTime,
-                  video_duration: duration,
-                  completion_rate: 100,
-                  total_watch_time: session.total_watch_time,
-                  pause_count: session.pause_count,
-                  seek_count: session.seek_count,
-                  ended_naturally: true,
-                  platform: session.platform
-                });
-                
-                // 완료 이벤트
-                trackEvent('te_video_complete', {
-                  video_name: session.video_name,
-                  video_url: session.video_url,
-                  video_id: session.video_id,
-                  video_duration: duration,
-                  total_watch_time: session.total_watch_time,
-                  pause_count: session.pause_count,
-                  seek_count: session.seek_count,
-                  completion_rate: 100,
-                  platform: session.platform
-                });
+                if (typeof window.te !== 'undefined' && typeof window.te.track === 'function') {
+                  window.te.track('te_video_ended', {
+                    video_name: session.video_name,
+                    video_url: session.video_url,
+                    video_id: session.video_id,
+                    video_position: currentTime,
+                    video_duration: duration,
+                    completion_rate: 100,
+                    total_watch_time: session.total_watch_time,
+                    pause_count: session.pause_count,
+                    seek_count: session.seek_count,
+                    ended_naturally: true,
+                    platform: session.platform
+                  });
+                  
+                  // 완료 이벤트
+                  window.te.track('te_video_complete', {
+                    video_name: session.video_name,
+                    video_url: session.video_url,
+                    video_id: session.video_id,
+                    video_duration: duration,
+                    total_watch_time: session.total_watch_time,
+                    pause_count: session.pause_count,
+                    seek_count: session.seek_count,
+                    completion_rate: 100,
+                    platform: session.platform
+                  });
+                }
                 break;
                 
               case YT.PlayerState.BUFFERING:
-                trackEvent('te_video_buffering', {
-                  video_name: session.video_name,
-                  video_url: session.video_url,
-                  video_id: session.video_id,
-                  video_position: currentTime,
-                  video_duration: duration,
-                  platform: session.platform
-                });
+                if (typeof window.te !== 'undefined' && typeof window.te.track === 'function') {
+                  window.te.track('te_video_buffering', {
+                    video_name: session.video_name,
+                    video_url: session.video_url,
+                    video_id: session.video_id,
+                    video_position: currentTime,
+                    video_duration: duration,
+                    platform: session.platform
+                  });
+                }
                 break;
                 
               case YT.PlayerState.CUED:
-                trackEvent('te_video_cued', {
-                  video_name: session.video_name,
-                  video_url: session.video_url,
-                  video_id: session.video_id,
-                  platform: session.platform
-                });
+                if (typeof window.te !== 'undefined' && typeof window.te.track === 'function') {
+                  window.te.track('te_video_cued', {
+                    video_name: session.video_name,
+                    video_url: session.video_url,
+                    video_id: session.video_id,
+                    platform: session.platform
+                  });
+                }
                 break;
             }
           },
           'onError': function(event) {
             console.error('❌ 비디오 플레이어 오류:', event.data);
-            trackEvent('te_video_error', {
-              video_id: iframe.id,
-              error_code: event.data,
-              platform: iframe.dataset.videoPlatform || 'youtube'
-            });
+            if (typeof window.te !== 'undefined' && typeof window.te.track === 'function') {
+              window.te.track('te_video_error', {
+                video_id: iframe.id,
+                error_code: event.data,
+                platform: iframe.dataset.videoPlatform || 'youtube'
+              });
+            }
           }
         }
       });
@@ -362,15 +376,17 @@ function checkVideoProgress(session, currentRate) {
   
   milestones.forEach(milestone => {
     if (currentRate >= milestone && session.completion_rate < milestone) {
-      trackEvent('te_video_progress', {
-        video_name: session.video_name,
-        video_url: session.video_url,
-        video_id: session.video_id,
-        completion_rate: milestone,
-        milestone_reached: `${milestone}%`,
-        total_watch_time: session.total_watch_time,
-        platform: session.platform
-      });
+      if (typeof window.te !== 'undefined' && typeof window.te.track === 'function') {
+        window.te.track('te_video_progress', {
+          video_name: session.video_name,
+          video_url: session.video_url,
+          video_id: session.video_id,
+          completion_rate: milestone,
+          milestone_reached: `${milestone}%`,
+          total_watch_time: session.total_watch_time,
+          platform: session.platform
+        });
+      }
     }
   });
 }
@@ -433,13 +449,7 @@ window.debugVideoTracking = debugVideoTracking;
 window.videoSessions = videoSessions;
 window.isVideoTrackingInitialized = isVideoTrackingInitialized;
 
-// 세션 활동 업데이트 함수
-window.updateSessionActivity = function() {
-  // 세션 활동 업데이트 함수가 있으면 호출
-  if (typeof window.updateSessionActivity === 'function') {
-    window.updateSessionActivity();
-  }
-};
+// 세션 활동 업데이트 함수 (제거 - 무한 재귀 방지)
 
 // 수동 비디오 추적 실행 함수
 window.forceVideoTracking = function() {
