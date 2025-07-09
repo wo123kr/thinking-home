@@ -5,33 +5,36 @@
  * - 전역 오염 없음, 테스트/디버깅 함수 제거
  */
 
-import { trackEvent } from '../core/utils.js';
+import { trackEvent, addTETimeProperties } from '../core/utils.js';
 
 let exitTrackingInitialized = false;
 
 function getExitData(type, extra = {}) {
-  const now = Date.now();
-  return {
+    const now = Date.now();
+  const exitData = {
     exit_type: type,
-    page_url: window.location.href,
-    page_title: document.title,
+          page_url: window.location.href,
+          page_title: document.title,
     user_agent: navigator.userAgent,
     timestamp: now,
     ...extra
   };
-}
-
+  
+  // TE 시간 형식 속성 추가
+  return addTETimeProperties(exitData);
+    }
+    
 function handleBeforeUnload() {
   trackEvent('te_page_exit', getExitData('beforeunload'));
-}
+  }
 
 function handleUnload() {
   trackEvent('te_browser_exit', getExitData('unload'));
-}
+  }
 
 function handlePageHide(event) {
   trackEvent('te_page_final_exit', getExitData('pagehide', { is_persisted: event.persisted }));
-}
+      }
 
 function handleVisibilityChange() {
   if (document.visibilityState === 'hidden') {
@@ -46,7 +49,7 @@ export function initExitTracking() {
   if (exitTrackingInitialized) {
     console.log('ℹ️ 페이지 종료 추적이 이미 초기화됨');
     return;
-  }
+    }
   window.addEventListener('beforeunload', handleBeforeUnload);
   window.addEventListener('unload', handleUnload);
   window.addEventListener('pagehide', handlePageHide);

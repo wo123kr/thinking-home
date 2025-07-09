@@ -5,8 +5,7 @@
  * - SPA 라우트 변경 등에서 재호출 가능
  */
 
-// core/utils.js에서 필요시 유틸리티 import (trackEvent 등)
-// import { trackEvent } from '../core/utils.js';
+import { addBotInfoToEvent, addTETimeProperties } from '../core/utils.js';
 
 /**
  * 페이지뷰 추적 함수
@@ -14,10 +13,21 @@
  */
 export function trackPageView(customProps = {}) {
   if (window.ta && typeof window.ta.quick === 'function') {
+    // 봇 정보 추가
+    const propsWithBot = addBotInfoToEvent(customProps);
+    
+    // TE 시간 형식 속성 추가
+    const propsWithTETime = addTETimeProperties(propsWithBot);
+    
     window.ta.quick('autoTrack', {
-      ...customProps
+      ...propsWithTETime
     });
-    console.log('✅ ta_pageview(pageview) 이벤트 전송', customProps);
+    console.log('✅ ta_pageview(pageview) 이벤트 전송', {
+      ...propsWithTETime,
+      is_bot: propsWithTETime.is_bot,
+      bot_type: propsWithTETime.bot_type,
+      current_time_te: propsWithTETime.current_time_te
+    });
   } else {
     console.warn('⚠️ ThinkingData SDK(ta.quick)가 준비되지 않음');
   }

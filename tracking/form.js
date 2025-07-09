@@ -2,7 +2,7 @@
  * 폼 제출 추적 모듈 - ThinkingData 홈페이지 최적화
  */
 
-import { maskEmail, maskPhone, maskName } from '../core/utils.js';
+import { maskEmail, maskPhone, maskName, addTETimeProperties } from '../core/utils.js';
 import { updateSessionActivity } from '../core/session-manager.js';
 
 // 폼 제출/오류 추적 메인 함수
@@ -61,8 +61,11 @@ export function initFormTracking() {
       form_submission_time: new Date().toISOString().replace('T', ' ').slice(0, 23)
     };
     
-    trackEvent('te_form_submit', formSubmitData);
-    console.log('📝 폼 제출 이벤트 전송:', formSubmitData);
+    // TE 시간 형식 속성 추가
+    const formSubmitDataWithTETime = addTETimeProperties(formSubmitData);
+    
+    trackEvent('te_form_submit', formSubmitDataWithTETime);
+    console.log('📝 폼 제출 이벤트 전송:', formSubmitDataWithTETime);
     
     // 폼 제출 결과 추적 (AJAX 요청인 경우)
     setTimeout(() => {
@@ -108,8 +111,11 @@ export function initFormTracking() {
         error_time: new Date().toISOString().replace('T', ' ').slice(0, 23)
       };
       
-      trackEvent('te_form_submit_error', errorData);
-      console.log('📝 폼 제출 오류 이벤트 전송:', errorData);
+      // TE 시간 형식 속성 추가
+      const errorDataWithTETime = addTETimeProperties(errorData);
+      
+      trackEvent('te_form_submit_error', errorDataWithTETime);
+      console.log('📝 폼 제출 오류 이벤트 전송:', errorDataWithTETime);
     }
   }
 
@@ -232,7 +238,10 @@ function sendFieldInteractionEvent(field, fieldKey, state, triggerType) {
      fieldData.length_category = getLengthCategory(state.length);
    }
 
-  trackEvent('te_form_field_interaction', fieldData);
+  // TE 시간 형식 속성 추가
+  const fieldDataWithTETime = addTETimeProperties(fieldData);
+
+  trackEvent('te_form_field_interaction', fieldDataWithTETime);
   
   console.log(`📝 필드 상호작용 추적 (${triggerType}):`, field.name, `길이: ${state.length}`);
 }

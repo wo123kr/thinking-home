@@ -3,6 +3,8 @@
  * 세션 생성, 유지, 종료 및 관련 이벤트 전송을 담당
  */
 
+import { trackEvent, addBotInfoToEvent, addTETimeProperties } from './utils.js';
+
 // 초기화 상태 추적
 let isInitialized = false;
 let initializationPromise = null;
@@ -152,58 +154,54 @@ function initializeSession(config = {}) {
  * 새 세션 시작 (GA4/Amplitude 방식)
  */
 function startNewSession() {
+  const now = Date.now();
   sessionId = generateSessionId();
   sessionNumber++;
-  sessionStartTime = Date.now();
-  sessionEndTime = null;
+  sessionStartTime = now;
   isEngagedSession = false;
   interactionCount = 0;
-  lastActivityTime = Date.now();
+  lastActivityTime = now;
 
-  // 로컬스토리지에 세션 정보 저장
+  // 세션 정보 저장
   safeSetItem('te_session_id', sessionId.toString());
   safeSetItem('te_session_number', sessionNumber.toString());
   safeSetItem('te_session_start_time', sessionStartTime.toString());
   safeSetItem('te_last_activity_time', lastActivityTime.toString());
+  safeSetItem('te_is_engaged_session', isEngagedSession.toString());
 
-  // 공통 속성 업데이트
-  updateSuperProperties();
-
-  // 세션 시작 시 날짜/UTM/사용자 체크
-  checkDateChange();
-  checkUtmChange();
-  checkUserChange();
-
-  // 세션 시작 이벤트 전송 (GA4/Amplitude 방식)
+  // 세션 시작 이벤트 데이터 준비
   const sessionStartData = {
-    session_id: sessionId.toString(), // 문자열로 전송
+    session_id: sessionId,
     session_number: sessionNumber,
-    session_start_time: new Date(sessionStartTime).toISOString().replace('T', ' ').slice(0, 23), // "YYYY-MM-DD HH:mm:ss.SSS" 형식
     is_engaged_session: isEngagedSession,
-    interaction_count: interactionCount,
+    session_start_time: formatTimestamp(new Date(sessionStartTime)),
     page_url: window.location.href,
     page_title: document.title,
+    referrer: document.referrer || '',
     user_agent: navigator.userAgent,
-    screen_resolution: `${screen.width}x${screen.height}`,
-    viewport_size: `${window.innerWidth}x${window.innerHeight}`,
     device_type: getDeviceType(),
-    browser_info: getBrowserInfo(),
-    session_timeout_minutes: Math.round(sessionTimeout / 60000)
+    browser_info: getBrowserInfo()
   };
 
-  // referrer 정보가 있을 때만 추가
-  if (document.referrer && document.referrer.trim() !== '') {
-    sessionStartData.referrer = document.referrer;
-  }
+  // 봇 정보 추가
+  const sessionStartDataWithBot = addBotInfoToEvent(sessionStartData);
+  
+  // TE 시간 형식 속성 추가
+  const sessionStartDataWithTETime = addTETimeProperties(sessionStartDataWithBot);
 
-  safeTrackEvent('te_session_start', sessionStartData);
-  sessionEventsTracked.session_start = true;
+  // 세션 시작 이벤트 전송
+  safeTrackEvent('te_session_start', sessionStartDataWithTETime);
 
-  console.log('🔄 새 세션 시작:', {
+  console.log('✅ 새 세션 시작:', {
     sessionId,
     sessionNumber,
-    startTime: new Date(sessionStartTime).toLocaleString()
+    isBot: sessionStartDataWithTETime.is_bot,
+    botType: sessionStartDataWithTETime.bot_type,
+    sessionStartTimeTE: sessionStartDataWithTETime.session_start_time_te
   });
+
+  // 세션 통계 업데이트
+  updateSessionStatistics(0);
 }
 
 /**
@@ -473,8 +471,11 @@ function updateSuperProperties() {
       }
     });
     
-    window.te.setSuperProperties(superProperties);
-    console.log('✅ 공통 속성 업데이트 완료');
+    // TE 시간 형식 속성 추가
+    const superPropertiesWithTETime = addTETimeProperties(superProperties);
+    
+    window.te.setSuperProperties(superPropertiesWithTETime);
+    console.log('✅ 공통 속성 업데이트 완료 (TE 시간 형식 포함)');
   } catch (error) {
     console.error('공통 속성 업데이트 실패:', error);
   }

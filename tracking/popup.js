@@ -10,9 +10,9 @@ function getPopupInfo(node) {
     popup_id: node.id || node.getAttribute('data-popup-id') || 'unknown',
     popup_class: node.className || '',
     popup_type: node.getAttribute('data-popup-type') || 'modal',
-    page_url: window.location.href,
-    page_title: document.title
-  };
+                page_url: window.location.href,
+                page_title: document.title
+              };
 }
 
 function trackPopupShown(node) {
@@ -95,9 +95,9 @@ export function initPopupTracking() {
       // 현재 열려있는 팝업을 찾아서 추적
       const openPopup = document.querySelector('.modal[style*="display: block"], .popup[style*="display: block"], .modal-container[style*="display: block"]');
       trackPopupAction('popup_close', openPopup || document.body, { close_method: 'escape_key' });
-    }
-  });
-}
+      }
+    });
+  }
 
 export function trackPopup() {
   document.addEventListener('click', (event) => {

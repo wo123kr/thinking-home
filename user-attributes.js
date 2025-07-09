@@ -3,6 +3,8 @@
  * 사용자 행동 패턴, 생명주기, 참여도 등을 추적 (중복 전송 최소화)
  */
 
+import { addTETimeProperties } from './core/utils.js';
+
 class UserAttributeTracker {
     constructor() {
         console.log('👤 유저 속성 추적 시스템 초기화 시작... (v2.0 - 최적화됨)');
@@ -297,13 +299,41 @@ class UserAttributeTracker {
         const utmSource = urlParams.get('utm_source') || this.inferTrafficSource();
         const utmCampaign = urlParams.get('utm_campaign') || '';
         const referrerDomain = document.referrer ? new URL(document.referrer).hostname : 'direct';
-        
+
+        // 검색 키워드 추출 함수 (q 우선, 없으면 네이버 query)
+        function extractSearchKeyword(referrer) {
+            try {
+                const url = new URL(referrer);
+                // 대부분 검색엔진은 q=검색어
+                if (url.searchParams.has('q')) {
+                    return url.searchParams.get('q');
+                }
+                // 네이버만 query=검색어
+                if (url.hostname.includes('naver')) {
+                    return url.searchParams.get('query');
+                }
+            } catch (e) {
+                return null;
+            }
+            return null;
+        }
+        const firstSearchKeyword = document.referrer ? extractSearchKeyword(document.referrer) : null;
+
         // 최초 방문 시에만 기록 (즉시 전송)
         this.sendImmediate('userSetOnce', {
             first_utm_source: utmSource,
             first_utm_campaign: utmCampaign,
-            first_referrer_domain: referrerDomain
+            first_referrer_domain: referrerDomain,
+            first_search_keyword: firstSearchKeyword || ''
         });
+        
+        // TE 시간 형식 속성 추가
+        const timeProperties = addTETimeProperties({
+            first_visit_timestamp: Date.now(),
+            first_visit_time: new Date().toISOString()
+        });
+        
+        this.sendImmediate('userSetOnce', timeProperties);
         
         // 사용한 유입 소스 누적 (중복 제거)
         this.sendImmediate('userUniqAppend', {
@@ -314,6 +344,7 @@ class UserAttributeTracker {
         this.attributes.first_utm_source = utmSource;
         this.attributes.first_utm_campaign = utmCampaign;
         this.attributes.first_referrer_domain = referrerDomain;
+        this.attributes.first_search_keyword = firstSearchKeyword || '';
         
         this.attributes.traffic_sources_used = this.attributes.traffic_sources_used || [];
         if (!this.attributes.traffic_sources_used.includes(utmSource)) {
@@ -572,6 +603,16 @@ class UserAttributeTracker {
             Object.assign(this.attributes, updates);
         }
         
+        // 시간 관련 속성 업데이트
+        const timeUpdates = addTETimeProperties({
+            preferred_visit_time: timeOfDay,
+            last_visit_day_of_week: dayOfWeek,
+            last_visit_timestamp: Date.now(),
+            last_visit_time: new Date().toISOString()
+        });
+        
+        this.queueUpdate('userSet', timeUpdates);
+        
         console.log('🕐 updateTimeAttributes 완료');
     }
     
@@ -601,6 +642,17 @@ class UserAttributeTracker {
         const averageDuration = Math.round(this.attributes.total_time_spent / totalSessions);
         this.queueUpdate('userSet', { average_session_duration: averageDuration });
         this.attributes.average_session_duration = averageDuration;
+        
+        // 세션 종료 시 시간 지표 업데이트
+        const sessionTimeUpdates = addTETimeProperties({
+            total_time_spent: sessionDuration,
+            longest_session_duration: sessionDuration,
+            average_session_duration: averageDuration,
+            session_end_timestamp: Date.now(),
+            session_end_time: new Date().toISOString()
+        });
+        
+        this.queueUpdate('userSet', sessionTimeUpdates);
         
         // 즉시 전송
         this.flushUpdates();
@@ -839,20 +891,20 @@ export function initUserAttributes() {
     trackerInstance.updateSessionTimeMetrics(sessionDuration);
     trackerInstance.endPageEngagement();
   });
-  let currentPath = window.location.pathname;
+    let currentPath = window.location.pathname;
   setInterval(() => {
-    if (window.location.pathname !== currentPath) {
-      currentPath = window.location.pathname;
+        if (window.location.pathname !== currentPath) {
+            currentPath = window.location.pathname;
       trackerInstance.updatePageInterests();
       trackerInstance.startPageEngagement();
-    }
-  }, 1000);
+        }
+    }, 1000);
   console.log('✅ 유저 속성 추적 시스템 초기화 완료');
-}
+    }
 
 export function debugUserAttributes() {
   if (trackerInstance) trackerInstance.debugUserAttributes();
-}
+    }
 
 export function flushUserAttributes() {
   if (trackerInstance) trackerInstance.flushUpdates();
