@@ -4,6 +4,7 @@
  */
 
 import { updateSessionActivity } from '../core/session-manager.js';
+import { trackFullScroll } from '../user-attributes.js';
 
 const scrollDepthThresholds = [25, 50, 75, 90, 100];
   let scrollDepthTracked = new Set();
@@ -66,6 +67,11 @@ export function initScrollTracking() {
         };
         if (window.te && typeof window.te.track === 'function') {
           window.te.track('te_scroll_depth', eventData);
+        }
+        
+        // 🚀 100% 스크롤 시 유저 속성에 추적
+        if (threshold === 100) {
+          trackFullScroll();
         }
       }
     });

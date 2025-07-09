@@ -412,6 +412,11 @@ class UserAttributeTracker {
         // ThinkingData 특화 페이지 정보 업데이트
         this.updateThinkingDataPageInfo(currentPath, pageCategory, sectionName);
         
+        // 🚀 자동으로 관련 속성들 업데이트
+        this.setThinkingDataSpecificAttributes();
+        this.updateLifecycleStage();
+        this.updateInteractionFrequency();
+        
         this.saveAttributes();
     }
     
@@ -908,4 +913,29 @@ export function debugUserAttributes() {
 
 export function flushUserAttributes() {
   if (trackerInstance) trackerInstance.flushUpdates();
+}
+
+// 🚀 전역 함수들 export (tracking 모듈에서 호출용)
+export function trackFormSubmission() {
+  if (trackerInstance) trackerInstance.trackFormSubmission();
+}
+
+export function trackDownload() {
+  if (trackerInstance) trackerInstance.trackDownload();
+}
+
+export function trackVideoInteraction() {
+  if (trackerInstance) trackerInstance.trackVideoInteraction();
+}
+
+export function trackFullScroll() {
+  if (trackerInstance) trackerInstance.trackFullScroll();
+}
+
+export function trackPopupInteraction() {
+  if (trackerInstance) trackerInstance.trackPopupInteraction();
+}
+
+export function trackExternalLinkClick() {
+  if (trackerInstance) trackerInstance.trackExternalLinkClick();
 } 

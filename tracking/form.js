@@ -4,6 +4,7 @@
 
 import { maskEmail, maskPhone, maskName, addTETimeProperties } from '../core/utils.js';
 import { updateSessionActivity } from '../core/session-manager.js';
+import { trackFormSubmission } from '../user-attributes.js';
 
 // 폼 제출/오류 추적 메인 함수
 export function initFormTracking() {
@@ -66,6 +67,9 @@ export function initFormTracking() {
     
     trackEvent('te_form_submit', formSubmitDataWithTETime);
     console.log('📝 폼 제출 이벤트 전송:', formSubmitDataWithTETime);
+    
+    // 🚀 유저 속성에 폼 제출 추적
+    trackFormSubmission();
     
     // 폼 제출 결과 추적 (AJAX 요청인 경우)
     setTimeout(() => {

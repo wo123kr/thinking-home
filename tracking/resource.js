@@ -4,6 +4,7 @@
  */
 
 import { updateSessionActivity } from '../core/session-manager.js';
+import { trackDownload } from '../user-attributes.js';
 
 const DOWNLOAD_EXTENSIONS = [
   '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
@@ -63,6 +64,9 @@ export function initResourceTracking() {
     if (window.te && typeof window.te.track === 'function') {
       window.te.track('resource_download', eventData);
     }
+    
+    // 🚀 유저 속성에 다운로드 추적
+    trackDownload();
   });
 }
 
