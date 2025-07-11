@@ -87,6 +87,8 @@ function initSDK(config) {
     window.te.init(config);
 
             // 공통 이벤트 속성 설정
+    const sessionId = localStorage.getItem('te_session_id') || null;
+    const sessionNumber = localStorage.getItem('te_session_number') || 0;
     const superProperties = {
       "channel": "webflow",
       "platform": "web",
@@ -94,7 +96,9 @@ function initSDK(config) {
       "page_category": getPageCategory(),
       "page_section": getPageSection(),
       "source": getTrafficSource(),
-      "timestamp": new Date()
+      "timestamp": new Date(),
+      session_id: sessionId,
+      session_number: sessionNumber
     };
     
     window.te.setSuperProperties(superProperties);

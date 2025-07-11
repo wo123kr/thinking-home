@@ -783,4 +783,17 @@ export function trackingLog(...args) {
   if (window.trackingConfig && window.trackingConfig.debug && window.trackingConfig.debug.showConsoleLogs) {
     console.log(...args);
   }
+}
+
+// 세션 정보가 포함된 슈퍼 프로퍼티 갱신 함수
+export function updateSuperPropertiesWithSession(sessionId, sessionNumber, extraProps = {}) {
+  if (window.te && typeof window.te.setSuperProperties === 'function') {
+    const baseProps = {
+      session_id: sessionId,
+      session_number: sessionNumber,
+      ...extraProps
+    };
+    window.te.setSuperProperties(baseProps);
+    trackingLog('🪪 setSuperProperties 갱신:', baseProps);
+  }
 } 

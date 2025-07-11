@@ -3,7 +3,7 @@
  * 세션 생성, 유지, 종료 및 관련 이벤트 전송을 담당
  */
 
-import { trackEvent, addBotInfoToEvent, addTETimeProperties, trackingLog } from './utils.js';
+import { trackEvent, addBotInfoToEvent, addTETimeProperties, trackingLog, updateSuperPropertiesWithSession } from './utils.js';
 
 // 초기화 상태 추적
 let isInitialized = false;
@@ -169,6 +169,9 @@ function startNewSession() {
   safeSetItem('te_last_activity_time', lastActivityTime.toString());
   safeSetItem('te_is_engaged_session', isEngagedSession.toString());
 
+  // 🪪 세션 정보로 슈퍼 프로퍼티 갱신
+  updateSuperPropertiesWithSession(sessionId, sessionNumber);
+
   // 세션 시작 이벤트 데이터 준비
   const sessionStartData = {
     session_id: sessionId,
@@ -208,10 +211,15 @@ function startNewSession() {
  * 기존 세션 복원
  */
 function restoreSession(existingSessionId, existingStartTime) {
-  sessionId = existingSessionId;
-  sessionStartTime = existingStartTime;
+  sessionId = parseInt(existingSessionId);
+  sessionStartTime = parseInt(existingStartTime);
   sessionNumber = parseInt(safeGetItem('te_session_number') || '1');
+  isEngagedSession = safeGetItem('te_is_engaged_session') === 'true';
+  interactionCount = 0;
   lastActivityTime = Date.now();
+  
+  // 🪪 세션 정보로 슈퍼 프로퍼티 갱신
+  updateSuperPropertiesWithSession(sessionId, sessionNumber);
   
   // 로컬스토리지 업데이트
   safeSetItem('te_last_activity_time', lastActivityTime.toString());
