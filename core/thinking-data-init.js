@@ -144,3 +144,5 @@ if (typeof module !== 'undefined' && module.exports) {
         getPageInfo
     };
 }
+
+export { initSDK, isSDKInitialized };
