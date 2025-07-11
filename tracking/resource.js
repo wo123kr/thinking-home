@@ -5,6 +5,7 @@
 
 import { updateSessionActivity } from '../core/session-manager.js';
 import { trackDownload } from '../user-attributes.js';
+import { trackingLog } from '../core/utils.js';
 
 const DOWNLOAD_EXTENSIONS = [
   '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
@@ -77,7 +78,7 @@ export function initResourceTracking() {
   if (resourceTrackingInitialized) return;
   resourceTrackingInitialized = true;
 
-    console.log('📥 리소스 다운로드 추적 초기화...');
+    trackingLog('📥 리소스 다운로드 추적 초기화...');
 
     // 다운로드 확장자 목록
     const downloadExtensions = getDownloadExtensions();
@@ -124,7 +125,7 @@ export function initResourceTracking() {
           // ThinkingData 이벤트 전송
           if (typeof window.te !== 'undefined' && window.te.track) {
             window.te.track('resource_download', eventData);
-            console.log('📥 리소스 다운로드 이벤트 전송:', eventData);
+            trackingLog('📥 리소스 다운로드 이벤트 전송:', eventData);
           } else {
             console.warn('📥 ThinkingData SDK가 로드되지 않음');
           }
@@ -132,7 +133,7 @@ export function initResourceTracking() {
       }
     });
 
-    console.log('✅ 리소스 다운로드 추적 초기화 완료');
+    trackingLog('✅ 리소스 다운로드 추적 초기화 완료');
   }
 
   /**
@@ -323,12 +324,12 @@ export function initResourceTracking() {
     // DOM 로드 완료 후 자동 실행
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', function() {
-        console.log('📥 DOM 로드 완료, 리소스 다운로드 추적 시작');
+        trackingLog('📥 DOM 로드 완료, 리소스 다운로드 추적 시작');
         trackResourceDownloads();
       });
     } else {
       // DOM이 이미 로드된 경우
-      console.log('📥 DOM 이미 로드됨, 리소스 다운로드 추적 시작');
+      trackingLog('📥 DOM 이미 로드됨, 리소스 다운로드 추적 시작');
       trackResourceDownloads();
     }
   }
@@ -340,7 +341,7 @@ export function initResourceTracking() {
   if (!window.thinkingDataResourceListenerAdded) {
     window.thinkingDataResourceListenerAdded = true;
     window.addEventListener('thinkingdata:ready', function() {
-      console.log('📥 ThinkingData 초기화 완료, 리소스 다운로드 추적 확인');
+      trackingLog('📥 ThinkingData 초기화 완료, 리소스 다운로드 추적 확인');
       // 이미 초기화되었으면 재실행하지 않음
       if (!resourceTrackingInitialized) {
         trackResourceDownloads();
@@ -352,7 +353,7 @@ export function initResourceTracking() {
   if (!window.loadResourceListenerAdded) {
     window.loadResourceListenerAdded = true;
     window.addEventListener('load', function() {
-      console.log('📥 페이지 로드 완료, 리소스 다운로드 추적 확인');
+      trackingLog('📥 페이지 로드 완료, 리소스 다운로드 추적 확인');
       // 이미 초기화되었으면 재실행하지 않음
       if (!resourceTrackingInitialized) {
         trackResourceDownloads();

@@ -5,7 +5,7 @@
  * - 전역 오염 없음, 테스트/디버깅 함수 제거
  */
 
-import { trackEvent, addTETimeProperties } from '../core/utils.js';
+import { trackEvent, addTETimeProperties, trackingLog } from '../core/utils.js';
 
 let exitTrackingInitialized = false;
 
@@ -47,7 +47,7 @@ function handleVisibilityChange() {
  */
 export function initExitTracking() {
   if (exitTrackingInitialized) {
-    console.log('ℹ️ 페이지 종료 추적이 이미 초기화됨');
+    trackingLog('ℹ️ 페이지 종료 추적이 이미 초기화됨');
     return;
     }
   window.addEventListener('beforeunload', handleBeforeUnload);
@@ -55,5 +55,5 @@ export function initExitTracking() {
   window.addEventListener('pagehide', handlePageHide);
   document.addEventListener('visibilitychange', handleVisibilityChange);
   exitTrackingInitialized = true;
-  console.log('✅ 페이지 종료(이탈) 트래킹 활성화');
+  trackingLog('✅ 페이지 종료(이탈) 트래킹 활성화');
 }

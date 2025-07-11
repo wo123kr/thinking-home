@@ -65,7 +65,7 @@ let isInitialized = false;
 function initSDK(config) {
   // 중복 초기화 방지
   if (isInitialized) {
-    console.log('ℹ️ ThinkingData SDK가 이미 초기화됨');
+    if (window.trackingLog) window.trackingLog('ℹ️ ThinkingData SDK가 이미 초기화됨');
     return true;
   }
 
@@ -73,8 +73,10 @@ function initSDK(config) {
     // SDK 존재 여부 확인
             if (typeof window.thinkingdata === 'undefined') {
                 console.error('❌ ThinkingData SDK가 로드되지 않았습니다.');
-                console.log('💡 SDK를 먼저 로드해주세요:');
-                console.log('<script src="https://cdn.jsdelivr.net/npm/thinkingdata-browser@2.0.3/thinkingdata.umd.min.js"></script>');
+                    if (window.trackingLog) {
+                        window.trackingLog('💡 SDK를 먼저 로드해주세요:');
+                        window.trackingLog('<script src="https://cdn.jsdelivr.net/npm/thinkingdata-browser@2.0.3/thinkingdata.umd.min.js"></script>');
+                    }
                 return false;
             }
 
@@ -97,9 +99,11 @@ function initSDK(config) {
     
     window.te.setSuperProperties(superProperties);
 
-    console.log('✅ ThinkingData SDK 초기화 완료');
-            console.log('📊 설정:', config);
-            console.log('🎯 공통 속성:', superProperties);
+        if (window.trackingLog) {
+            window.trackingLog('✅ ThinkingData SDK 초기화 완료');
+            window.trackingLog('📊 설정:', config);
+            window.trackingLog('🎯 공통 속성:', superProperties);
+        }
 
             // 초기화 완료 이벤트 발생
             window.dispatchEvent(new CustomEvent('thinkingdata:ready'));

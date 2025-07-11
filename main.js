@@ -1,7 +1,7 @@
 import config from './config.js';
 import { initSDK, isSDKInitialized } from './core/thinking-data-init.js';
 import { initSession } from './core/session-manager.js';
-import { registerGlobalUtils } from './core/utils.js';
+import { registerGlobalUtils, trackingLog } from './core/utils.js';
 import { initClickTracking } from './tracking/click.js';
 import { initExitTracking } from './tracking/exit.js';
 import { initScrollTracking } from './tracking/scroll.js';
@@ -19,7 +19,7 @@ async function main() {
   // config를 전역으로 설정 (로그 제어용)
   window.trackingConfig = config;
   
-  console.log('🚀 ThinkingData 추적 시스템 초기화 시작...');
+  trackingLog('🚀 ThinkingData 추적 시스템 초기화 시작...');
   
   try {
     // 1. 유틸리티 함수 전역 등록 (하위 호환성)
@@ -59,7 +59,7 @@ async function main() {
       }
     });
 
-    console.log('✅ 모든 트래킹 모듈 초기화 완료');
+    trackingLog('✅ 모든 트래킹 모듈 초기화 완료');
   } catch (error) {
     console.error('❌ 추적 시스템 초기화 실패:', error);
   }

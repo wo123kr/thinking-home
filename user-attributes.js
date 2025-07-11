@@ -3,11 +3,11 @@
  * 사용자 행동 패턴, 생명주기, 참여도 등을 추적 (중복 전송 최소화)
  */
 
-import { addTETimeProperties } from './core/utils.js';
+import { addTETimeProperties, trackingLog } from './core/utils.js';
 
 class UserAttributeTracker {
     constructor() {
-        console.log('👤 유저 속성 추적 시스템 초기화 시작... (v2.0 - 최적화됨)');
+        trackingLog('👤 유저 속성 추적 시스템 초기화 시작... (v2.0 - 최적화됨)');
         
         // ThinkingData SDK 확인
         if (typeof window.te === 'undefined') {
@@ -37,14 +37,14 @@ class UserAttributeTracker {
         
         // 이미 초기화된 세션인지 확인 (강화된 체크)
         if (localStorage.getItem(this.initKey)) {
-            console.log('ℹ️ 이미 이 세션에서 초기화됨, 스킵');
+            trackingLog('ℹ️ 이미 이 세션에서 초기화됨, 스킵');
             this.isInitialized = true;
             return;
         }
         
         // 전역 중복 방지 플래그 확인
         if (window.userTrackerSessionInitialized) {
-            console.log('ℹ️ 다른 세션에서 이미 초기화됨, 스킵');
+            trackingLog('ℹ️ 다른 세션에서 이미 초기화됨, 스킵');
             this.isInitialized = true;
             return;
         }
@@ -180,7 +180,7 @@ class UserAttributeTracker {
         
         // 전역 중복 방지 플래그 확인 (강화된 체크)
         if (window.userAttributeInitialized || localStorage.getItem('te_user_initialized')) {
-            console.log('ℹ️ 다른 인스턴스에서 이미 초기화됨, 스킵');
+            trackingLog('ℹ️ 다른 인스턴스에서 이미 초기화됨, 스킵');
             this.isInitialized = true;
             return;
         }
@@ -895,7 +895,7 @@ export function initUserAttributes() {
       trackerInstance.startPageEngagement();
         }
     }, 1000);
-  console.log('✅ 유저 속성 추적 시스템 초기화 완료');
+      trackingLog('✅ 유저 속성 추적 시스템 초기화 완료');
     }
 
 export function debugUserAttributes() {

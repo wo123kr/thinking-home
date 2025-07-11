@@ -5,6 +5,7 @@
 
 import { updateSessionActivity } from '../core/session-manager.js';
 import { trackFullScroll } from '../user-attributes.js';
+import { trackingLog } from '../core/utils.js';
 
 const scrollDepthThresholds = [25, 50, 75, 90, 100];
   let scrollDepthTracked = new Set();
@@ -89,7 +90,7 @@ function trackScrollDepth() {
     return;
   }
 
-  console.log('📜 스크롤 깊이 추적 초기화...');
+  trackingLog('📜 스크롤 깊이 추적 초기화...');
 
     function handleScroll() {
       // 세션 활동 업데이트 (전역 함수 호출)
@@ -123,7 +124,7 @@ function trackScrollDepth() {
           // ThinkingData 이벤트 전송
           if (typeof window.te !== 'undefined' && window.te.track) {
             window.te.track('te_scroll_depth', eventData);
-            console.log('📜 스크롤 깊이 이벤트 전송:', eventData);
+            trackingLog('📜 스크롤 깊이 이벤트 전송:', eventData);
           } else {
             console.warn('📜 ThinkingData SDK가 로드되지 않음');
           }
@@ -139,7 +140,7 @@ function trackScrollDepth() {
     });
 
     scrollTrackingInitialized = true;
-    console.log('✅ 스크롤 깊이 추적 초기화 완료');
+    trackingLog('✅ 스크롤 깊이 추적 초기화 완료');
   }
 
   // 전역 함수로 노출
@@ -154,12 +155,12 @@ function trackScrollDepth() {
     // DOM 로드 완료 후 자동 실행
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', function() {
-        console.log('📜 DOM 로드 완료, 스크롤 깊이 추적 시작');
+        trackingLog('📜 DOM 로드 완료, 스크롤 깊이 추적 시작');
         trackScrollDepth();
       });
     } else {
       // DOM이 이미 로드된 경우
-      console.log('📜 DOM 이미 로드됨, 스크롤 깊이 추적 시작');
+      trackingLog('📜 DOM 이미 로드됨, 스크롤 깊이 추적 시작');
       trackScrollDepth();
     }
   }
@@ -171,7 +172,7 @@ function trackScrollDepth() {
   if (!window.thinkingDataScrollListenerAdded) {
     window.thinkingDataScrollListenerAdded = true;
     window.addEventListener('thinkingdata:ready', function() {
-      console.log('📜 ThinkingData 초기화 완료, 스크롤 깊이 추적 확인');
+      trackingLog('📜 ThinkingData 초기화 완료, 스크롤 깊이 추적 확인');
       // 이미 초기화되었으면 재실행하지 않음
       if (!scrollTrackingInitialized) {
         trackScrollDepth();
@@ -183,7 +184,7 @@ function trackScrollDepth() {
   if (!window.loadScrollListenerAdded) {
     window.loadScrollListenerAdded = true;
     window.addEventListener('load', function() {
-      console.log('📜 페이지 로드 완료, 스크롤 깊이 추적 확인');
+      trackingLog('📜 페이지 로드 완료, 스크롤 깊이 추적 확인');
       // 이미 초기화되었으면 재실행하지 않음
       if (!scrollTrackingInitialized) {
         trackScrollDepth();
@@ -200,5 +201,5 @@ function trackScrollDepth() {
         window.thinkingdata.track('scroll_depth', { percent: scrollPercent });
       }
     });
-    console.log('✅ 스크롤 트래킹 활성화');
+    trackingLog('✅ 스크롤 트래킹 활성화');
   }

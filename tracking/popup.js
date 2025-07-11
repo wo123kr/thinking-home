@@ -4,6 +4,7 @@
  */
 
 import { updateSessionActivity } from '../core/session-manager.js';
+import { trackingLog } from '../core/utils.js';
 
 function getPopupInfo(node) {
   return {
@@ -108,5 +109,5 @@ export function trackPopup() {
       window.thinkingdata.track('popup_close', { popup_id: event.target.id });
     }
   });
-  console.log('✅ 팝업 트래킹 활성화');
+  trackingLog('✅ 팝업 트래킹 활성화');
 }

@@ -3,7 +3,7 @@
  * 세션 생성, 유지, 종료 및 관련 이벤트 전송을 담당
  */
 
-import { trackEvent, addBotInfoToEvent, addTETimeProperties } from './utils.js';
+import { trackEvent, addBotInfoToEvent, addTETimeProperties, trackingLog } from './utils.js';
 
 // 초기화 상태 추적
 let isInitialized = false;
@@ -79,7 +79,7 @@ function initializeSession(config = {}) {
   }
   
   if (isInitialized) {
-    console.log('🔄 세션 관리자가 이미 초기화됨');
+    trackingLog('🔄 세션 관리자가 이미 초기화됨');
     return Promise.resolve();
   }
 
@@ -88,7 +88,7 @@ function initializeSession(config = {}) {
   }
 
   initializationPromise = new Promise((resolve, reject) => {
-    console.log('🔄 세션 관리자 초기화 시작...');
+    trackingLog('🔄 세션 관리자 초기화 시작...');
 
     // ThinkingData SDK 확인 및 재시도 로직
     function checkAndInitialize() {
@@ -136,7 +136,7 @@ function initializeSession(config = {}) {
         }
 
         isInitialized = true;
-        console.log('✅ 세션 관리자 초기화 완료 (안전성 강화)');
+        trackingLog('✅ 세션 관리자 초기화 완료 (안전성 강화)');
         resolve();
       } catch (error) {
         console.error('세션 초기화 실패:', error);
@@ -192,7 +192,7 @@ function startNewSession() {
   // 세션 시작 이벤트 전송
   safeTrackEvent('te_session_start', sessionStartDataWithTETime);
 
-  console.log('✅ 새 세션 시작:', {
+      trackingLog('✅ 새 세션 시작:', {
     sessionId,
     sessionNumber,
     isBot: sessionStartDataWithTETime.is_bot,
@@ -221,7 +221,7 @@ function restoreSession(existingSessionId, existingStartTime) {
   checkUtmChange();
   checkUserChange();
 
-  console.log('🔄 기존 세션 복원:', {
+      trackingLog('🔄 기존 세션 복원:', {
     sessionId,
     sessionNumber,
     startTime: new Date(sessionStartTime).toLocaleString(),

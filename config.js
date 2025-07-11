@@ -52,13 +52,11 @@ const config = {
     trackValidationErrors: true
   },
 
-
-
   // 디버그 설정
   debug: {
     enabled: false, // 운영환경에서는 false, 개발환경에서는 true
     logLevel: 'warn', // 'error', 'warn', 'info', 'debug'
-    showConsoleLogs: false // 우리가 만든 console.log들 제어
+    showConsoleLogs: true // 우리가 만든 console.log들 제어 (테스트용)
   }
 };
 

@@ -5,7 +5,7 @@
  * - SPA 라우트 변경 등에서 재호출 가능
  */
 
-import { addBotInfoToEvent, addTETimeProperties } from '../core/utils.js';
+import { addBotInfoToEvent, addTETimeProperties, trackingLog } from '../core/utils.js';
 
 /**
  * 페이지뷰 추적 함수
@@ -22,7 +22,7 @@ export function trackPageView(customProps = {}) {
     window.ta.quick('autoTrack', {
       ...propsWithTETime
     });
-    console.log('✅ ta_pageview(pageview) 이벤트 전송', {
+    trackingLog('✅ ta_pageview(pageview) 이벤트 전송', {
       ...propsWithTETime,
       is_bot: propsWithTETime.is_bot,
       bot_type: propsWithTETime.bot_type,
