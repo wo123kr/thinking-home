@@ -599,8 +599,8 @@ const sessionManager = {
   debug: debugSession
 };
 
-// 브라우저 환경에서만 전역 등록
-if (typeof window !== 'undefined') {
+// 브라우저 환경에서만 전역 등록 (중복 방지)
+if (typeof window !== 'undefined' && !window.sessionManager) {
   window.sessionManager = sessionManager;
 }
 
