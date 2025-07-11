@@ -599,8 +599,10 @@ const sessionManager = {
   debug: debugSession
 };
 
-// 전역 객체에 등록 (하위 호환성)
-window.sessionManager = sessionManager;
+// 브라우저 환경에서만 전역 등록
+if (typeof window !== 'undefined') {
+  window.sessionManager = sessionManager;
+}
 
 /**
  * 세션 초기화 함수 (외부 노출용)
