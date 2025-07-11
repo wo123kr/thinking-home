@@ -41,13 +41,7 @@ jobs:
       
     - name: 🔐 Setup Google Service Account
       run: |
-        pwd
-        ls -la
-        mkdir -p credentials
-        ls -la credentials/
-        echo "${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}" > credentials/service-account-key.json
-        ls -la credentials/
-        echo "GOOGLE_APPLICATION_CREDENTIALS=$PWD/credentials/service-account-key.json" >> $GITHUB_ENV
+        echo "GOOGLE_APPLICATION_CREDENTIALS_JSON=${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}" >> $GITHUB_ENV
         echo "✅ Google Service Account 설정 완료"
         
     - name: 🔑 Setup ThinkingData credentials
