@@ -174,7 +174,7 @@ function startNewSession() {
     session_id: sessionId,
     session_number: sessionNumber,
     is_engaged_session: isEngagedSession,
-    session_start_time: formatTimestamp(new Date(sessionStartTime)),
+    session_start_time: sessionStartTime,
     page_url: window.location.href,
     page_title: document.title,
     referrer: document.referrer || '',
