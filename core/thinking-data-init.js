@@ -62,7 +62,7 @@ let isInitialized = false;
  * @param {Object} config - SDK 설정 객체
  * @returns {boolean} 초기화 성공 여부
  */
-export function initSDK(config) {
+function initSDK(config) {
   // 중복 초기화 방지
   if (isInitialized) {
     console.log('ℹ️ ThinkingData SDK가 이미 초기화됨');
@@ -82,7 +82,10 @@ export function initSDK(config) {
     window.te = window.thinkingdata;
     
     // SDK 초기화
-    window.te.init(config);
+    window.te.init({
+      ...config,
+      showLog: false // 콘솔 로그 비활성화
+    });
 
             // 공통 이벤트 속성 설정
     const superProperties = {
@@ -116,7 +119,7 @@ export function initSDK(config) {
  * SDK가 초기화되었는지 확인
  * @returns {boolean} 초기화 여부
  */
-export function isSDKInitialized() {
+function isSDKInitialized() {
   return isInitialized;
 }
 
@@ -124,11 +127,20 @@ export function isSDKInitialized() {
  * 페이지 정보 가져오기
  * @returns {Object} 페이지 정보 객체
  */
-export function getPageInfo() {
+function getPageInfo() {
   return {
     type: getPageType(),
     category: getPageCategory(),
     section: getPageSection(),
     source: getTrafficSource()
   };
+}
+
+// Node.js 환경에서 사용할 수 있도록 export
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+        initSDK,
+        isSDKInitialized,
+        getPageInfo
+    };
 }
