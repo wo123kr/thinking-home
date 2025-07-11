@@ -99,6 +99,24 @@ jobs:
         echo "✅ 데이터 동기화 완료"
         echo "sync_status=success" >> $GITHUB_OUTPUT
         
+    - name: 🚀 Send to ThinkingData
+      id: thinkingdata
+      run: |
+        echo "🎯 ThinkingData 전송 시작"
+        echo "📊 수집된 데이터 확인:"
+        ls -la exports/ || echo "exports 폴더가 없습니다"
+        
+        if [ -f "main.js" ]; then
+          echo "✅ main.js 실행 중..."
+          node main.js
+          echo "✅ ThinkingData 전송 완료"
+          echo "thinkingdata_status=success" >> $GITHUB_OUTPUT
+        else
+          echo "❌ main.js를 찾을 수 없습니다"
+          echo "thinkingdata_status=failed" >> $GITHUB_OUTPUT
+          exit 1
+        fi
+        
     - name: 📝 Upload logs
       uses: actions/upload-artifact@v4
       if: always()
@@ -110,7 +128,7 @@ jobs:
         retention-days: 30
         
     - name: 🔔 Notify on success
-      if: success() && steps.sync.outputs.sync_status == 'success'
+      if: success() && steps.sync.outputs.sync_status == 'success' && steps.thinkingdata.outputs.thinkingdata_status == 'success'
       uses: slackapi/slack-github-action@v1.24.0
       with:
         channel-id: ${{ secrets.SLACK_CHANNEL_ID }}
@@ -135,6 +153,10 @@ jobs:
                   {
                     "type": "mrkdwn",
                     "text": "*동기화 타입:*\n${{ github.event.inputs.sync_type || 'yesterday' }}"
+                  },
+                  {
+                    "type": "mrkdwn",
+                    "text": "*ThinkingData 전송:*\n✅ 성공"
                   },
                   {
                     "type": "mrkdwn",
