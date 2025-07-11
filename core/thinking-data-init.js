@@ -84,7 +84,7 @@ function initSDK(config) {
     // SDK 초기화
     window.te.init({
       ...config,
-      showLog: false // 콘솔 로그 비활성화
+      showLog: true // 디버깅을 위해 콘솔 로그 활성화
     });
 
             // 공통 이벤트 속성 설정
