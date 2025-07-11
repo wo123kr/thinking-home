@@ -50,7 +50,9 @@ jobs:
       run: |
         echo "TE_APP_ID=${{ secrets.TE_APP_ID }}" >> $GITHUB_ENV
         echo "TE_SERVER_URL=${{ secrets.TE_SERVER_URL }}" >> $GITHUB_ENV
+        echo "SLACK_CHANNEL_ID=${{ secrets.SLACK_CHANNEL_ID }}" >> $GITHUB_ENV
         echo "✅ ThinkingData 인증 정보 설정 완료"
+        echo "🔍 Slack Channel ID 확인: ${{ secrets.SLACK_CHANNEL_ID }}"
         
     - name: 📊 Run data sync
       id: sync
