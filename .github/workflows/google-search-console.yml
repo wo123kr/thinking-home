@@ -1,0 +1,46 @@
+name: Google Search Console → ThinkingData 자동 연동
+
+on:
+  schedule:
+    - cron: '0 18 * * *'  # 매일 오전 3시(KST, UTC+9 → 18시)
+  workflow_dispatch:      # 수동 실행도 허용
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Node.js 설치
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Google 서비스 계정 키 파일 생성
+        run: |
+          echo "${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}" > service-account.json
+
+      - name: 환경변수 설정
+        run: |
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$PWD/service-account.json" >> $GITHUB_ENV
+          echo "TE_SERVER_URL=${{ secrets.TE_SERVER_URL }}" >> $GITHUB_ENV
+          echo "TE_APP_ID=${{ secrets.TE_APP_ID }}" >> $GITHUB_ENV
+
+      - name: 의존성 설치
+        run: npm ci
+
+      - name: Google Search Console → ThinkingData 동기화 실행
+        run: node google-search-console.js
+
+      # (선택) Slack 알림
+      # - name: Slack 알림
+      #   uses: slackapi/slack-github-action@v1.25.0
+      #   with:
+      #     payload: |
+      #       {
+      #         "text": "Google Search Console → TE 동기화 완료 :white_check_mark:"
+      #       }
+      #   env:
+      #     SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+      #     SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }} 
