@@ -1,5 +1,5 @@
-const https = require('https');
-const http = require('http');
+import https from 'https';
+import http from 'http';
 
 /**
  * Node.js 환경에서 ThinkingData HTTP API를 사용하여 데이터를 전송하는 클래스
