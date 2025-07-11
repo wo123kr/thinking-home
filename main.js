@@ -16,6 +16,9 @@ import { trackPageView } from './tracking/pageview.js';
  * 모든 트래킹 모듈의 진입점
  */
 async function main() {
+  // config를 전역으로 설정 (로그 제어용)
+  window.trackingConfig = config;
+  
   console.log('🚀 ThinkingData 추적 시스템 초기화 시작...');
   
   try {

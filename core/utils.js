@@ -777,9 +777,10 @@ export function convertTimePropertyToTE(properties = {}, propertyName) {
   return properties;
 }
 
-// 트래킹 로그 전용 함수 (운영환경에서는 로그 숨김)
+// 트래킹 로그 전용 함수 (config.debug.showConsoleLogs로 제어)
 export function trackingLog(...args) {
-  if (window.ENABLE_TRACKING_LOG) {
+  // config에서 로그 설정 확인
+  if (window.trackingConfig && window.trackingConfig.debug && window.trackingConfig.debug.showConsoleLogs) {
     console.log(...args);
   }
 } 
