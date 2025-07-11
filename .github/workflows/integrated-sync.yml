@@ -103,9 +103,6 @@ jobs:
       id: thinkingdata
       run: |
         echo "🎯 ThinkingData 전송 시작"
-        echo "📊 수집된 데이터 확인:"
-        ls -la exports/ || echo "exports 폴더가 없습니다"
-        
         if [ -f "main.js" ]; then
           echo "✅ main.js 실행 중..."
           node main.js
@@ -124,7 +121,6 @@ jobs:
         name: sync-logs-${{ github.run_id }}-${{ github.sha }}
         path: |
           logs/
-          exports/
         retention-days: 30
         
     # Slack 알림 관련 step 전체 삭제 

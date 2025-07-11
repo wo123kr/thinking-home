@@ -1,6 +1,5 @@
 import config from './config.js';
 import { initSDK, isSDKInitialized } from './core/thinking-data-init.js';
-import { initSession } from './core/session-manager.js';
 import { registerGlobalUtils, trackingLog } from './core/utils.js';
 import { initClickTracking } from './tracking/click.js';
 import { initExitTracking } from './tracking/exit.js';
@@ -17,7 +16,7 @@ import { trackPageView } from './tracking/pageview.js';
  */
 async function main() {
   // config를 전역으로 설정 (로그 제어용)
-  window.trackingConfig = config;
+  // window.trackingConfig = config; // Node.js 환경에서는 불필요
   
   trackingLog('🚀 ThinkingData 추적 시스템 초기화 시작...');
   
@@ -28,10 +27,7 @@ async function main() {
     // 2. SDK 초기화
     await initSDK(config.thinkingData);
     
-    // 3. 세션 초기화
-    await initSession(config.session);
-    
-    // 4. 각 트래킹 모듈 초기화
+    // 3. 각 트래킹 모듈 초기화 (세션/브라우저 전용 제외)
     if (config.modules.click) initClickTracking();
     if (config.modules.exit) initExitTracking();
     if (config.modules.scroll) initScrollTracking();
@@ -40,24 +36,8 @@ async function main() {
     if (config.modules.resource) initResourceTracking();
     if (config.modules.userAttributes) initUserAttributes();
 
-    // 5. 페이지 진입 시 pageview 이벤트 전송 (SDK가 완전히 준비된 후 1회만 전송)
-    let pageviewSent = false;
-    function sendPageviewOnce() {
-      if (!pageviewSent) {
-        trackPageView();
-        pageviewSent = true;
-      }
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-      // SDK가 이미 준비된 경우 바로 전송
-      if (window.ta && typeof window.ta.quick === 'function') {
-        sendPageviewOnce();
-      } else {
-        // SDK 준비 이벤트가 오면 전송
-        window.addEventListener('thinkingdata:ready', sendPageviewOnce, { once: true });
-      }
-    });
+    // 4. 페이지 진입 시 pageview 이벤트 전송 (SDK가 완전히 준비된 후 1회만 전송)
+    // Node.js 환경에서는 불필요
 
     trackingLog('✅ 모든 트래킹 모듈 초기화 완료');
   } catch (error) {
