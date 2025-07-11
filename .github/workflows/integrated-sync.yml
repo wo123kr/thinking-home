@@ -111,6 +111,7 @@ jobs:
       if: success() && steps.sync.outputs.sync_status == 'success'
       uses: slackapi/slack-github-action@v1.24.0
       with:
+        channel-id: ${{ secrets.SLACK_CHANNEL_ID }}
         payload: |
           {
             "text": "✅ Google Search Console → ThinkingData 동기화 성공",
@@ -154,12 +155,12 @@ jobs:
           }
       env:
         SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-        SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
         
     - name: 🚨 Notify on failure
       if: failure()
       uses: slackapi/slack-github-action@v1.24.0
       with:
+        channel-id: ${{ secrets.SLACK_CHANNEL_ID }}
         payload: |
           {
             "text": "❌ Google Search Console → ThinkingData 동기화 실패",
@@ -211,5 +212,4 @@ jobs:
             ]
           }
       env:
-        SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-        SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }} 
+        SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }} 
