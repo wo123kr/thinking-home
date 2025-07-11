@@ -1,0 +1,216 @@
+name: Google Search Console → ThinkingData 통합 동기화
+
+on:
+  schedule:
+    # 매일 새벽 3시 (KST, UTC+9 → UTC 18시)
+    - cron: '0 18 * * *'
+  workflow_dispatch:
+    # 고급 수동 실행 옵션
+    inputs:
+      sync_type:
+        description: '동기화 타입 선택'
+        required: true
+        default: 'yesterday'
+        type: choice
+        options:
+          - yesterday
+          - last-week
+          - last-month
+      force_run:
+        description: '강제 실행 (에러 무시)'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  sync-data:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 🚀 Checkout code
+      uses: actions/checkout@v4
+      
+    - name: 📦 Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: 🔧 Install dependencies
+      run: npm ci
+      
+    - name: 🔐 Setup Google Service Account
+      run: |
+        echo "${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}" > credentials/service-account-key.json
+        echo "GOOGLE_APPLICATION_CREDENTIALS=$PWD/credentials/service-account-key.json" >> $GITHUB_ENV
+        echo "✅ Google Service Account 설정 완료"
+        
+    - name: 🔑 Setup ThinkingData credentials
+      run: |
+        echo "TE_APP_ID=${{ secrets.TE_APP_ID }}" >> $GITHUB_ENV
+        echo "TE_SERVER_URL=${{ secrets.TE_SERVER_URL }}" >> $GITHUB_ENV
+        echo "✅ ThinkingData 인증 정보 설정 완료"
+        
+    - name: 📊 Run data sync
+      id: sync
+      run: |
+        SYNC_TYPE="${{ github.event.inputs.sync_type || 'yesterday' }}"
+        FORCE_RUN="${{ github.event.inputs.force_run || 'false' }}"
+        
+        echo "🔄 동기화 타입: $SYNC_TYPE"
+        echo "🔧 강제 실행: $FORCE_RUN"
+        echo "📅 실행 시간: $(date)"
+        echo "🌍 시간대: $(date +%Z)"
+        echo "🏢 Repository: ${{ github.repository }}"
+        
+        # 실행 스크립트 결정
+        if [ -f "tracking/search-performance.js" ]; then
+          SCRIPT="tracking/search-performance.js"
+        elif [ -f "google-search-console.js" ]; then
+          SCRIPT="google-search-console.js"
+        else
+          echo "❌ 실행 스크립트를 찾을 수 없습니다"
+          exit 1
+        fi
+        
+        echo "📜 실행 스크립트: $SCRIPT"
+        
+        # 동기화 실행
+        case $SYNC_TYPE in
+          "yesterday")
+            echo "📅 어제 데이터 전송 시작"
+            node $SCRIPT yesterday
+            ;;
+          "last-week")
+            echo "📊 지난 주 데이터 전송 시작"
+            node $SCRIPT last-week
+            ;;
+          "last-month")
+            echo "📈 지난 달 데이터 전송 시작"
+            node $SCRIPT last-month
+            ;;
+          *)
+            echo "❌ 알 수 없는 동기화 타입: $SYNC_TYPE"
+            exit 1
+            ;;
+        esac
+        
+        echo "✅ 데이터 동기화 완료"
+        echo "sync_status=success" >> $GITHUB_OUTPUT
+        
+    - name: 📝 Upload logs
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: sync-logs-${{ github.run_id }}-${{ github.sha }}
+        path: |
+          logs/
+          exports/
+        retention-days: 30
+        
+    - name: 🔔 Notify on success
+      if: success() && steps.sync.outputs.sync_status == 'success'
+      uses: slackapi/slack-github-action@v1.24.0
+      with:
+        payload: |
+          {
+            "text": "✅ Google Search Console → ThinkingData 동기화 성공",
+            "blocks": [
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "*동기화 성공 알림* 🎉"
+                }
+              },
+              {
+                "type": "section",
+                "fields": [
+                  {
+                    "type": "mrkdwn",
+                    "text": "*실행 ID:*\n${{ github.run_id }}"
+                  },
+                  {
+                    "type": "mrkdwn",
+                    "text": "*동기화 타입:*\n${{ github.event.inputs.sync_type || 'yesterday' }}"
+                  },
+                  {
+                    "type": "mrkdwn",
+                    "text": "*실행 시간:*\n$(date '+%Y-%m-%d %H:%M:%S KST')"
+                  },
+                  {
+                    "type": "mrkdwn",
+                    "text": "*Repository:*\n${{ github.repository }}"
+                  }
+                ]
+              },
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|로그 확인하기>"
+                }
+              }
+            ]
+          }
+      env:
+        SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+        SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
+        
+    - name: 🚨 Notify on failure
+      if: failure()
+      uses: slackapi/slack-github-action@v1.24.0
+      with:
+        payload: |
+          {
+            "text": "❌ Google Search Console → ThinkingData 동기화 실패",
+            "blocks": [
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "*동기화 실패 알림* 🚨"
+                }
+              },
+              {
+                "type": "section",
+                "fields": [
+                  {
+                    "type": "mrkdwn",
+                    "text": "*실행 ID:*\n${{ github.run_id }}"
+                  },
+                  {
+                    "type": "mrkdwn",
+                    "text": "*동기화 타입:*\n${{ github.event.inputs.sync_type || 'yesterday' }}"
+                  },
+                  {
+                    "type": "mrkdwn",
+                    "text": "*실패 시간:*\n$(date '+%Y-%m-%d %H:%M:%S KST')"
+                  },
+                  {
+                    "type": "mrkdwn",
+                    "text": "*Repository:*\n${{ github.repository }}"
+                  }
+                ]
+              },
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|로그 확인하기>"
+                }
+              },
+              {
+                "type": "context",
+                "elements": [
+                  {
+                    "type": "mrkdwn",
+                    "text": "💡 *문제 해결 팁:* GitHub Actions 로그를 확인하여 구체적인 오류 원인을 파악하세요."
+                  }
+                ]
+              }
+            ]
+          }
+      env:
+        SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+        SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }} 
