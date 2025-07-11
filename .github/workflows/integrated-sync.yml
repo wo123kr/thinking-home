@@ -41,6 +41,7 @@ jobs:
       
     - name: 🔐 Setup Google Service Account
       run: |
+        mkdir -p credentials
         echo "${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}" > credentials/service-account-key.json
         echo "GOOGLE_APPLICATION_CREDENTIALS=$PWD/credentials/service-account-key.json" >> $GITHUB_ENV
         echo "✅ Google Service Account 설정 완료"
