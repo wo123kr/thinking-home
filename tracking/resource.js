@@ -185,12 +185,7 @@ export function initResourceTracking() {
         class: ['zip-link', 'archive-link'],
         id: ['zip', 'archive']
       },
-      'media': {
-        extensions: ['.mp3', '.mp4', '.avi', '.mov', '.wmv'],
-        text: ['동영상', '비디오', '오디오', 'video', 'audio', 'media'],
-        class: ['video-link', 'audio-link', 'media-link'],
-        id: ['video', 'audio', 'media']
-      },
+
       'image': {
         extensions: ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.svg'],
         text: ['이미지', '사진', 'image', 'photo', 'picture'],

@@ -8,6 +8,7 @@ const config = {
   thinkingData: {
     appId: '79ed7051fc51493798b16328c0ebd0bc', // 실제 APP_ID
     serverUrl: 'https://te-receiver-naver.thinkingdata.kr/sync_js', // 실제 서버 URL
+    showLog: true, // SDK 로그 활성화 (개발/운영 환경에 따라 조정)
     autoTrack: {
       pageShow: true,
       pageHide: true
@@ -28,7 +29,6 @@ const config = {
     scroll: true,
     form: true,
     popup: true,
-    video: true,
     resource: true,
     userAttributes: true
   },
@@ -52,11 +52,7 @@ const config = {
     trackValidationErrors: true
   },
 
-  // 비디오 추적 설정
-  video: {
-    platforms: ['youtube', 'vimeo'],
-    trackProgress: [25, 50, 75, 90]
-  },
+
 
   // 디버그 설정
   debug: {

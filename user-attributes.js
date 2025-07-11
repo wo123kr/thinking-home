@@ -544,14 +544,7 @@ class UserAttributeTracker {
         console.log('📥 다운로드 추적:', this.attributes.total_downloads);
     }
     
-    // 비디오 상호작용 추적
-    trackVideoInteraction() {
-        this.sendImmediate('userAdd', { total_video_interactions: 1 });
-        this.attributes.total_video_interactions = (this.attributes.total_video_interactions || 0) + 1;
-        this.updateEngagementLevel();
-        this.saveAttributes();
-        console.log('🎬 비디오 상호작용 추적:', this.attributes.total_video_interactions);
-    }
+
     
     // 100% 스크롤 추적
     trackFullScroll() {
@@ -680,7 +673,6 @@ class UserAttributeTracker {
         // 행동별 점수 계산
         score += (this.attributes.total_form_submissions || 0) * 50;
         score += (this.attributes.total_downloads || 0) * 30;
-        score += (this.attributes.total_video_interactions || 0) * 20;
         score += (this.attributes.total_scroll_depth_100 || 0) * 15;
         score += (this.attributes.popup_interactions || 0) * 10;
         score += (this.attributes.external_link_clicks || 0) * 5;
@@ -795,7 +787,6 @@ class UserAttributeTracker {
         
         const totalInteractions = (this.attributes.total_form_submissions || 0) +
                                 (this.attributes.total_downloads || 0) +
-                                (this.attributes.total_video_interactions || 0) +
                                 (this.attributes.popup_interactions || 0) +
                                 (this.attributes.external_link_clicks || 0);
         
@@ -924,9 +915,7 @@ export function trackDownload() {
   if (trackerInstance) trackerInstance.trackDownload();
 }
 
-export function trackVideoInteraction() {
-  if (trackerInstance) trackerInstance.trackVideoInteraction();
-}
+
 
 export function trackFullScroll() {
   if (trackerInstance) trackerInstance.trackFullScroll();

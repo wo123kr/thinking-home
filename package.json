@@ -1,0 +1,31 @@
+{
+  "name": "webpage-thinking",
+  "version": "1.0.0",
+  "description": "Google Search Console to ThinkingData integration",
+  "main": "main.js",
+  "scripts": {
+    "start": "node main.js",
+    "test": "node test-connection.js",
+    "sync:yesterday": "node tracking/search-performance.js yesterday",
+    "sync:last-week": "node tracking/search-performance.js last-week",
+    "sync:last-month": "node tracking/search-performance.js last-month",
+    "setup-cron": "chmod +x scripts/setup-cron.sh && ./scripts/setup-cron.sh"
+  },
+  "dependencies": {
+    "googleapis": "^128.0.0",
+    "axios": "^1.6.0",
+    "node-cron": "^3.0.3",
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "dotenv": "^16.3.1"
+  },
+  "keywords": [
+    "google-search-console",
+    "thinkingdata",
+    "analytics",
+    "seo"
+  ],
+  "author": "",
+  "license": "MIT"
+}

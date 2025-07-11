@@ -82,10 +82,7 @@ function initSDK(config) {
     window.te = window.thinkingdata;
     
     // SDK 초기화
-    window.te.init({
-      ...config,
-      showLog: true // 디버깅을 위해 콘솔 로그 활성화
-    });
+    window.te.init(config);
 
             // 공통 이벤트 속성 설정
     const superProperties = {

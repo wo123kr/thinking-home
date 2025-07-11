@@ -1,0 +1,125 @@
+name: Google Search Console → ThinkingData Daily Sync
+
+on:
+  schedule:
+    # 매일 새벽 2시 (UTC 기준, 한국 시간 11시)
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    # 수동 실행 가능
+    inputs:
+      sync_type:
+        description: '동기화 타입'
+        required: true
+        default: 'yesterday'
+        type: choice
+        options:
+          - yesterday
+          - last-week
+          - last-month
+
+jobs:
+  sync-data:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 🚀 Checkout code
+      uses: actions/checkout@v4
+      
+    - name: 📦 Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: 🔧 Install dependencies
+      run: npm ci
+      
+    - name: 🔐 Setup Google Service Account
+      run: |
+        echo "${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}" > credentials/service-account-key.json
+        echo "Google Service Account 설정 완료"
+        
+    - name: 🔑 Setup ThinkingData credentials
+      run: |
+        echo "TE_APP_ID=79ed7051fc51493798b16328c0ebd0bc" >> $GITHUB_ENV
+        echo "TE_SERVER_URL=https://te-receiver-naver.thinkingdata.kr/sync_js" >> $GITHUB_ENV
+        echo "ThinkingData 인증 정보 설정 완료"
+        
+    - name: 📊 Run data sync
+      run: |
+        SYNC_TYPE="${{ github.event.inputs.sync_type || 'yesterday' }}"
+        echo "🔄 동기화 타입: $SYNC_TYPE"
+        echo "📅 실행 시간: $(date)"
+        echo "🌍 시간대: $(date +%Z)"
+        
+        case $SYNC_TYPE in
+          "yesterday")
+            echo "📅 어제 데이터 전송 시작"
+            node tracking/search-performance.js yesterday
+            ;;
+          "last-week")
+            echo "📊 지난 주 데이터 전송 시작"
+            node tracking/search-performance.js last-week
+            ;;
+          "last-month")
+            echo "📈 지난 달 데이터 전송 시작"
+            node tracking/search-performance.js last-month
+            ;;
+          *)
+            echo "❌ 알 수 없는 동기화 타입: $SYNC_TYPE"
+            exit 1
+            ;;
+        esac
+        
+        echo "✅ 데이터 동기화 완료"
+        
+    - name: 📝 Upload logs
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: sync-logs-${{ github.run_id }}
+        path: |
+          logs/
+          exports/
+        retention-days: 30
+        
+    - name: 🔔 Notify on failure
+      if: failure()
+      uses: slackapi/slack-github-action@v1.24.0
+      with:
+        payload: |
+          {
+            "text": "❌ Google Search Console → ThinkingData 동기화 실패",
+            "blocks": [
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "*동기화 실패 알림*"
+                }
+              },
+              {
+                "type": "section",
+                "fields": [
+                  {
+                    "type": "mrkdwn",
+                    "text": "*실행 ID:*\n${{ github.run_id }}"
+                  },
+                  {
+                    "type": "mrkdwn",
+                    "text": "*동기화 타입:*\n${{ github.event.inputs.sync_type || 'yesterday' }}"
+                  }
+                ]
+              },
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|로그 확인하기>"
+                }
+              }
+            ]
+          }
+      env:
+        SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+        SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }} 
