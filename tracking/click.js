@@ -5,7 +5,7 @@
  * - 전역 오염 최소화
  */
 
-import { trackEvent, updateSessionActivity } from '../core/utils.js';
+import { trackEvent, updateSessionActivity, trackingLog } from '../core/utils.js';
 
 // 클릭 패턴 정의 (필요시 확장)
   const clickPatterns = {
@@ -71,7 +71,7 @@ function matchPattern(text) {
  */
 export function initClickTracking(config = { useSdkAutoTrack: false }) {
   if (clickTrackingInitialized) {
-    console.log('ℹ️ 클릭 추적이 이미 초기화됨');
+    trackingLog('ℹ️ 클릭 추적이 이미 초기화됨');
     return;
   }
   if (config.useSdkAutoTrack && window.ta && window.ta.trackLink) {
@@ -81,12 +81,12 @@ export function initClickTracking(config = { useSdkAutoTrack: false }) {
       'element_click',
       {}
     );
-    console.log('✅ SDK 자동수집 클릭 트래킹 활성화');
+    trackingLog('✅ SDK 자동수집 클릭 트래킹 활성화');
   } else {
     // 커스텀 추적 사용
     document.removeEventListener('click', handleClick);
     document.addEventListener('click', handleClick);
-    console.log('✅ 커스텀 클릭 트래킹 활성화');
+    trackingLog('✅ 커스텀 클릭 트래킹 활성화');
   }
   clickTrackingInitialized = true;
 }

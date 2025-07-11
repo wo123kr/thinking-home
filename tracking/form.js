@@ -2,13 +2,13 @@
  * 폼 제출 추적 모듈 - ThinkingData 홈페이지 최적화
  */
 
-import { maskEmail, maskPhone, maskName, addTETimeProperties } from '../core/utils.js';
+import { maskEmail, maskPhone, maskName, addTETimeProperties, trackingLog } from '../core/utils.js';
 import { updateSessionActivity } from '../core/session-manager.js';
 import { trackFormSubmission } from '../user-attributes.js';
 
 // 폼 제출/오류 추적 메인 함수
 export function initFormTracking() {
-  console.log('📝 폼 추적 초기화 시작...');
+  trackingLog('📝 폼 추적 초기화 시작...');
 
   // SDK 로드 체크
   function isSDKLoaded() {
@@ -19,7 +19,7 @@ export function initFormTracking() {
     const form = event.target;
     updateSessionActivity();
     
-    console.log('📝 폼 제출 감지:', form);
+    trackingLog('📝 폼 제출 감지:', form);
     
     // 폼 데이터 수집 (개인정보 제외)
     const formData = new FormData(form);
@@ -66,7 +66,7 @@ export function initFormTracking() {
     const formSubmitDataWithTETime = addTETimeProperties(formSubmitData);
     
     trackEvent('te_form_submit', formSubmitDataWithTETime);
-    console.log('📝 폼 제출 이벤트 전송:', formSubmitDataWithTETime);
+    trackingLog('📝 폼 제출 이벤트 전송:', formSubmitDataWithTETime);
     
     // 🚀 유저 속성에 폼 제출 추적
     trackFormSubmission();
@@ -80,7 +80,7 @@ export function initFormTracking() {
           ...formSubmitData,
           submission_status: 'success'
         });
-        console.log('📝 폼 제출 성공 이벤트 전송');
+        trackingLog('📝 폼 제출 성공 이벤트 전송');
       }
     }, 1000);
     
@@ -94,7 +94,7 @@ export function initFormTracking() {
             submission_status: 'success',
             success_message_detected: true
           });
-          console.log('📝 폼 제출 성공 메시지 감지');
+          trackingLog('�� 폼 제출 성공 메시지 감지');
         }
       }
     }, 2000);
@@ -119,26 +119,26 @@ export function initFormTracking() {
       const errorDataWithTETime = addTETimeProperties(errorData);
       
       trackEvent('te_form_submit_error', errorDataWithTETime);
-      console.log('📝 폼 제출 오류 이벤트 전송:', errorDataWithTETime);
+      trackingLog('📝 폼 제출 오류 이벤트 전송:', errorDataWithTETime);
     }
   }
 
   function bindFormEvents() {
     document.addEventListener('submit', handleFormSubmit);
     document.addEventListener('invalid', handleFormInvalid, true);
-    console.log('📝 폼 이벤트 바인딩 완료');
+    trackingLog('📝 폼 이벤트 바인딩 완료');
   }
 
   // SDK가 로드될 때까지 재시도
   function tryInit(retry = 0) {
     if (isSDKLoaded()) {
       bindFormEvents();
-      console.log('✅ 폼 트래킹 SDK 연동 및 이벤트 바인딩 완료');
+      trackingLog('✅ 폼 트래킹 SDK 연동 및 이벤트 바인딩 완료');
     } else if (retry < 5) {
-      console.warn('⚠️ ThinkingData SDK가 로드되지 않음, 2초 후 재시도...');
+      trackingLog('⚠️ ThinkingData SDK가 로드되지 않음, 2초 후 재시도...');
       setTimeout(() => tryInit(retry + 1), 2000);
     } else {
-      console.error('❌ 폼 트래킹: SDK 로드 실패, 이벤트 바인딩 중단');
+      trackingLog('❌ 폼 트래킹: SDK 로드 실패, 이벤트 바인딩 중단');
     }
   }
 
@@ -155,7 +155,7 @@ const fieldTrackingConfig = {
   ...(window.formTrackingConfig || {}) // 사용자 커스텀 설정
 };
 
-console.log('📝 폼 필드 추적 설정:', fieldTrackingConfig);
+trackingLog('📝 폼 필드 추적 설정:', fieldTrackingConfig);
 
 // 🚀 최적화된 폼 필드 변경 추적 (이벤트 폭발 방지)
 const fieldTrackingState = new Map(); // 필드별 상태 관리
@@ -247,7 +247,7 @@ function sendFieldInteractionEvent(field, fieldKey, state, triggerType) {
 
   trackEvent('te_form_field_interaction', fieldDataWithTETime);
   
-  console.log(`📝 필드 상호작용 추적 (${triggerType}):`, field.name, `길이: ${state.length}`);
+  trackingLog(`📝 필드 상호작용 추적 (${triggerType}):`, field.name, `길이: ${state.length}`);
 }
 
 // 길이 카테고리 분류
@@ -282,7 +282,7 @@ document.addEventListener('focusout', function(event) {
   }
 });
 
-console.log('✅ 폼 추적 초기화 완료');
+trackingLog('✅ 폼 추적 초기화 완료');
 
 // ThinkingData 폼인지 확인
 function isThinkingDataForm(form) {
@@ -375,15 +375,15 @@ function getThinkingDataFormInfo(form) {
 
 // 디버깅용 함수
 function debugFormTracking() {
-  console.log('📝 폼 추적 디버깅 정보:');
-  console.log('- 현재 URL:', window.location.href);
-  console.log('- 페이지 제목:', document.title);
-  console.log('- 폼 개수:', document.querySelectorAll('form').length);
-  console.log('- ThinkingData SDK:', typeof window.te !== 'undefined' ? '로드됨' : '로드 안됨');
+  trackingLog('📝 폼 추적 디버깅 정보:');
+  trackingLog('- 현재 URL:', window.location.href);
+  trackingLog('- 페이지 제목:', document.title);
+  trackingLog('- 폼 개수:', document.querySelectorAll('form').length);
+  trackingLog('- ThinkingData SDK:', typeof window.te !== 'undefined' ? '로드됨' : '로드 안됨');
   
   // 폼 상세 정보
   document.querySelectorAll('form').forEach((form, index) => {
-    console.log(`- 폼 ${index + 1}:`, {
+    trackingLog(`- 폼 ${index + 1}:`, {
       id: form.id,
       name: form.name,
       action: form.action,

@@ -775,4 +775,11 @@ export function convertTimePropertyToTE(properties = {}, propertyName) {
     };
   }
   return properties;
+}
+
+// 트래킹 로그 전용 함수 (운영환경에서는 로그 숨김)
+export function trackingLog(...args) {
+  if (window.ENABLE_TRACKING_LOG) {
+    console.log(...args);
+  }
 } 
