@@ -1,6 +1,6 @@
-const { google } = require('googleapis');
-const fs = require('fs');
-const path = require('path');
+import { google } from 'googleapis';
+import fs from 'fs';
+import path from 'path';
 
 class GoogleSearchConsoleAPI {
     constructor(credentialsPath, siteUrl) {
@@ -261,4 +261,4 @@ class GoogleSearchConsoleAPI {
     }
 }
 
-module.exports = GoogleSearchConsoleAPI; 
+export default GoogleSearchConsoleAPI; 

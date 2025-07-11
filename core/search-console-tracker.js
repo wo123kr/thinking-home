@@ -1,5 +1,5 @@
-const GoogleSearchConsoleAPI = require('../google-search-console');
-const ThinkingDataNode = require('./thinking-data-node');
+import GoogleSearchConsoleAPI from '../google-search-console.js';
+import ThinkingDataNode from './thinking-data-node.js';
 
 /**
  * Google Search Console 데이터를 ThinkingData 이벤트로 변환하는 클래스
@@ -297,4 +297,4 @@ class SearchConsoleTracker {
     }
 }
 
-module.exports = SearchConsoleTracker; 
+export default SearchConsoleTracker; 

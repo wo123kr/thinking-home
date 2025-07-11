@@ -1,5 +1,9 @@
-const SearchConsoleTracker = require('../core/search-console-tracker');
-const path = require('path');
+import SearchConsoleTracker from '../core/search-console-tracker.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
  * Search Console 데이터를 ThinkingData로 전송하는 실행 스크립트
@@ -165,7 +169,7 @@ async function trackDevices(startDate, endDate) {
 }
 
 // 명령행 인수 처리
-if (require.main === module) {
+if (import.meta.url === process.argv[1] || import.meta.url === `file://${process.argv[1]}`) {
     const args = process.argv.slice(2);
     
     if (args.length === 0) {
@@ -208,11 +212,4 @@ if (require.main === module) {
     }
 }
 
-module.exports = {
-    main,
-    trackSpecificPeriod,
-    trackKeywords,
-    trackPages,
-    trackCountries,
-    trackDevices
-}; 
+export { main, trackSpecificPeriod, trackKeywords, trackPages, trackCountries, trackDevices }; 

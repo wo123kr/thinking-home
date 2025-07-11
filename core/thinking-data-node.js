@@ -254,4 +254,4 @@ class ThinkingDataNode {
     }
 }
 
-module.exports = ThinkingDataNode; 
+export default ThinkingDataNode; 
