@@ -18,6 +18,8 @@ class ThinkingDataNode {
         this.apiEndpoint = this.serverUrl.endsWith('/sync_json') 
             ? this.serverUrl 
             : this.serverUrl.replace(/\/?$/, '') + '/sync_json';
+        
+        console.log('🔧 ThinkingData API 엔드포인트:', this.apiEndpoint);
     }
 
     /**
@@ -186,14 +188,15 @@ class ThinkingDataNode {
         }
 
         try {
-            // TE RESTful API 규칙에 맞는 payload 구조
-            // 여러 데이터를 배열로 전송
+            // TE RESTful API 문서에 따른 올바른 payload 구조
+            // 여러 데이터를 배열로 전송 (sync_json 방식)
             const payload = this.buffer.map(eventData => ({
                 appid: this.appId,
                 data: eventData,
-                debug: 1 // 디버그 모드 활성화
+                debug: 1 // 디버그 모드 활성화 (문제 해결 후 제거 예정)
             }));
 
+            console.log('📤 전송할 데이터 구조:', JSON.stringify(payload[0], null, 2));
             await this.sendRequest(payload);
             console.log(`✅ ${this.buffer.length}개 이벤트 전송 완료`);
             this.buffer = [];
@@ -227,6 +230,13 @@ class ThinkingDataNode {
                     'client': '1' // 클라이언트 IP 수집 활성화
                 }
             };
+            
+            console.log('🌐 HTTP 요청 옵션:', {
+                hostname: options.hostname,
+                port: options.port,
+                path: options.path,
+                method: options.method
+            });
 
             const req = client.request(options, (res) => {
                 let data = '';
@@ -236,20 +246,31 @@ class ThinkingDataNode {
                 });
                 
                 res.on('end', () => {
+                    console.log('📥 API 응답 상태:', res.statusCode);
+                    console.log('📥 API 응답 데이터:', data);
+                    
                     try {
                         const response = JSON.parse(data);
+                        
+                        // TE API 응답 구조 확인
                         if (response.code === 0) {
+                            console.log('✅ TE API 성공 응답:', response);
                             resolve(response);
                         } else {
-                            console.error('❌ TE API Error (debug):', {
+                            console.error('❌ TE API Error:', {
                                 code: response.code,
                                 msg: response.msg,
-                                raw: data
+                                raw: data,
+                                statusCode: res.statusCode
                             });
                             reject(new Error(`TE API Error: ${response.msg || 'Unknown error'}`));
                         }
                     } catch (parseError) {
+                        console.error('❌ JSON 파싱 실패:', parseError.message);
+                        console.error('❌ 원본 응답 데이터:', data);
+                        
                         if (res.statusCode >= 200 && res.statusCode < 300) {
+                            console.log('⚠️ JSON 파싱 실패했지만 HTTP 상태는 성공');
                             resolve(data);
                         } else {
                             console.error('❌ TE API HTTP Error:', {
@@ -263,6 +284,7 @@ class ThinkingDataNode {
             });
 
             req.on('error', (error) => {
+                console.error('❌ HTTP 요청 에러:', error.message);
                 reject(error);
             });
 
@@ -277,6 +299,39 @@ class ThinkingDataNode {
     async close() {
         if (this.buffer.length > 0) {
             await this.flush();
+        }
+    }
+
+    /**
+     * 테스트용 간단한 이벤트 전송 (디버깅용)
+     */
+    async testConnection() {
+        console.log('🧪 ThinkingData API 연결 테스트 시작...');
+        
+        try {
+            const testEvent = {
+                "#type": "track",
+                "#event_name": "test_connection",
+                "#time": new Date().toISOString().replace('T', ' ').slice(0, 23),
+                "properties": {
+                    "test_property": "test_value",
+                    "timestamp": new Date().toISOString()
+                }
+            };
+
+            const payload = [{
+                appid: this.appId,
+                data: testEvent,
+                debug: 1
+            }];
+
+            console.log('🧪 테스트 이벤트:', JSON.stringify(payload, null, 2));
+            await this.sendRequest(payload);
+            console.log('✅ 연결 테스트 성공!');
+            return true;
+        } catch (error) {
+            console.error('❌ 연결 테스트 실패:', error.message);
+            return false;
         }
     }
 }

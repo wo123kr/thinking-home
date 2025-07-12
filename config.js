@@ -17,7 +17,7 @@ const config = {
 
   // Google Search Console 설정
   googleSearchConsole: {
-    siteUrl: process.env.GSC_SITE_URL || 'https://www.thinkingdata.kr'
+    siteUrl: process.env.GSC_SITE_URL || 'https://www.thinkingdata.kr/'
   },
 
   // 세션 관리 설정

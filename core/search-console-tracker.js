@@ -26,6 +26,13 @@ class SearchConsoleTracker {
                 throw new Error('Search Console API 연결 실패');
             }
 
+            // ThinkingData API 연결 테스트
+            console.log('🧪 ThinkingData API 연결 테스트 중...');
+            const teConnectionTest = await this.thinkingData.testConnection();
+            if (!teConnectionTest) {
+                console.warn('⚠️ ThinkingData API 연결 테스트 실패 - 데이터 전송에 문제가 있을 수 있습니다.');
+            }
+
             this.isInitialized = true;
             console.log('✅ SearchConsoleTracker 초기화 완료');
         } catch (error) {
