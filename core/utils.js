@@ -18,9 +18,44 @@ export function safeTeCall(method, ...args) {
   }
 }
 
-// 안전한 이벤트 전송
+// 안전한 이벤트 전송 (SDK 없어도 동작)
 export function trackEvent(eventName, properties = {}) {
-  return safeTeCall('track', eventName, properties);
+  try {
+    // SDK가 있는 경우 정상 전송
+    if (typeof window.te !== 'undefined' && typeof window.te.track === 'function') {
+      return window.te.track(eventName, properties);
+    }
+    
+    // SDK가 없는 경우 로컬 스토리지에 임시 저장 (나중에 전송 가능)
+    if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+      const pendingEvents = JSON.parse(localStorage.getItem('te_pending_events') || '[]');
+      pendingEvents.push({
+        eventName,
+        properties,
+        timestamp: new Date().toISOString(),
+        url: window.location.href
+      });
+      
+      // 최대 100개까지만 저장
+      if (pendingEvents.length > 100) {
+        pendingEvents.splice(0, pendingEvents.length - 100);
+      }
+      
+      localStorage.setItem('te_pending_events', JSON.stringify(pendingEvents));
+      
+      // 개발 환경에서만 로그 출력
+      if (window.trackingLog) {
+        window.trackingLog(`📤 이벤트 임시 저장: ${eventName}`, properties);
+      }
+      
+      return true;
+    }
+    
+    return false;
+  } catch (error) {
+    console.warn(`이벤트 전송 실패 (${eventName}):`, error);
+    return false;
+  }
 }
 
 // 세션 활동 업데이트 함수 (세션 관리자에서 실제 구현)
@@ -367,7 +402,8 @@ export function registerGlobalUtils() {
     getDeviceType, getBrowserInfo, simpleHash,
     generateTextBasedId, generateClassBasedId, generatePositionBasedId,
     isExternalLink, maskEmail, maskPhone, maskName,
-    isElementVisible, getPageLoadTime, safeMatchPatterns
+    isElementVisible, getPageLoadTime, safeMatchPatterns,
+    sendPendingEvents
   };
   
   // 전역 객체에 등록
@@ -795,5 +831,51 @@ export function updateSuperPropertiesWithSession(sessionId, sessionNumber, extra
     };
     window.te.setSuperProperties(baseProps);
     trackingLog('🪪 setSuperProperties 갱신:', baseProps);
+  }
+}
+
+// 임시 저장된 이벤트들을 ThinkingData로 전송
+export function sendPendingEvents() {
+  try {
+    if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+      return false;
+    }
+    
+    const pendingEvents = JSON.parse(localStorage.getItem('te_pending_events') || '[]');
+    if (pendingEvents.length === 0) {
+      return true;
+    }
+    
+    if (typeof window.te === 'undefined' || typeof window.te.track !== 'function') {
+      return false;
+    }
+    
+    let successCount = 0;
+    let failCount = 0;
+    
+    pendingEvents.forEach(event => {
+      try {
+        window.te.track(event.eventName, event.properties);
+        successCount++;
+      } catch (error) {
+        console.warn(`임시 이벤트 전송 실패 (${event.eventName}):`, error);
+        failCount++;
+      }
+    });
+    
+    // 성공한 이벤트들은 제거
+    if (successCount > 0) {
+      const remainingEvents = pendingEvents.slice(successCount);
+      localStorage.setItem('te_pending_events', JSON.stringify(remainingEvents));
+      
+      if (window.trackingLog) {
+        window.trackingLog(`📤 임시 이벤트 전송 완료: ${successCount}개 성공, ${failCount}개 실패`);
+      }
+    }
+    
+    return successCount > 0;
+  } catch (error) {
+    console.error('임시 이벤트 전송 중 오류:', error);
+    return false;
   }
 } 
