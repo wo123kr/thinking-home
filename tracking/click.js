@@ -74,14 +74,22 @@ export function initClickTracking(config = { useSdkAutoTrack: false }) {
     trackingLog('ℹ️ 클릭 추적이 이미 초기화됨');
     return;
   }
-  if (config.useSdkAutoTrack && window.ta && window.ta.trackLink) {
-    // SDK 자동수집 사용
+  if (config.useSdkAutoTrack && window.te && window.te.trackLink) {
+    // SDK 자동수집 사용 (window.te)
+    window.te.trackLink(
+      { tag: ['a', 'button'], class: ['btn', 'button'], id: [] },
+      'element_click',
+      {}
+    );
+    trackingLog('✅ SDK 자동수집 클릭 트래킹 활성화 (te)');
+  } else if (config.useSdkAutoTrack && window.ta && window.ta.trackLink) {
+    // SDK 자동수집 사용 (하위 호환성 - window.ta)
     window.ta.trackLink(
       { tag: ['a', 'button'], class: ['btn', 'button'], id: [] },
       'element_click',
       {}
     );
-    trackingLog('✅ SDK 자동수집 클릭 트래킹 활성화');
+    trackingLog('✅ SDK 자동수집 클릭 트래킹 활성화 (ta)');
   } else {
     // 커스텀 추적 사용
     document.removeEventListener('click', handleClick);

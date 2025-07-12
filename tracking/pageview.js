@@ -12,24 +12,39 @@ import { addBotInfoToEvent, addTETimeProperties, trackingLog } from '../core/uti
  * @param {Object} customProps - 추가로 전송할 커스텀 속성(선택)
  */
 export function trackPageView(customProps = {}) {
-  if (window.ta && typeof window.ta.quick === 'function') {
+  try {
     // 봇 정보 추가
     const propsWithBot = addBotInfoToEvent(customProps);
     
     // TE 시간 형식 속성 추가
     const propsWithTETime = addTETimeProperties(propsWithBot);
     
-    window.ta.quick('autoTrack', {
+    // 페이지 정보 추가
+    const pageviewData = {
+      page_url: window.location.href,
+      page_path: window.location.pathname,
+      page_title: document.title,
+      referrer: document.referrer || '',
       ...propsWithTETime
-    });
-    trackingLog('✅ ta_pageview(pageview) 이벤트 전송', {
-      ...propsWithTETime,
-      is_bot: propsWithTETime.is_bot,
-      bot_type: propsWithTETime.bot_type,
-      current_time_te: propsWithTETime.current_time_te
-    });
-  } else {
-    console.warn('⚠️ ThinkingData SDK(ta.quick)가 준비되지 않음');
+    };
+    
+    // ThinkingData SDK를 통한 전송 시도
+    if (window.te && typeof window.te.track === 'function') {
+      window.te.track('te_pageview', pageviewData);
+      trackingLog('✅ te_pageview 이벤트 전송 (SDK)', pageviewData);
+    } else if (window.ta && typeof window.ta.quick === 'function') {
+      // 기존 ta.quick 방식 지원 (하위 호환성)
+      window.ta.quick('autoTrack', pageviewData);
+      trackingLog('✅ te_pageview 이벤트 전송 (ta.quick)', pageviewData);
+    } else {
+      // SDK가 없는 경우 utils의 trackEvent 사용 (로컬 스토리지 임시 저장)
+      trackEvent('te_pageview', pageviewData);
+      trackingLog('✅ te_pageview 이벤트 임시 저장 (SDK 없음)', pageviewData);
+    }
+    
+  } catch (error) {
+    console.warn('⚠️ 페이지뷰 이벤트 전송 실패:', error);
+    trackingLog('❌ 페이지뷰 이벤트 전송 실패:', error);
   }
 }
 
