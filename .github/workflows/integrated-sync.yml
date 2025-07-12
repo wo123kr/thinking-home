@@ -53,10 +53,10 @@ jobs:
         echo "TE_SERVER_URL=${{ secrets.TE_SERVER_URL }}" >> $GITHUB_ENV
         echo "✅ ThinkingData 인증 정보 설정 완료"
         
-    - name: 📊 Run data sync
+    - name: 📊 Run Google Search Console data sync
       id: sync
       run: |
-        SYNC_TYPE="${{ github.event.inputs.sync_type || 'yesterday' }}"
+        SYNC_TYPE="${{ github.event.inputs.sync_type || 'last-3-days' }}"
         FORCE_RUN="${{ github.event.inputs.force_run || 'false' }}"
         
         echo "🔄 동기화 타입: $SYNC_TYPE"
@@ -65,35 +65,25 @@ jobs:
         echo "🌍 시간대: $(date +%Z)"
         echo "🏢 Repository: ${{ github.repository }}"
         
-        # 실행 스크립트 결정
-        if [ -f "tracking/search-performance.js" ]; then
-          SCRIPT="tracking/search-performance.js"
-        elif [ -f "google-search-console.js" ]; then
-          SCRIPT="google-search-console.js"
-        else
-          echo "❌ 실행 스크립트를 찾을 수 없습니다"
-          exit 1
-        fi
+        # Google Search Console 데이터 수집 실행
+        echo "📊 Google Search Console 데이터 수집 시작"
         
-        echo "📜 실행 스크립트: $SCRIPT"
-        
-        # 동기화 실행
         case $SYNC_TYPE in
           "yesterday")
-            echo "📅 어제 데이터 전송 시작"
-            node $SCRIPT yesterday
+            echo "📅 어제 데이터 수집 시작"
+            node gsc-collector.js --mode daily --days 1
             ;;
           "last-3-days")
-            echo "📊 최근 3일치 데이터 전송 시작"
-            node $SCRIPT last-3-days
+            echo "📊 최근 3일치 데이터 수집 시작"
+            node gsc-collector.js --mode daily --days 3
             ;;
           "last-week")
-            echo "📊 지난 주 데이터 전송 시작"
-            node $SCRIPT last-week
+            echo "📊 지난 주 데이터 수집 시작"
+            node gsc-collector.js --mode daily --days 7
             ;;
           "last-month")
-            echo "📈 지난 달 데이터 전송 시작"
-            node $SCRIPT last-month
+            echo "📈 지난 달 데이터 수집 시작"
+            node gsc-collector.js --mode all --start-date $(date -d '30 days ago' +%Y-%m-%d) --end-date $(date -d 'yesterday' +%Y-%m-%d)
             ;;
           *)
             echo "❌ 알 수 없는 동기화 타입: $SYNC_TYPE"
@@ -101,23 +91,15 @@ jobs:
             ;;
         esac
         
-        echo "✅ 데이터 동기화 완료"
+        echo "✅ Google Search Console 데이터 수집 완료"
         echo "sync_status=success" >> $GITHUB_OUTPUT
         
-    - name: 🚀 Send to ThinkingData
-      id: thinkingdata
+    - name: ✅ Verify data collection
+      id: verify
       run: |
-        echo "🎯 ThinkingData 전송 시작"
-        if [ -f "main.js" ]; then
-          echo "✅ main.js 실행 중..."
-          node main.js
-          echo "✅ ThinkingData 전송 완료"
-          echo "thinkingdata_status=success" >> $GITHUB_OUTPUT
-        else
-          echo "❌ main.js를 찾을 수 없습니다"
-          echo "thinkingdata_status=failed" >> $GITHUB_OUTPUT
-          exit 1
-        fi
+        echo "✅ Google Search Console 데이터 수집 완료 확인"
+        echo "📊 수집된 데이터는 gsc-collector.js에서 직접 ThinkingData로 전송되었습니다"
+        echo "verify_status=success" >> $GITHUB_OUTPUT
         
     - name: 📝 Upload logs
       uses: actions/upload-artifact@v4

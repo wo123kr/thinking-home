@@ -6,10 +6,11 @@
   "scripts": {
     "start": "node main.js",
     "test": "node test-connection.js",
-    "sync:yesterday": "node tracking/search-performance.js yesterday",
-    "sync:last-3-days": "node tracking/search-performance.js last-3-days",
-    "sync:last-week": "node tracking/search-performance.js last-week",
-    "sync:last-month": "node tracking/search-performance.js last-month",
+    "gsc:yesterday": "node gsc-collector.js --mode daily --days 1",
+    "gsc:last-3-days": "node gsc-collector.js --mode daily --days 3",
+    "gsc:last-week": "node gsc-collector.js --mode daily --days 7",
+    "gsc:last-month": "node gsc-collector.js --mode all --days 30",
+    "gsc:custom": "node gsc-collector.js",
     "setup-cron": "chmod +x scripts/setup-cron.sh && ./scripts/setup-cron.sh"
   },
   "dependencies": {

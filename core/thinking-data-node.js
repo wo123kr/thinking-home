@@ -2,7 +2,8 @@ import https from 'https';
 import http from 'http';
 
 /**
- * Node.js 환경에서 ThinkingData HTTP API를 사용하여 데이터를 전송하는 클래스
+ * Node.js 환경에서 ThinkingData RESTful API를 사용하여 데이터를 전송하는 클래스
+ * TE 데이터 규칙에 맞게 구현
  */
 class ThinkingDataNode {
     constructor(config) {
@@ -12,6 +13,11 @@ class ThinkingDataNode {
         this.batchSize = config.batchSize || 20;
         this.buffer = [];
         this.isInitialized = true;
+        
+        // TE RESTful API 엔드포인트 설정
+        this.apiEndpoint = this.serverUrl.endsWith('/sync_json') 
+            ? this.serverUrl 
+            : this.serverUrl.replace(/\/?$/, '') + '/sync_json';
     }
 
     /**
@@ -179,13 +185,15 @@ class ThinkingDataNode {
             return;
         }
 
-        const payload = {
-            data: this.buffer,
-            "#app_id": this.appId,
-            "#flush_time": Date.now()
-        };
-
         try {
+            // TE RESTful API 규칙에 맞는 payload 구조
+            // 여러 데이터를 배열로 전송
+            const payload = this.buffer.map(eventData => ({
+                appid: this.appId,
+                data: eventData,
+                debug: 0 // 디버그 모드 비활성화
+            }));
+
             await this.sendRequest(payload);
             console.log(`✅ ${this.buffer.length}개 이벤트 전송 완료`);
             this.buffer = [];
@@ -196,7 +204,7 @@ class ThinkingDataNode {
     }
 
     /**
-     * HTTP 요청 전송
+     * HTTP 요청 전송 (TE RESTful API 규칙 준수)
      * @param {Object} payload - 전송할 데이터
      */
     async sendRequest(payload) {
@@ -204,7 +212,7 @@ class ThinkingDataNode {
             const postData = JSON.stringify(payload);
             
             // URL 파싱
-            const url = new URL(this.serverUrl);
+            const url = new URL(this.apiEndpoint);
             const isHttps = url.protocol === 'https:';
             const client = isHttps ? https : http;
 
@@ -215,7 +223,8 @@ class ThinkingDataNode {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Content-Length': Buffer.byteLength(postData)
+                    'Content-Length': Buffer.byteLength(postData),
+                    'client': '1' // 클라이언트 IP 수집 활성화
                 }
             };
 
@@ -227,10 +236,19 @@ class ThinkingDataNode {
                 });
                 
                 res.on('end', () => {
-                    if (res.statusCode >= 200 && res.statusCode < 300) {
-                        resolve(data);
-                    } else {
-                        reject(new Error(`HTTP ${res.statusCode}: ${data}`));
+                    try {
+                        const response = JSON.parse(data);
+                        if (response.code === 0) {
+                            resolve(response);
+                        } else {
+                            reject(new Error(`TE API Error: ${response.msg || 'Unknown error'}`));
+                        }
+                    } catch (parseError) {
+                        if (res.statusCode >= 200 && res.statusCode < 300) {
+                            resolve(data);
+                        } else {
+                            reject(new Error(`HTTP ${res.statusCode}: ${data}`));
+                        }
                     }
                 });
             });
