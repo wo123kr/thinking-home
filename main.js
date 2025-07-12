@@ -1,6 +1,7 @@
 import config from './config.js';
 import { initSDK, isSDKInitialized } from './core/thinking-data-init.js';
 import { registerGlobalUtils, trackingLog } from './core/utils.js';
+import { initSession } from './core/session-manager.js';
 import { initClickTracking } from './tracking/click.js';
 import { initExitTracking } from './tracking/exit.js';
 import { initScrollTracking } from './tracking/scroll.js';
@@ -26,6 +27,9 @@ async function main() {
         return;
     }
     
+    // ✅ config를 전역으로 노출 (trackingLog 함수가 접근할 수 있도록)
+    window.trackingConfig = config;
+    
     trackingLog('🚀 ThinkingData 추적 시스템 초기화 시작...');
     
     try {
@@ -38,6 +42,14 @@ async function main() {
             sdkInitialized = await initSDK(config.thinkingData);
         } catch (sdkError) {
             console.warn('⚠️ SDK 초기화 실패, 다른 모듈들은 계속 실행:', sdkError);
+        }
+        
+        // ✅ 세션 관리자 초기화 (SDK 초기화 후)
+        try {
+            await initSession(config.session);
+            trackingLog('✅ 세션 관리자 초기화 완료');
+        } catch (sessionError) {
+            console.warn('⚠️ 세션 관리자 초기화 실패:', sessionError);
         }
         
         // 3. 각 트래킹 모듈 초기화 (SDK 초기화 실패해도 실행)

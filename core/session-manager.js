@@ -11,7 +11,7 @@ let initializationPromise = null;
 
 // 세션 변수들 (모듈 내부 캡슐화)
 let sessionId = null;
-let sessionNumber = 0;
+let sessionNumber = parseInt(safeGetItem('te_session_number') || '0');
 let sessionStartTime = null;
 let sessionEndTime = null;
 let isEngagedSession = false;
@@ -99,6 +99,24 @@ function initializeSession(config = {}) {
       }
 
       try {
+        // ✅ 세션 번호 초기화 검증
+        const storedSessionNumber = safeGetItem('te_session_number');
+        if (storedSessionNumber !== null) {
+          const parsedNumber = parseInt(storedSessionNumber);
+          if (!isNaN(parsedNumber) && parsedNumber >= 0) {
+            sessionNumber = parsedNumber;
+            trackingLog(`📊 기존 세션 번호 복원: ${sessionNumber}`);
+          } else {
+            console.warn('⚠️ 잘못된 세션 번호 발견, 0으로 리셋:', storedSessionNumber);
+            sessionNumber = 0;
+            safeSetItem('te_session_number', '0');
+          }
+        } else {
+          trackingLog('📊 최초 방문자, 세션 번호 0으로 시작');
+          sessionNumber = 0;
+          safeSetItem('te_session_number', '0');
+        }
+
         const storedSessionId = safeGetItem('te_session_id');
         const storedStartTime = safeGetItem('te_session_start_time');
         const storedLastActivity = safeGetItem('te_last_activity_time');
@@ -156,7 +174,11 @@ function initializeSession(config = {}) {
 function startNewSession() {
   const now = Date.now();
   sessionId = generateSessionId();
-  sessionNumber++;
+  
+  // ✅ 세션 번호 증가 (안전한 방식)
+  const previousSessionNumber = sessionNumber;
+  sessionNumber = previousSessionNumber + 1;
+  
   sessionStartTime = now;
   isEngagedSession = false;
   interactionCount = 0;
@@ -198,6 +220,7 @@ function startNewSession() {
       trackingLog('✅ 새 세션 시작:', {
     sessionId,
     sessionNumber,
+    previousSessionNumber, // ✅ 이전 세션 번호도 로그에 포함
     isBot: sessionStartDataWithTETime.is_bot,
     botType: sessionStartDataWithTETime.bot_type,
     sessionStartTimeTE: sessionStartDataWithTETime.session_start_time_te
@@ -213,7 +236,7 @@ function startNewSession() {
 function restoreSession(existingSessionId, existingStartTime) {
   sessionId = parseInt(existingSessionId);
   sessionStartTime = parseInt(existingStartTime);
-  sessionNumber = parseInt(safeGetItem('te_session_number') || '1');
+  sessionNumber = parseInt(safeGetItem('te_session_number') || '0');
   isEngagedSession = safeGetItem('te_is_engaged_session') === 'true';
   interactionCount = 0;
   lastActivityTime = Date.now();
@@ -581,12 +604,19 @@ function debugSession() {
   console.log('- 초기화 상태:', isInitialized);
   console.log('- 세션 ID:', sessionId);
   console.log('- 세션 번호:', sessionNumber);
+  console.log('- localStorage 세션 번호:', safeGetItem('te_session_number'));
   console.log('- 세션 시작 시간:', sessionStartTime ? new Date(sessionStartTime).toLocaleString() : '없음');
   console.log('- 인게이지 세션:', isEngagedSession);
   console.log('- 상호작용 수:', interactionCount);
   console.log('- 마지막 활동 시간:', new Date(lastActivityTime).toLocaleString());
   console.log('- 세션 타임아웃:', Math.round(sessionTimeout / 60000) + '분');
   console.log('- ThinkingData SDK:', typeof window.te !== 'undefined' ? '로드됨' : '로드 안됨');
+  
+  // ✅ 추가 디버깅 정보
+  console.log('- localStorage 전체 세션 관련 키들:');
+  ['te_session_id', 'te_session_number', 'te_session_start_time', 'te_last_activity_time', 'te_is_engaged_session'].forEach(key => {
+    console.log(`  ${key}:`, safeGetItem(key));
+  });
 }
 
 // 세션 관리자 API
@@ -602,6 +632,35 @@ const sessionManager = {
 // 브라우저 환경에서만 전역 등록 (중복 방지)
 if (typeof window !== 'undefined' && !window.sessionManager) {
   window.sessionManager = sessionManager;
+  
+  // ✅ 추가 디버깅 함수들
+  window.debugSessionNumber = function() {
+    console.log('🔍 세션 번호 디버깅:');
+    console.log('- 메모리 세션 번호:', sessionNumber);
+    console.log('- localStorage 세션 번호:', safeGetItem('te_session_number'));
+    console.log('- 세션 ID:', sessionId);
+    console.log('- 세션 시작 시간:', sessionStartTime ? new Date(sessionStartTime).toLocaleString() : '없음');
+    
+    // localStorage 전체 확인
+    console.log('- localStorage 전체 내용:');
+    Object.keys(localStorage).filter(key => key.startsWith('te_')).forEach(key => {
+      console.log(`  ${key}:`, localStorage.getItem(key));
+    });
+  };
+  
+  window.resetSessionNumber = function() {
+    console.log('🔄 세션 번호 리셋...');
+    sessionNumber = 0;
+    safeSetItem('te_session_number', '0');
+    console.log('✅ 세션 번호가 0으로 리셋되었습니다.');
+  };
+  
+  window.forceNewSession = function() {
+    console.log('🔄 강제 새 세션 시작...');
+    endSession('manual_reset');
+    startNewSession();
+    console.log('✅ 새 세션이 시작되었습니다. 세션 번호:', sessionNumber);
+  };
 }
 
 /**
