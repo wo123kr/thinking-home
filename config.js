@@ -56,7 +56,7 @@ const config = {
   debug: {
     enabled: false, // 운영환경에서는 false, 개발환경에서는 true
     logLevel: 'warn', // 'error', 'warn', 'info', 'debug'
-    showConsoleLogs: true // 우리가 만든 console.log들 제어 (테스트용)
+    showConsoleLogs: false // 우리가 만든 console.log들 제어 (테스트용)
   }
 };
 
