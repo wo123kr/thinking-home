@@ -315,7 +315,7 @@ export class ConfigManager {
     
     updateConfig(module, updates) {
       this.setConfig(module, updates);
-      console.log(`🔄 ${module} 설정 업데이트 완료:`, updates);
+      trackingLog(`🔄 ${module} 설정 업데이트 완료:`, updates);
     }
   }
   
@@ -387,7 +387,7 @@ export function registerGlobalUtils() {
 }
 
   window.utilsRegistered = true;
-  console.log('✅ 공통 유틸리티 함수 전역 등록 완료');
+      trackingLog('✅ 공통 유틸리티 함수 전역 등록 완료');
 }
 
 // 전역 함수 등록 (선택적으로 호출 가능)

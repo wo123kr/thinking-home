@@ -146,14 +146,14 @@ class UserAttributeTracker {
                     });
                     if (Object.keys(finalData).length > 0) {
                         this.safeTeCall(method, finalData);
-                        console.log('📦 배치 전송 (userSet):', Object.keys(finalData));
+                        trackingLog('📦 배치 전송 (userSet):', Object.keys(finalData));
                     }
                 } else {
                     // userAdd, userUniqAppend 등은 개별 처리
                     updates.forEach(update => {
                         this.safeTeCall(method, update);
                     });
-                    console.log(`📦 배치 전송 (${method}):`, updates.length, '개');
+                    trackingLog(`📦 배치 전송 (${method}):`, updates.length, '개');
                 }
             }
         });
@@ -174,7 +174,7 @@ class UserAttributeTracker {
     initializeUser() {
         // 이미 초기화된 경우 스킵
         if (this.isInitialized) {
-            console.log('ℹ️ 이미 초기화됨, 스킵');
+            trackingLog('ℹ️ 이미 초기화됨, 스킵');
             return;
         }
         
@@ -192,7 +192,7 @@ class UserAttributeTracker {
         const now = Date.now();
         const today = new Date().toISOString().split('T')[0];
         
-        console.log('👤 유저 속성 초기화 시작...');
+        trackingLog('👤 유저 속성 초기화 시작...');
         
         // 전역 플래그 설정
         window.userAttributeInitialized = true;
@@ -237,7 +237,7 @@ class UserAttributeTracker {
         this.updateTimeAttributes();
         
         this.saveAttributes();
-        console.log('✅ 유저 속성 초기화 완료:', this.attributes);
+        trackingLog('✅ 유저 속성 초기화 완료:', this.attributes);
     }
     
     // ThinkingData 홈페이지 특화 속성 설정 (최적화됨)
@@ -376,7 +376,7 @@ class UserAttributeTracker {
         const pageCategory = this.categorizePageContent(currentPath);
         const sectionName = this.getPageSection(currentPath);
         
-        console.log('📊 페이지 관심사 업데이트:', { currentPath, pageCategory, sectionName });
+        trackingLog('📊 페이지 관심사 업데이트:', { currentPath, pageCategory, sectionName });
         
         // 관심 주제 추가 (중복 방지)
         if (pageCategory) {
@@ -532,7 +532,7 @@ class UserAttributeTracker {
         this.attributes.total_form_submissions = (this.attributes.total_form_submissions || 0) + 1;
         this.updateEngagementLevel();
         this.saveAttributes();
-        console.log('📝 폼 제출 추적:', this.attributes.total_form_submissions);
+        trackingLog('📝 폼 제출 추적:', this.attributes.total_form_submissions);
     }
     
     // 다운로드 추적
@@ -541,7 +541,7 @@ class UserAttributeTracker {
         this.attributes.total_downloads = (this.attributes.total_downloads || 0) + 1;
         this.updateEngagementLevel();
         this.saveAttributes();
-        console.log('📥 다운로드 추적:', this.attributes.total_downloads);
+        trackingLog('📥 다운로드 추적:', this.attributes.total_downloads);
     }
     
 
@@ -553,7 +553,7 @@ class UserAttributeTracker {
         this.updateContentPreference('deep');
         this.updateEngagementLevel();
         this.saveAttributes();
-        console.log('📜 100% 스크롤 추적:', this.attributes.total_scroll_depth_100);
+        trackingLog('📜 100% 스크롤 추적:', this.attributes.total_scroll_depth_100);
     }
     
     // 팝업 상호작용 추적
@@ -561,7 +561,7 @@ class UserAttributeTracker {
         this.queueUpdate('userAdd', { popup_interactions: 1 });
         this.attributes.popup_interactions = (this.attributes.popup_interactions || 0) + 1;
         this.saveAttributes();
-        console.log('🪟 팝업 상호작용 추적:', this.attributes.popup_interactions);
+        trackingLog('🪟 팝업 상호작용 추적:', this.attributes.popup_interactions);
     }
     
     // 외부 링크 클릭 추적
@@ -569,19 +569,19 @@ class UserAttributeTracker {
         this.queueUpdate('userAdd', { external_link_clicks: 1 });
         this.attributes.external_link_clicks = (this.attributes.external_link_clicks || 0) + 1;
         this.saveAttributes();
-        console.log('🔗 외부 링크 클릭 추적:', this.attributes.external_link_clicks);
+        trackingLog('🔗 외부 링크 클릭 추적:', this.attributes.external_link_clicks);
     }
     
     // 시간 관련 속성 업데이트 (최적화됨)
     updateTimeAttributes() {
-        console.log('🕐 updateTimeAttributes 시작');
+        trackingLog('🕐 updateTimeAttributes 시작');
         
         const now = new Date();
         const hour = now.getHours();
         
-        console.log('🕐 weekday 옵션 테스트 시작');
+        trackingLog('🕐 weekday 옵션 테스트 시작');
         const dayOfWeek = now.toLocaleDateString('en', {weekday: 'long'}).toLowerCase();
-        console.log('🕐 weekday 처리 완료:', dayOfWeek);
+        trackingLog('🕐 weekday 처리 완료:', dayOfWeek);
         
         // 선호 방문 시간대
         const timeOfDay = this.getTimeOfDay(hour);
@@ -611,7 +611,7 @@ class UserAttributeTracker {
         
         this.queueUpdate('userSet', timeUpdates);
         
-        console.log('🕐 updateTimeAttributes 완료');
+        trackingLog('🕐 updateTimeAttributes 완료');
     }
     
     // 시간대 분류
@@ -664,7 +664,7 @@ class UserAttributeTracker {
         const lastUpdate = this.lastUpdates?.get('engagement_level') || 0;
         
         if (now - lastUpdate < 10000) {
-            console.log(`📊 참여도 업데이트 중복 방지 (${Math.round((now - lastUpdate)/1000)}초 전에 업데이트됨)`);
+            trackingLog(`📊 참여도 업데이트 중복 방지 (${Math.round((now - lastUpdate)/1000)}초 전에 업데이트됨)`);
             return;
         }
         
@@ -700,12 +700,12 @@ class UserAttributeTracker {
             this.lastUpdates = this.lastUpdates || new Map();
             this.lastUpdates.set('engagement_level', now);
             
-            console.log(`📊 참여도 수준 업데이트: ${level} (점수: ${score})`);
+            trackingLog(`📊 참여도 수준 업데이트: ${level} (점수: ${score})`);
             
             // 생명주기 단계 업데이트
             this.updateLifecycleStage();
         } else {
-            console.log(`📊 참여도 수준 변화 없음: ${level} (점수: ${score})`);
+            trackingLog(`📊 참여도 수준 변화 없음: ${level} (점수: ${score})`);
         }
     }
     
@@ -719,7 +719,7 @@ class UserAttributeTracker {
         const lastUpdate = this.lastUpdates?.get(lastUpdateKey) || 0;
         
         if (now - lastUpdate < 5000) {
-            console.log(`📊 콘텐츠 선호도 중복 방지: ${depth} (${Math.round((now - lastUpdate)/1000)}초 전에 업데이트됨)`);
+            trackingLog(`📊 콘텐츠 선호도 중복 방지: ${depth} (${Math.round((now - lastUpdate)/1000)}초 전에 업데이트됨)`);
             return;
         }
         
@@ -741,9 +741,9 @@ class UserAttributeTracker {
                 this.lastUpdates = this.lastUpdates || new Map();
                 this.lastUpdates.set(lastUpdateKey, now);
                 
-                console.log(`📊 콘텐츠 선호도 업데이트: ${depth} → ${newPreference}`);
+                trackingLog(`📊 콘텐츠 선호도 업데이트: ${depth} → ${newPreference}`);
             } else {
-                console.log(`📊 콘텐츠 선호도 변화 없음: ${newPreference} (기록만 누적)`);
+                trackingLog(`📊 콘텐츠 선호도 변화 없음: ${newPreference} (기록만 누적)`);
             }
         }
     }
@@ -781,7 +781,7 @@ class UserAttributeTracker {
         const lastUpdate = this.lastUpdates?.get('interaction_frequency') || 0;
         
         if (now - lastUpdate < 15000) {
-            console.log(`📊 상호작용 빈도 중복 방지 (${Math.round((now - lastUpdate)/1000)}초 전에 업데이트됨)`);
+            trackingLog(`📊 상호작용 빈도 중복 방지 (${Math.round((now - lastUpdate)/1000)}초 전에 업데이트됨)`);
             return;
         }
         
@@ -806,9 +806,9 @@ class UserAttributeTracker {
             this.lastUpdates = this.lastUpdates || new Map();
             this.lastUpdates.set('interaction_frequency', now);
             
-            console.log(`📊 상호작용 빈도 업데이트: ${frequency} (비율: ${interactionRate.toFixed(2)})`);
+            trackingLog(`📊 상호작용 빈도 업데이트: ${frequency} (비율: ${interactionRate.toFixed(2)})`);
         } else {
-            console.log(`📊 상호작용 빈도 변화 없음: ${frequency} (비율: ${interactionRate.toFixed(2)})`);
+            trackingLog(`📊 상호작용 빈도 변화 없음: ${frequency} (비율: ${interactionRate.toFixed(2)})`);
         }
     }
     
@@ -816,7 +816,7 @@ class UserAttributeTracker {
     startPageEngagement() {
         // 이미 추적 중인 경우 무시
         if (this.pageStartTime && this.contentEngagementTimer) {
-            console.log('📊 페이지 참여 추적이 이미 진행 중입니다.');
+            trackingLog('📊 페이지 참여 추적이 이미 진행 중입니다.');
             return;
         }
         
@@ -828,13 +828,13 @@ class UserAttributeTracker {
             this.contentEngagementTimer = null; // 타이머 완료 표시
         }, 10000);
         
-        console.log('📊 페이지 참여 추적 시작');
+        trackingLog('📊 페이지 참여 추적 시작');
     }
     
     // 🚀 최적화된 페이지 체류 종료 (중복 방지)
     endPageEngagement() {
         if (!this.pageStartTime) {
-            console.log('📊 페이지 참여 추적이 시작되지 않았습니다.');
+            trackingLog('📊 페이지 참여 추적이 시작되지 않았습니다.');
             return 0;
         }
         
@@ -858,14 +858,14 @@ class UserAttributeTracker {
         this.flushUpdates();
         
         const seconds = Math.round(engagementTime / 1000);
-        console.log(`📊 페이지 참여 추적 종료: ${seconds}초`);
+        trackingLog(`📊 페이지 참여 추적 종료: ${seconds}초`);
         return seconds;
     }
     
     // 디버깅용 유저 속성 출력
     debugUserAttributes() {
-        console.log('🔍 현재 유저 속성:', this.attributes);
-        console.log('📦 대기 중인 업데이트:', this.pendingUpdates);
+        trackingLog('🔍 현재 유저 속성:', this.attributes);
+        trackingLog('📦 대기 중인 업데이트:', this.pendingUpdates);
     }
 }
 
@@ -873,7 +873,7 @@ let trackerInstance = null;
 
 export function initUserAttributes() {
   if (trackerInstance) {
-    console.log('ℹ️ 유저 속성 추적 시스템이 이미 초기화됨');
+    trackingLog('ℹ️ 유저 속성 추적 시스템이 이미 초기화됨');
     return;
   }
   trackerInstance = new UserAttributeTracker();
