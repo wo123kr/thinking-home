@@ -15,6 +15,11 @@ const config = {
     },
   },
 
+  // Google Search Console 설정
+  googleSearchConsole: {
+    siteUrl: 'https://www.thinkingdata.kr'
+  },
+
   // 세션 관리 설정
   session: {
     timeout: 30 * 60 * 1000, // 30분
