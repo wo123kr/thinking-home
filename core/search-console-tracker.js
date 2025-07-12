@@ -98,12 +98,12 @@ class SearchConsoleTracker {
             
             // 추가 메타데이터
             data_source: 'google_search_console',
-            event_category: 'search_performance',
+            event_category: 'search_performance_v2',
             timestamp: new Date().toISOString()
         };
 
         // ThinkingData 이벤트 전송
-        await this.thinkingData.track('search_performance', eventData);
+        await this.thinkingData.track('search_performance_v2', eventData);
     }
 
     /**
@@ -134,11 +134,11 @@ class SearchConsoleTracker {
                     analysis_start_date: startDate,
                     analysis_end_date: endDate,
                     data_source: 'google_search_console',
-                    event_category: 'keyword_performance',
+                    event_category: 'keyword_performance_v2',
                     timestamp: new Date().toISOString()
                 };
 
-                await this.thinkingData.track('keyword_performance', eventData);
+                await this.thinkingData.track('keyword_performance_v2', eventData);
             }
 
             await this.thinkingData.flush();
@@ -176,11 +176,11 @@ class SearchConsoleTracker {
                     analysis_start_date: startDate,
                     analysis_end_date: endDate,
                     data_source: 'google_search_console',
-                    event_category: 'page_performance',
+                    event_category: 'page_performance_v2',
                     timestamp: new Date().toISOString()
                 };
 
-                await this.thinkingData.track('page_performance', eventData);
+                await this.thinkingData.track('page_performance_v2', eventData);
             }
 
             await this.thinkingData.flush();
@@ -218,11 +218,11 @@ class SearchConsoleTracker {
                     analysis_start_date: startDate,
                     analysis_end_date: endDate,
                     data_source: 'google_search_console',
-                    event_category: 'country_performance',
+                    event_category: 'country_performance_v2',
                     timestamp: new Date().toISOString()
                 };
 
-                await this.thinkingData.track('country_performance', eventData);
+                await this.thinkingData.track('country_performance_v2', eventData);
             }
 
             await this.thinkingData.flush();
@@ -244,11 +244,11 @@ class SearchConsoleTracker {
             const deviceData = await this.searchConsoleAPI.getDevicePerformance(startDate, endDate);
             
             if (!deviceData || !deviceData.rows) {
-                console.log('📊 조회 기간에 디바이스 데이터가 없습니다.');
+                console.log('📊 조회 기간에 디바이스별 데이터가 없습니다.');
                 return;
             }
 
-            console.log(`📱 ${deviceData.rows.length}개의 디바이스 데이터를 ThinkingData로 전송 중...`);
+            console.log(`📱 ${deviceData.rows.length}개의 디바이스별 데이터를 ThinkingData로 전송 중...`);
 
             for (const row of deviceData.rows) {
                 const eventData = {
@@ -260,11 +260,11 @@ class SearchConsoleTracker {
                     analysis_start_date: startDate,
                     analysis_end_date: endDate,
                     data_source: 'google_search_console',
-                    event_category: 'device_performance',
+                    event_category: 'device_performance_v2',
                     timestamp: new Date().toISOString()
                 };
 
-                await this.thinkingData.track('device_performance', eventData);
+                await this.thinkingData.track('device_performance_v2', eventData);
             }
 
             await this.thinkingData.flush();
@@ -373,11 +373,11 @@ class SearchConsoleTracker {
                     position: row.position || 0,
                     analysis_date: startDate,
                     data_source: 'google_search_console',
-                    event_category: 'search_query_performance_daily',
+                    event_category: 'daily_query_performance',
                     timestamp: new Date().toISOString()
                 };
 
-                await this.thinkingData.track('search_query_performance_daily', eventData);
+                await this.thinkingData.track('daily_query_performance', eventData);
             }
 
             await this.thinkingData.flush();
@@ -414,11 +414,11 @@ class SearchConsoleTracker {
                     position: row.position || 0,
                     analysis_date: startDate,
                     data_source: 'google_search_console',
-                    event_category: 'search_page_performance_daily',
+                    event_category: 'daily_page_performance',
                     timestamp: new Date().toISOString()
                 };
 
-                await this.thinkingData.track('search_page_performance_daily', eventData);
+                await this.thinkingData.track('daily_page_performance', eventData);
             }
 
             await this.thinkingData.flush();
@@ -455,11 +455,11 @@ class SearchConsoleTracker {
                     position: row.position || 0,
                     analysis_date: startDate,
                     data_source: 'google_search_console',
-                    event_category: 'search_country_performance_daily',
+                    event_category: 'daily_country_performance',
                     timestamp: new Date().toISOString()
                 };
 
-                await this.thinkingData.track('search_country_performance_daily', eventData);
+                await this.thinkingData.track('daily_country_performance', eventData);
             }
 
             await this.thinkingData.flush();
@@ -496,11 +496,11 @@ class SearchConsoleTracker {
                     position: row.position || 0,
                     analysis_date: startDate,
                     data_source: 'google_search_console',
-                    event_category: 'search_device_performance_daily',
+                    event_category: 'daily_device_performance',
                     timestamp: new Date().toISOString()
                 };
 
-                await this.thinkingData.track('search_device_performance_daily', eventData);
+                await this.thinkingData.track('daily_device_performance', eventData);
             }
 
             await this.thinkingData.flush();

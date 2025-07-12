@@ -118,7 +118,15 @@ async function trackSpecificPeriod(startDate, endDate) {
     
     try {
         const tracker = new SearchConsoleTracker(config);
-        await tracker.trackDailyPerformance(startDate, endDate);
+        
+        // 시작일과 종료일이 같으면 일별 데이터로 처리
+        if (startDate === endDate) {
+            await tracker.trackDailyPerformance(startDate, endDate);
+        } else {
+            // 기간이 다르면 기존 방식으로 처리 (주간/월간)
+            await tracker.trackAllPerformance(startDate, endDate);
+        }
+        
         console.log('✅ 특정 기간 데이터 전송 완료!');
     } catch (error) {
         console.error('❌ 특정 기간 데이터 전송 실패:', error);

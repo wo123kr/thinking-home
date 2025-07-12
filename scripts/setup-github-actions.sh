@@ -31,7 +31,7 @@ echo ""
 
 echo "📊 모니터링:"
 echo "   - Repository → Actions 탭에서 실행 상태 확인"
-echo "   - ThinkingData 대시보드에서 gsc_search_performance 이벤트 확인"
+echo "   - ThinkingData 대시보드에서 daily_* 이벤트들 확인"
 echo ""
 
 echo "⚠️ 주의사항:"
