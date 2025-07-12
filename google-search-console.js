@@ -231,10 +231,16 @@ class GoogleSearchConsoleAPI {
                 1000
             );
 
-            return data?.rows || [];
+            if (data && data.rows) {
+                // 클릭수 기준으로 정렬
+                const sortedCountries = data.rows.sort((a, b) => b.clicks - a.clicks);
+                return { rows: sortedCountries };
+            }
+
+            return { rows: [] };
         } catch (error) {
             console.error('❌ 국가별 성과 조회 실패:', error.message);
-            return [];
+            return { rows: [] };
         }
     }
 
@@ -253,10 +259,16 @@ class GoogleSearchConsoleAPI {
                 1000
             );
 
-            return data?.rows || [];
+            if (data && data.rows) {
+                // 클릭수 기준으로 정렬
+                const sortedDevices = data.rows.sort((a, b) => b.clicks - a.clicks);
+                return { rows: sortedDevices };
+            }
+
+            return { rows: [] };
         } catch (error) {
             console.error('❌ 디바이스별 성과 조회 실패:', error.message);
-            return [];
+            return { rows: [] };
         }
     }
 }
