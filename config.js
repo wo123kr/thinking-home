@@ -107,11 +107,12 @@ const config = {
 
 // 설정 유효성 검사
 function validateConfig() {
-  console.log('🔧 ThinkingData 설정 로드:', {
-    appId: config.thinkingData.appId ? '설정됨' : '기본값 사용',
-    serverUrl: config.thinkingData.serverUrl,
-    siteUrl: config.googleSearchConsole.siteUrl
-  });
+  // 설정 로드 로그 비활성화 (운영 환경)
+  // console.log('🔧 ThinkingData 설정 로드:', {
+  //   appId: config.thinkingData.appId ? '설정됨' : '기본값 사용',
+  //   serverUrl: config.thinkingData.serverUrl,
+  //   siteUrl: config.googleSearchConsole.siteUrl
+  // });
   
   if (!config.thinkingData.appId) {
     console.warn('⚠️ ThinkingData APP_ID가 설정되지 않았습니다.');
@@ -135,7 +136,7 @@ function updateConfig(module, updates) {
   }
   
   config[module] = { ...config[module], ...updates };
-  console.log(`🔄 ${module} 설정 업데이트 완료:`, updates);
+  // console.log(`🔄 ${module} 설정 업데이트 완료:`, updates); // 로그 비활성화
   return config[module];
 }
 
@@ -147,14 +148,14 @@ function getModuleConfig(module) {
 // 환경변수 설정 헬퍼 함수 (런타임에 설정 가능)
 function setEnvVar(name, value) {
   window[name] = value;
-  console.log(`🔧 환경변수 설정: ${name} = ${value}`);
+  // console.log(`🔧 환경변수 설정: ${name} = ${value}`); // 로그 비활성화
 }
 
 // 전역으로 노출 (HTML에서 직접 설정 가능)
 window.setThinkingDataConfig = function(appId, serverUrl) {
   if (appId) setEnvVar('TE_APP_ID', appId);
   if (serverUrl) setEnvVar('TE_SERVER_URL', serverUrl);
-  console.log('🔧 ThinkingData 설정이 업데이트되었습니다. 페이지를 새로고침하세요.');
+  // console.log('🔧 ThinkingData 설정이 업데이트되었습니다. 페이지를 새로고침하세요.'); // 로그 비활성화
 };
 
 export default config;
