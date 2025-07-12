@@ -347,7 +347,7 @@ function endSession(reason = 'page_exit') {
   
   sessionEventsTracked.session_end = true;
   
-  console.log('🔄 세션 종료:', {
+  trackingLog('🔄 세션 종료:', {
     sessionId,
     duration: sessionDuration + '초',
     reason
@@ -506,7 +506,7 @@ function updateSuperProperties() {
     const superPropertiesWithTETime = addTETimeProperties(superProperties);
     
     window.te.setSuperProperties(superPropertiesWithTETime);
-    console.log('✅ 공통 속성 업데이트 완료 (TE 시간 형식 포함)');
+    trackingLog('✅ 공통 속성 업데이트 완료 (TE 시간 형식 포함)');
   } catch (error) {
     console.error('공통 속성 업데이트 실패:', error);
   }
@@ -572,7 +572,7 @@ function updateSessionConfig(newConfig) {
   if (typeof newConfig.enabled === 'boolean') {
     isSessionTrackingEnabled = newConfig.enabled;
   }
-  console.log('✅ 세션 설정 업데이트:', newConfig);
+  trackingLog('✅ 세션 설정 업데이트:', newConfig);
 }
 
 /**
@@ -600,22 +600,22 @@ function getSessionStatistics() {
  * 디버깅용 함수
  */
 function debugSession() {
-  console.log('🔄 세션 디버깅 정보:');
-  console.log('- 초기화 상태:', isInitialized);
-  console.log('- 세션 ID:', sessionId);
-  console.log('- 세션 번호:', sessionNumber);
-  console.log('- localStorage 세션 번호:', safeGetItem('te_session_number'));
-  console.log('- 세션 시작 시간:', sessionStartTime ? new Date(sessionStartTime).toLocaleString() : '없음');
-  console.log('- 인게이지 세션:', isEngagedSession);
-  console.log('- 상호작용 수:', interactionCount);
-  console.log('- 마지막 활동 시간:', new Date(lastActivityTime).toLocaleString());
-  console.log('- 세션 타임아웃:', Math.round(sessionTimeout / 60000) + '분');
-  console.log('- ThinkingData SDK:', typeof window.te !== 'undefined' ? '로드됨' : '로드 안됨');
+  trackingLog('🔄 세션 디버깅 정보:');
+  trackingLog('- 초기화 상태:', isInitialized);
+  trackingLog('- 세션 ID:', sessionId);
+  trackingLog('- 세션 번호:', sessionNumber);
+  trackingLog('- localStorage 세션 번호:', safeGetItem('te_session_number'));
+  trackingLog('- 세션 시작 시간:', sessionStartTime ? new Date(sessionStartTime).toLocaleString() : '없음');
+  trackingLog('- 인게이지 세션:', isEngagedSession);
+  trackingLog('- 상호작용 수:', interactionCount);
+  trackingLog('- 마지막 활동 시간:', new Date(lastActivityTime).toLocaleString());
+  trackingLog('- 세션 타임아웃:', Math.round(sessionTimeout / 60000) + '분');
+  trackingLog('- ThinkingData SDK:', typeof window.te !== 'undefined' ? '로드됨' : '로드 안됨');
   
   // ✅ 추가 디버깅 정보
-  console.log('- localStorage 전체 세션 관련 키들:');
+  trackingLog('- localStorage 전체 세션 관련 키들:');
   ['te_session_id', 'te_session_number', 'te_session_start_time', 'te_last_activity_time', 'te_is_engaged_session'].forEach(key => {
-    console.log(`  ${key}:`, safeGetItem(key));
+    trackingLog(`  ${key}:`, safeGetItem(key));
   });
 }
 
@@ -635,31 +635,31 @@ if (typeof window !== 'undefined' && !window.sessionManager) {
   
   // ✅ 추가 디버깅 함수들
   window.debugSessionNumber = function() {
-    console.log('🔍 세션 번호 디버깅:');
-    console.log('- 메모리 세션 번호:', sessionNumber);
-    console.log('- localStorage 세션 번호:', safeGetItem('te_session_number'));
-    console.log('- 세션 ID:', sessionId);
-    console.log('- 세션 시작 시간:', sessionStartTime ? new Date(sessionStartTime).toLocaleString() : '없음');
+    trackingLog('🔍 세션 번호 디버깅:');
+    trackingLog('- 메모리 세션 번호:', sessionNumber);
+    trackingLog('- localStorage 세션 번호:', safeGetItem('te_session_number'));
+    trackingLog('- 세션 ID:', sessionId);
+    trackingLog('- 세션 시작 시간:', sessionStartTime ? new Date(sessionStartTime).toLocaleString() : '없음');
     
     // localStorage 전체 확인
-    console.log('- localStorage 전체 내용:');
+    trackingLog('- localStorage 전체 내용:');
     Object.keys(localStorage).filter(key => key.startsWith('te_')).forEach(key => {
-      console.log(`  ${key}:`, localStorage.getItem(key));
+      trackingLog(`  ${key}:`, localStorage.getItem(key));
     });
   };
   
   window.resetSessionNumber = function() {
-    console.log('🔄 세션 번호 리셋...');
+    trackingLog('🔄 세션 번호 리셋...');
     sessionNumber = 0;
     safeSetItem('te_session_number', '0');
-    console.log('✅ 세션 번호가 0으로 리셋되었습니다.');
+    trackingLog('✅ 세션 번호가 0으로 리셋되었습니다.');
   };
   
   window.forceNewSession = function() {
-    console.log('🔄 강제 새 세션 시작...');
+    trackingLog('🔄 강제 새 세션 시작...');
     endSession('manual_reset');
     startNewSession();
-    console.log('✅ 새 세션이 시작되었습니다. 세션 번호:', sessionNumber);
+    trackingLog('✅ 새 세션이 시작되었습니다. 세션 번호:', sessionNumber);
   };
 }
 
