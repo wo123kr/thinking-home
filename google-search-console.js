@@ -177,13 +177,13 @@ class GoogleSearchConsoleAPI {
             if (data && data.rows) {
                 // 클릭수 기준으로 정렬
                 const sortedQueries = data.rows.sort((a, b) => b.clicks - a.clicks);
-                return sortedQueries;
+                return { rows: sortedQueries };
             }
 
-            return [];
+            return { rows: [] };
         } catch (error) {
             console.error('❌ 상위 검색어 조회 실패:', error.message);
-            return [];
+            return { rows: [] };
         }
     }
 
@@ -206,13 +206,13 @@ class GoogleSearchConsoleAPI {
             if (data && data.rows) {
                 // 클릭수 기준으로 정렬
                 const sortedPages = data.rows.sort((a, b) => b.clicks - a.clicks);
-                return sortedPages;
+                return { rows: sortedPages };
             }
 
-            return [];
+            return { rows: [] };
         } catch (error) {
             console.error('❌ 상위 페이지 조회 실패:', error.message);
-            return [];
+            return { rows: [] };
         }
     }
 

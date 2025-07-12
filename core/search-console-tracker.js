@@ -282,18 +282,37 @@ class SearchConsoleTracker {
     async trackAllPerformance(startDate, endDate) {
         console.log('🚀 모든 검색 성과 데이터 전송 시작...');
         
-        await Promise.all([
-            this.trackSearchPerformance(startDate, endDate),
-            this.trackKeywordPerformance(startDate, endDate),
-            this.trackPagePerformance(startDate, endDate),
-            this.trackCountryPerformance(startDate, endDate),
-            this.trackDevicePerformance(startDate, endDate)
-        ]);
+        try {
+            await Promise.all([
+                this.trackSearchPerformance(startDate, endDate),
+                this.trackKeywordPerformance(startDate, endDate),
+                this.trackPagePerformance(startDate, endDate),
+                this.trackCountryPerformance(startDate, endDate),
+                this.trackDevicePerformance(startDate, endDate)
+            ]);
 
-        // 최종 버퍼 정리
-        await this.thinkingData.close();
+            // 최종 버퍼 정리
+            await this.thinkingData.close();
 
-        console.log('🎉 모든 검색 성과 데이터 전송 완료!');
+            console.log('🎉 모든 검색 성과 데이터 전송 완료!');
+        } catch (error) {
+            console.error('❌ 전체 데이터 전송 중 오류 발생:', error);
+            // 개별 전송 시도
+            console.log('🔄 개별 전송으로 재시도...');
+            
+            try {
+                await this.trackSearchPerformance(startDate, endDate);
+                await this.trackKeywordPerformance(startDate, endDate);
+                await this.trackPagePerformance(startDate, endDate);
+                await this.trackCountryPerformance(startDate, endDate);
+                await this.trackDevicePerformance(startDate, endDate);
+                await this.thinkingData.close();
+                console.log('✅ 개별 전송 완료!');
+            } catch (retryError) {
+                console.error('❌ 재시도도 실패:', retryError);
+                throw retryError;
+            }
+        }
     }
 }
 

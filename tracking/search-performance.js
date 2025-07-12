@@ -14,8 +14,8 @@ const config = {
     credentialsPath: path.join(__dirname, '../credentials/service-account-key.json'),
     siteUrl: 'https://www.thinkingdata.kr/',
     thinkingData: {
-        appId: 'test', // 실제 ThinkingData 프로젝트 ID로 변경
-        serverUrl: 'https://te-receiver-naver.thinkingdata.kr/sync_js',
+        appId: process.env.TE_APP_ID || 'test', // 환경변수에서 가져오기
+        serverUrl: process.env.TE_SERVER_URL || 'https://te-receiver-naver.thinkingdata.kr/sync_js',
         autoTrack: {
             pageShow: true,
             pageHide: true
