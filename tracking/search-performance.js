@@ -23,6 +23,11 @@ const config = {
     }
 };
 
+// 환경변수 확인 로깅
+console.log('🔧 환경변수 확인:');
+console.log('  TE_APP_ID:', process.env.TE_APP_ID ? '설정됨' : '기본값 사용');
+console.log('  TE_SERVER_URL:', process.env.TE_SERVER_URL ? '설정됨' : '기본값 사용');
+
 /**
  * 날짜 범위 계산 함수들
  */

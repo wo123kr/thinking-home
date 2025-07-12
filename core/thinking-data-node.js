@@ -15,9 +15,14 @@ class ThinkingDataNode {
         this.isInitialized = true;
         
         // TE RESTful API 엔드포인트 설정
-        this.apiEndpoint = this.serverUrl.endsWith('/sync_json') 
-            ? this.serverUrl 
-            : this.serverUrl.replace(/\/?$/, '') + '/sync_json';
+        // /sync_js로 끝나는 경우 /sync_json으로 변경
+        if (this.serverUrl.endsWith('/sync_js')) {
+            this.apiEndpoint = this.serverUrl.replace('/sync_js', '/sync_json');
+        } else if (this.serverUrl.endsWith('/sync_json')) {
+            this.apiEndpoint = this.serverUrl;
+        } else {
+            this.apiEndpoint = this.serverUrl.replace(/\/?$/, '') + '/sync_json';
+        }
         
         console.log('🔧 ThinkingData API 엔드포인트:', this.apiEndpoint);
     }
@@ -192,8 +197,8 @@ class ThinkingDataNode {
             // 여러 데이터를 배열로 전송 (sync_json 방식)
             const payload = this.buffer.map(eventData => ({
                 appid: this.appId,
-                data: eventData,
-                debug: 1 // 디버그 모드 활성화 (문제 해결 후 제거 예정)
+                data: eventData
+                // debug: 1 // 디버그 모드 비활성화 (운영 환경)
             }));
 
             console.log('📤 전송할 데이터 구조:', JSON.stringify(payload[0], null, 2));
@@ -240,6 +245,12 @@ class ThinkingDataNode {
 
             const req = client.request(options, (res) => {
                 let data = '';
+                
+                console.log('📡 HTTP 응답 헤더:', {
+                    statusCode: res.statusCode,
+                    statusMessage: res.statusMessage,
+                    headers: res.headers
+                });
                 
                 res.on('data', (chunk) => {
                     data += chunk;
@@ -321,8 +332,8 @@ class ThinkingDataNode {
 
             const payload = [{
                 appid: this.appId,
-                data: testEvent,
-                debug: 1
+                data: testEvent
+                // debug: 1 // 디버그 모드 비활성화
             }];
 
             console.log('🧪 테스트 이벤트:', JSON.stringify(payload, null, 2));
@@ -331,7 +342,24 @@ class ThinkingDataNode {
             return true;
         } catch (error) {
             console.error('❌ 연결 테스트 실패:', error.message);
-            return false;
+            
+            // 대체 엔드포인트로 재시도
+            console.log('🔄 대체 엔드포인트로 재시도...');
+            const originalEndpoint = this.apiEndpoint;
+            
+            // /sync_json 대신 /sync_data 시도
+            this.apiEndpoint = this.apiEndpoint.replace('/sync_json', '/sync_data');
+            console.log('🔄 새로운 엔드포인트:', this.apiEndpoint);
+            
+            try {
+                await this.sendRequest(payload);
+                console.log('✅ 대체 엔드포인트 연결 테스트 성공!');
+                return true;
+            } catch (retryError) {
+                console.error('❌ 대체 엔드포인트도 실패:', retryError.message);
+                this.apiEndpoint = originalEndpoint; // 원래 엔드포인트로 복원
+                return false;
+            }
         }
     }
 }
