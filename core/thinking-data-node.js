@@ -191,7 +191,7 @@ class ThinkingDataNode {
             const payload = this.buffer.map(eventData => ({
                 appid: this.appId,
                 data: eventData,
-                debug: 0 // 디버그 모드 비활성화
+                debug: 1 // 디버그 모드 활성화
             }));
 
             await this.sendRequest(payload);
@@ -241,12 +241,21 @@ class ThinkingDataNode {
                         if (response.code === 0) {
                             resolve(response);
                         } else {
+                            console.error('❌ TE API Error (debug):', {
+                                code: response.code,
+                                msg: response.msg,
+                                raw: data
+                            });
                             reject(new Error(`TE API Error: ${response.msg || 'Unknown error'}`));
                         }
                     } catch (parseError) {
                         if (res.statusCode >= 200 && res.statusCode < 300) {
                             resolve(data);
                         } else {
+                            console.error('❌ TE API HTTP Error:', {
+                                status: res.statusCode,
+                                raw: data
+                            });
                             reject(new Error(`HTTP ${res.statusCode}: ${data}`));
                         }
                     }
