@@ -9,7 +9,7 @@ const __dirname = path.dirname(__filename);
  * Search Console 데이터를 ThinkingData로 전송하는 실행 스크립트
  */
 
-// 설정 객체
+// 설정 객체 (GitHub Actions 환경용)
 const config = {
     credentialsPath: path.join(__dirname, '../credentials/service-account-key.json'),
     siteUrl: 'https://www.thinkingdata.kr/',

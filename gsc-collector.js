@@ -7,7 +7,7 @@
 
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import config from './config.js';
+import config from './config-github-actions.js';
 import SearchConsoleTracker from './core/search-console-tracker.js';
 import { trackingLog } from './core/utils.js';
 

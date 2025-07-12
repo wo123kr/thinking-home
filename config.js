@@ -1,5 +1,5 @@
 /**
- * ThinkingData 추적 시스템 설정 (브라우저 환경 최적화)
+ * ThinkingData 추적 시스템 설정 (브라우저 환경 전용)
  * 중앙화된 설정 관리
  * 
  * 환경변수 설정 방법:
@@ -55,11 +55,6 @@ const config = {
     },
   },
 
-  // Google Search Console 설정
-  googleSearchConsole: {
-    siteUrl: getEnvVar('GSC_SITE_URL', 'https://www.thinkingdata.kr/')
-  },
-
   // 세션 관리 설정
   session: {
     timeout: 30 * 60 * 1000, // 30분
@@ -110,8 +105,7 @@ function validateConfig() {
   // 설정 로드 로그 비활성화 (운영 환경)
   // console.log('🔧 ThinkingData 설정 로드:', {
   //   appId: config.thinkingData.appId ? '설정됨' : '기본값 사용',
-  //   serverUrl: config.thinkingData.serverUrl,
-  //   siteUrl: config.googleSearchConsole.siteUrl
+  //   serverUrl: config.thinkingData.serverUrl
   // });
   
   if (!config.thinkingData.appId) {
