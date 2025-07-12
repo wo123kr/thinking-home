@@ -50,7 +50,6 @@ const config = {
     serverUrl: getEnvVar('TE_SERVER_URL', 'https://te-receiver-naver.thinkingdata.kr/sync_js'),
     showLog: false, // SDK 로그 활성화 (개발/운영 환경에 따라 조정)
     batch: false, // 🚀 실시간 전송으로 변경 (기본값: true)
-    batchSize: 1, // 🚀 Node.js용 배치 크기 (즉시 전송)
     autoTrack: {
       pageShow: true,
       pageHide: true
