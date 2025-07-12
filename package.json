@@ -7,6 +7,7 @@
     "start": "node main.js",
     "test": "node test-connection.js",
     "sync:yesterday": "node tracking/search-performance.js yesterday",
+    "sync:last-3-days": "node tracking/search-performance.js last-3-days",
     "sync:last-week": "node tracking/search-performance.js last-week",
     "sync:last-month": "node tracking/search-performance.js last-month",
     "setup-cron": "chmod +x scripts/setup-cron.sh && ./scripts/setup-cron.sh"

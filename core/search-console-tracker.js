@@ -314,6 +314,201 @@ class SearchConsoleTracker {
             }
         }
     }
+
+    /**
+     * 일별 검색 성과 데이터를 ThinkingData 이벤트로 전송
+     * @param {string} startDate - 시작 날짜 (YYYY-MM-DD)
+     * @param {string} endDate - 종료 날짜 (YYYY-MM-DD)
+     */
+    async trackDailyPerformance(startDate, endDate) {
+        console.log(`📅 ${startDate} 일별 데이터 전송 시작...`);
+        
+        try {
+            // 1. 검색 쿼리별 일별 성과
+            await this.trackDailyQueryPerformance(startDate, endDate);
+            
+            // 2. 페이지별 일별 성과
+            await this.trackDailyPagePerformance(startDate, endDate);
+            
+            // 3. 국가별 일별 성과
+            await this.trackDailyCountryPerformance(startDate, endDate);
+            
+            // 4. 디바이스별 일별 성과
+            await this.trackDailyDevicePerformance(startDate, endDate);
+            
+            // 최종 버퍼 정리
+            await this.thinkingData.close();
+            
+            console.log(`✅ ${startDate} 일별 데이터 전송 완료!`);
+        } catch (error) {
+            console.error(`❌ ${startDate} 일별 데이터 전송 실패:`, error);
+            throw error;
+        }
+    }
+
+    /**
+     * 검색 쿼리별 일별 성과를 ThinkingData 이벤트로 전송
+     * @param {string} startDate - 시작 날짜
+     * @param {string} endDate - 종료 날짜
+     */
+    async trackDailyQueryPerformance(startDate, endDate) {
+        await this.ready;
+        
+        try {
+            const queryData = await this.searchConsoleAPI.getTopQueries(startDate, endDate, 1000);
+            
+            if (!queryData || !queryData.rows) {
+                console.log('📊 조회 기간에 검색 쿼리 데이터가 없습니다.');
+                return;
+            }
+
+            console.log(`🔍 ${queryData.rows.length}개의 검색 쿼리 데이터를 ThinkingData로 전송 중...`);
+
+            for (const row of queryData.rows) {
+                const eventData = {
+                    search_query: row.keys[0] || 'unknown',
+                    clicks: row.clicks || 0,
+                    impressions: row.impressions || 0,
+                    ctr: row.ctr || 0,
+                    position: row.position || 0,
+                    analysis_date: startDate,
+                    data_source: 'google_search_console',
+                    event_category: 'search_query_performance_daily',
+                    timestamp: new Date().toISOString()
+                };
+
+                await this.thinkingData.track('search_query_performance_daily', eventData);
+            }
+
+            await this.thinkingData.flush();
+            console.log('✅ 검색 쿼리별 일별 성과 데이터 전송 완료');
+        } catch (error) {
+            console.error('❌ 검색 쿼리별 일별 성과 데이터 전송 실패:', error);
+        }
+    }
+
+    /**
+     * 페이지별 일별 성과를 ThinkingData 이벤트로 전송
+     * @param {string} startDate - 시작 날짜
+     * @param {string} endDate - 종료 날짜
+     */
+    async trackDailyPagePerformance(startDate, endDate) {
+        await this.ready;
+        
+        try {
+            const pageData = await this.searchConsoleAPI.getTopPages(startDate, endDate, 1000);
+            
+            if (!pageData || !pageData.rows) {
+                console.log('📊 조회 기간에 페이지 데이터가 없습니다.');
+                return;
+            }
+
+            console.log(`📄 ${pageData.rows.length}개의 페이지 데이터를 ThinkingData로 전송 중...`);
+
+            for (const row of pageData.rows) {
+                const eventData = {
+                    page_url: row.keys[0] || 'unknown',
+                    clicks: row.clicks || 0,
+                    impressions: row.impressions || 0,
+                    ctr: row.ctr || 0,
+                    position: row.position || 0,
+                    analysis_date: startDate,
+                    data_source: 'google_search_console',
+                    event_category: 'search_page_performance_daily',
+                    timestamp: new Date().toISOString()
+                };
+
+                await this.thinkingData.track('search_page_performance_daily', eventData);
+            }
+
+            await this.thinkingData.flush();
+            console.log('✅ 페이지별 일별 성과 데이터 전송 완료');
+        } catch (error) {
+            console.error('❌ 페이지별 일별 성과 데이터 전송 실패:', error);
+        }
+    }
+
+    /**
+     * 국가별 일별 성과를 ThinkingData 이벤트로 전송
+     * @param {string} startDate - 시작 날짜
+     * @param {string} endDate - 종료 날짜
+     */
+    async trackDailyCountryPerformance(startDate, endDate) {
+        await this.ready;
+        
+        try {
+            const countryData = await this.searchConsoleAPI.getCountryPerformance(startDate, endDate);
+            
+            if (!countryData || !countryData.rows) {
+                console.log('📊 조회 기간에 국가별 데이터가 없습니다.');
+                return;
+            }
+
+            console.log(`🌍 ${countryData.rows.length}개의 국가별 데이터를 ThinkingData로 전송 중...`);
+
+            for (const row of countryData.rows) {
+                const eventData = {
+                    country: row.keys[0] || 'unknown',
+                    clicks: row.clicks || 0,
+                    impressions: row.impressions || 0,
+                    ctr: row.ctr || 0,
+                    position: row.position || 0,
+                    analysis_date: startDate,
+                    data_source: 'google_search_console',
+                    event_category: 'search_country_performance_daily',
+                    timestamp: new Date().toISOString()
+                };
+
+                await this.thinkingData.track('search_country_performance_daily', eventData);
+            }
+
+            await this.thinkingData.flush();
+            console.log('✅ 국가별 일별 성과 데이터 전송 완료');
+        } catch (error) {
+            console.error('❌ 국가별 일별 성과 데이터 전송 실패:', error);
+        }
+    }
+
+    /**
+     * 디바이스별 일별 성과를 ThinkingData 이벤트로 전송
+     * @param {string} startDate - 시작 날짜
+     * @param {string} endDate - 종료 날짜
+     */
+    async trackDailyDevicePerformance(startDate, endDate) {
+        await this.ready;
+        
+        try {
+            const deviceData = await this.searchConsoleAPI.getDevicePerformance(startDate, endDate);
+            
+            if (!deviceData || !deviceData.rows) {
+                console.log('📊 조회 기간에 디바이스별 데이터가 없습니다.');
+                return;
+            }
+
+            console.log(`📱 ${deviceData.rows.length}개의 디바이스별 데이터를 ThinkingData로 전송 중...`);
+
+            for (const row of deviceData.rows) {
+                const eventData = {
+                    device: row.keys[0] || 'unknown',
+                    clicks: row.clicks || 0,
+                    impressions: row.impressions || 0,
+                    ctr: row.ctr || 0,
+                    position: row.position || 0,
+                    analysis_date: startDate,
+                    data_source: 'google_search_console',
+                    event_category: 'search_device_performance_daily',
+                    timestamp: new Date().toISOString()
+                };
+
+                await this.thinkingData.track('search_device_performance_daily', eventData);
+            }
+
+            await this.thinkingData.flush();
+            console.log('✅ 디바이스별 일별 성과 데이터 전송 완료');
+        } catch (error) {
+            console.error('❌ 디바이스별 일별 성과 데이터 전송 실패:', error);
+        }
+    }
 }
 
 export default SearchConsoleTracker; 

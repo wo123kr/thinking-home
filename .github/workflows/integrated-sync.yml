@@ -10,10 +10,11 @@ on:
       sync_type:
         description: '동기화 타입 선택'
         required: true
-        default: 'yesterday'
+        default: 'last-3-days'
         type: choice
         options:
           - yesterday
+          - last-3-days
           - last-week
           - last-month
       force_run:
@@ -81,6 +82,10 @@ jobs:
           "yesterday")
             echo "📅 어제 데이터 전송 시작"
             node $SCRIPT yesterday
+            ;;
+          "last-3-days")
+            echo "📊 최근 3일치 데이터 전송 시작"
+            node $SCRIPT last-3-days
             ;;
           "last-week")
             echo "📊 지난 주 데이터 전송 시작"
