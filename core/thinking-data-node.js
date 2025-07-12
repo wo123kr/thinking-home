@@ -10,7 +10,7 @@ class ThinkingDataNode {
         this.appId = config.appId;
         this.serverUrl = config.serverUrl;
         this.secretKey = config.secretKey || null;
-        this.batchSize = config.batchSize || 20;
+        this.batchSize = config.batchSize || 1; // 🚀 실시간 전송: 1개씩 즉시 전송 (기존: 20)
         this.buffer = [];
         this.isInitialized = true;
         
