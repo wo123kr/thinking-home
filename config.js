@@ -1,13 +1,13 @@
 /**
- * ThinkingData 추적 시스템 설정
+ * ThinkingData 추적 시스템 설정 (환경변수 기반 리팩터링)
  * 중앙화된 설정 관리
  */
 
 const config = {
   // ThinkingData SDK 설정
   thinkingData: {
-    appId: '79ed7051fc51493798b16328c0ebd0bc', // 실제 APP_ID
-    serverUrl: 'https://te-receiver-naver.thinkingdata.kr/sync_js', // 실제 서버 URL
+    appId: process.env.TE_APP_ID || '79ed7051fc51493798b16328c0ebd0bc', // 환경변수 우선
+    serverUrl: process.env.TE_SERVER_URL || 'https://te-receiver-naver.thinkingdata.kr/sync_js',
     showLog: false, // SDK 로그 활성화 (개발/운영 환경에 따라 조정)
     autoTrack: {
       pageShow: true,
@@ -17,7 +17,7 @@ const config = {
 
   // Google Search Console 설정
   googleSearchConsole: {
-    siteUrl: 'https://www.thinkingdata.kr'
+    siteUrl: process.env.GSC_SITE_URL || 'https://www.thinkingdata.kr'
   },
 
   // 세션 관리 설정
