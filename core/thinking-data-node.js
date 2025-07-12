@@ -87,11 +87,14 @@ class ThinkingDataNode {
             "properties": normalizedProperties
         };
 
-        if (distinctId) {
-            eventData["#distinct_id"] = distinctId;
-        }
+        // 🚀 ThinkingData API 규칙: account_id 또는 distinct_id 중 하나는 반드시 필요
         if (accountId) {
             eventData["#account_id"] = accountId;
+        } else if (distinctId) {
+            eventData["#distinct_id"] = distinctId;
+        } else {
+            // 기본 distinct_id 생성 (서버 환경용)
+            eventData["#distinct_id"] = `server_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         }
 
         // 배치 전송을 위해 버퍼에 추가
@@ -116,11 +119,14 @@ class ThinkingDataNode {
             "properties": properties
         };
 
-        if (distinctId) {
-            eventData["#distinct_id"] = distinctId;
-        }
+        // 🚀 ThinkingData API 규칙: account_id 또는 distinct_id 중 하나는 반드시 필요
         if (accountId) {
             eventData["#account_id"] = accountId;
+        } else if (distinctId) {
+            eventData["#distinct_id"] = distinctId;
+        } else {
+            // 기본 distinct_id 생성 (서버 환경용)
+            eventData["#distinct_id"] = `server_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         }
 
         this.buffer.push(eventData);
@@ -143,11 +149,14 @@ class ThinkingDataNode {
             "properties": properties
         };
 
-        if (distinctId) {
-            eventData["#distinct_id"] = distinctId;
-        }
+        // 🚀 ThinkingData API 규칙: account_id 또는 distinct_id 중 하나는 반드시 필요
         if (accountId) {
             eventData["#account_id"] = accountId;
+        } else if (distinctId) {
+            eventData["#distinct_id"] = distinctId;
+        } else {
+            // 기본 distinct_id 생성 (서버 환경용)
+            eventData["#distinct_id"] = `server_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         }
 
         this.buffer.push(eventData);
@@ -170,11 +179,14 @@ class ThinkingDataNode {
             "properties": properties
         };
 
-        if (distinctId) {
-            eventData["#distinct_id"] = distinctId;
-        }
+        // 🚀 ThinkingData API 규칙: account_id 또는 distinct_id 중 하나는 반드시 필요
         if (accountId) {
             eventData["#account_id"] = accountId;
+        } else if (distinctId) {
+            eventData["#distinct_id"] = distinctId;
+        } else {
+            // 기본 distinct_id 생성 (서버 환경용)
+            eventData["#distinct_id"] = `server_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         }
 
         this.buffer.push(eventData);
@@ -320,15 +332,16 @@ class ThinkingDataNode {
         console.log('🧪 ThinkingData API 연결 테스트 시작...');
         
         try {
-            const testEvent = {
-                "#type": "track",
-                "#event_name": "test_connection",
-                "#time": new Date().toISOString().replace('T', ' ').slice(0, 23),
-                "properties": {
-                    "test_property": "test_value",
-                    "timestamp": new Date().toISOString()
-                }
-            };
+                    const testEvent = {
+            "#type": "track",
+            "#event_name": "test_connection",
+            "#time": new Date().toISOString().replace('T', ' ').slice(0, 23),
+            "#distinct_id": `test_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            "properties": {
+                "test_property": "test_value",
+                "timestamp": new Date().toISOString()
+            }
+        };
 
             const payload = [{
                 appid: this.appId,
