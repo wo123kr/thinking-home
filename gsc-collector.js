@@ -106,16 +106,26 @@ async function main() {
         const dateRange = calculateDateRange(options);
         console.log(`📅 수집 기간: ${dateRange.startDate} ~ ${dateRange.endDate}`);
 
-        // 3. Search Console Tracker 초기화
+        // 3. 설정 디버깅 및 기본값 설정
+        console.log('🔧 Config 객체 구조:', {
+            hasGoogleSearchConsole: !!config.googleSearchConsole,
+            googleSearchConsoleKeys: config.googleSearchConsole ? Object.keys(config.googleSearchConsole) : 'undefined',
+            siteUrl: config.googleSearchConsole?.siteUrl
+        });
+        
+        const siteUrl = config.googleSearchConsole?.siteUrl || 'https://www.thinkingdata.kr';
+        console.log('🌐 사용할 사이트 URL:', siteUrl);
+
+        // 4. Search Console Tracker 초기화
         const tracker = new SearchConsoleTracker({
             credentialsPath: join(__dirname, 'credentials', 'google-search-console.json'),
-            siteUrl: config.googleSearchConsole.siteUrl,
+            siteUrl: siteUrl,
             thinkingData: config.thinkingData
         });
 
         await tracker.initialize();
 
-        // 4. 데이터 수집 실행
+        // 5. 데이터 수집 실행
         if (options.mode === 'daily') {
             // 일별 데이터 수집 (최근 3일치)
             console.log('📊 일별 데이터 수집 모드');
