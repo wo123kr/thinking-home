@@ -1,14 +1,21 @@
 // tracking/section-scroll.js
 // @brief: 각 section(id)별로 0/25/50/75/100% 스크롤 도달 시 ThinkingData 이벤트 전송
 
+import config from '../config.js';
+
 const SECTION_THRESHOLDS = [0, 25, 50, 75, 100];
 const DEBOUNCE_TIME = 100; // ms
+
+let sectionScrollTrackingInitialized = false;
 
 /**
  * 섹션별 스크롤 뎁스 추적 초기화
  * 사용법: main.js 등에서 import 후 initSectionScrollTracking() 1회 호출
  */
 export function initSectionScrollTracking() {
+  if (sectionScrollTrackingInitialized) return;
+  sectionScrollTrackingInitialized = true;
+
   const sections = Array.from(document.querySelectorAll('section[id]'));
   const tracked = {}; // { sectionId: Set([0, 25, ...]) }
 
@@ -44,7 +51,9 @@ export function initSectionScrollTracking() {
               page_name: document.title,
               page_url: window.location.href
             };
-            console.log('[DEBUG] section_scroll_depth fired', eventData);
+            if (config.debug && config.debug.showConsoleLogs) {
+              console.log('[DEBUG] section_scroll_depth fired', eventData);
+            }
             window.te.track('section_scroll_depth', eventData);
           }
         }
@@ -61,4 +70,36 @@ export function initSectionScrollTracking() {
 
   // 최초 진입 시도 체크
   checkSectionScrollDepth();
-} 
+}
+
+// robust 초기화: DOMContentLoaded, window load, SDK ready 등에서 자동 실행
+function robustSectionScrollInit() {
+  if (sectionScrollTrackingInitialized) return;
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initSectionScrollTracking);
+  } else {
+    initSectionScrollTracking();
+  }
+
+  // ThinkingData SDK ready 이벤트
+  if (!window.sectionScrollThinkingDataListenerAdded) {
+    window.sectionScrollThinkingDataListenerAdded = true;
+    window.addEventListener('thinkingdata:ready', function() {
+      if (!sectionScrollTrackingInitialized) {
+        initSectionScrollTracking();
+      }
+    });
+  }
+
+  // window load 이벤트
+  if (!window.sectionScrollLoadListenerAdded) {
+    window.sectionScrollLoadListenerAdded = true;
+    window.addEventListener('load', function() {
+      if (!sectionScrollTrackingInitialized) {
+        initSectionScrollTracking();
+      }
+    });
+  }
+}
+
+robustSectionScrollInit(); 
