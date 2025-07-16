@@ -7,7 +7,7 @@ import { updateSessionActivity } from '../core/session-manager.js';
 import { trackFullScroll } from '../user-attributes.js';
 import { trackingLog } from '../core/utils.js';
 
-const scrollDepthThresholds = [25, 50, 75, 90, 100];
+const scrollDepthThresholds = [0, 25, 50, 75, 90, 100];
   let scrollDepthTracked = new Set();
   let maxScrollDepth = 0;
 

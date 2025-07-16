@@ -48,7 +48,7 @@ const config = {
   thinkingData: {
     appId: getEnvVar('TE_APP_ID', '79ed7051fc51493798b16328c0ebd0bc'),
     serverUrl: getEnvVar('TE_SERVER_URL', 'https://te-receiver-naver.thinkingdata.kr/sync_js'),
-    showLog: true, // SDK 로그 활성화 (개발/운영 환경에 따라 조정)
+    showLog: false, // SDK 로그 활성화 (개발/운영 환경에 따라 조정)
     batch: false, // 🚀 실시간 전송으로 변경 (기본값: true)
     autoTrack: {
       pageShow: true,
