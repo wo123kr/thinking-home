@@ -37,7 +37,11 @@ export function initSectionScrollTracking() {
             window.te.track('section_scroll_depth', {
               section_id: sectionId,
               section_index: idx + 1,
+              section_class: section.className,
               scroll_depth_percentage: threshold,
+              section_height: sectionHeight,
+              visible_height: visibleHeight,
+              page_name: document.title,
               page_url: window.location.href
             });
           }
