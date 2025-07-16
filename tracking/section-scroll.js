@@ -34,7 +34,7 @@ export function initSectionScrollTracking() {
           tracked[sectionId].add(threshold);
           // 이벤트 전송
           if (window.te && typeof window.te.track === 'function') {
-            window.te.track('section_scroll_depth', {
+            const eventData = {
               section_id: sectionId,
               section_index: idx + 1,
               section_class: section.className,
@@ -43,7 +43,9 @@ export function initSectionScrollTracking() {
               visible_height: visibleHeight,
               page_name: document.title,
               page_url: window.location.href
-            });
+            };
+            console.log('[DEBUG] section_scroll_depth fired', eventData);
+            window.te.track('section_scroll_depth', eventData);
           }
         }
       });
