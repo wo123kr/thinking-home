@@ -10,6 +10,7 @@ import { initPopupTracking } from './tracking/popup.js';
 import { initResourceTracking } from './tracking/resource.js';
 import { initUserAttributes } from './user-attributes.js';
 import { trackPageView } from './tracking/pageview.js';
+import { initSectionScrollTracking } from './tracking/section-scroll.js';
 
 // 브라우저 환경 체크
 function isBrowserEnvironment() {
@@ -150,4 +151,6 @@ if (isBrowserEnvironment()) {
         // DOM이 이미 로드된 경우 즉시 실행
         main();
     }
-} 
+}
+
+window.initSectionScrollTracking = initSectionScrollTracking; 
