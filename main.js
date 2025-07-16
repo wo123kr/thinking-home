@@ -102,18 +102,29 @@ async function main() {
         if (config.modules.resource) {
             try {
                 initResourceTracking();
-                trackingLog('✅ 리소스 추적 초기화 완료');
+                trackingLog('✅ 리소스 다운로드 추적 초기화 완료');
             } catch (error) {
-                console.warn('⚠️ 리소스 추적 초기화 실패:', error);
+                console.warn('⚠️ 리소스 다운로드 추적 초기화 실패:', error);
             }
         }
         
+        if (config.modules.sectionScroll) {
+            try {
+                initSectionScrollTracking();
+                window.initSectionScrollTracking = initSectionScrollTracking;
+                trackingLog('✅ 섹션 스크롤 추적 초기화 완료');
+            } catch (error) {
+                console.warn('⚠️ 섹션 스크롤 추적 초기화 실패:', error);
+            }
+        }
+
+        // 유저 속성 추적 초기화
         if (config.modules.userAttributes) {
             try {
                 initUserAttributes();
-                trackingLog('✅ 유저 속성 초기화 완료');
+                trackingLog('✅ 유저 속성 추적 초기화 완료');
             } catch (error) {
-                console.warn('⚠️ 유저 속성 초기화 실패:', error);
+                console.warn('⚠️ 유저 속성 추적 초기화 실패:', error);
             }
         }
 
@@ -151,6 +162,4 @@ if (isBrowserEnvironment()) {
         // DOM이 이미 로드된 경우 즉시 실행
         main();
     }
-}
-
-window.initSectionScrollTracking = initSectionScrollTracking; 
+} 

@@ -71,7 +71,8 @@ const config = {
     form: true,
     popup: true,
     resource: true,
-    userAttributes: true
+    userAttributes: true,
+    sectionScroll: true
   },
 
   // 스크롤 추적 설정
@@ -95,9 +96,9 @@ const config = {
 
   // 디버그 설정
   debug: {
-    enabled: false, // 운영환경에서는 false, 개발환경에서는 true
+    enabled: true, // 운영환경에서는 false, 개발환경에서는 true
     logLevel: 'warn', // 'error', 'warn', 'info', 'debug'
-    showConsoleLogs: false // 우리가 만든 console.log들 제어 (테스트용)
+    showConsoleLogs: true // 우리가 만든 console.log들 제어 (테스트용)
   }
 };
 
