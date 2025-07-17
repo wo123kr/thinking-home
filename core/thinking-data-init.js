@@ -146,7 +146,27 @@ function initSDK(config) {
             "source": getTrafficSource(),
             "timestamp": new Date(),
             session_id: sessionId,
-            session_number: sessionNumber
+            session_number: sessionNumber,
+            common_url: window.location.href,
+            common_title: document.title,
+            common_page_path: window.location.pathname,
+            common_referrer: document.referrer,
+            common_referrer_host: document.referrer ? (function() { try { return new URL(document.referrer).hostname; } catch(e) { return null; } })() : null,
+            common_language: navigator.language,
+            common_browser: (function() {
+                const ua = navigator.userAgent;
+                if (ua.includes('Chrome')) return 'Chrome';
+                if (ua.includes('Firefox')) return 'Firefox';
+                if (ua.includes('Safari') && !ua.includes('Chrome')) return 'Safari';
+                if (ua.includes('Edge')) return 'Edge';
+                if (ua.includes('MSIE') || ua.includes('Trident')) return 'Internet Explorer';
+                return 'unknown';
+            })(),
+            common_browser_version: (function() {
+                const ua = navigator.userAgent;
+                let match = ua.match(/(Chrome|Firefox|Version|Edge|MSIE|rv:)(\/|:)?(\d+)/);
+                return match ? match[3] : 'unknown';
+            })()
         };
         
         if (typeof window.te.setSuperProperties === 'function') {
