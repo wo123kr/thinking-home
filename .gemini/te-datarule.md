@@ -1,8 +1,3 @@
----
-description: 
-globs: 
-alwaysApply: true
----
 Understanding the ThinkingEngine (TE) backend's data rules is crucial for effective data transmission and troubleshooting. This document details the **data structure, data types, and data limitations** to help you configure data correctly and resolve data transfer issues.
 
 -----

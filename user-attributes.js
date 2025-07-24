@@ -288,86 +288,145 @@ class UserAttributeTracker {
         }
     }
     
-    // 최초 유입 소스 기록
+    // 최초 유입 소스 기록 (v2.1 - 상세 정보 추가)
     recordFirstVisitSource() {
-        // 이미 기록된 경우 스킵
-        if (this.attributes.first_utm_source !== undefined) {
+        // 이미 채널 정보가 기록된 경우 스킵 (더 강력한 중복 방지)
+        if (this.attributes.first_channel !== undefined) {
             return;
         }
-        
+
         const urlParams = new URLSearchParams(window.location.search);
-        const utmSource = urlParams.get('utm_source') || this.inferTrafficSource();
-        const utmCampaign = urlParams.get('utm_campaign') || '';
-        const referrerDomain = document.referrer ? new URL(document.referrer).hostname : 'direct';
+        const referrer = document.referrer;
 
-        // 검색 키워드 추출 함수 (q 우선, 없으면 네이버 query)
-        function extractSearchKeyword(referrer) {
-            try {
-                const url = new URL(referrer);
-                // 대부분 검색엔진은 q=검색어
-                if (url.searchParams.has('q')) {
-                    return url.searchParams.get('q');
-                }
-                // 네이버만 query=검색어
-                if (url.hostname.includes('naver')) {
-                    return url.searchParams.get('query');
-                }
-            } catch (e) {
-                return null;
-            }
-            return null;
-        }
-        const firstSearchKeyword = document.referrer ? extractSearchKeyword(document.referrer) : null;
+        // 1. 유입 정보 소스 추출
+        const utmSource = urlParams.get('utm_source');
+        const utmMedium = urlParams.get('utm_medium');
+        const utmCampaign = urlParams.get('utm_campaign');
+        const utmTerm = urlParams.get('utm_term');
+        const utmContent = urlParams.get('utm_content');
+        const gclid = urlParams.get('gclid');
+        
+        // 2. 채널 결정
+        const channel = this.determineChannel(utmSource, utmMedium, gclid, referrer);
 
-        // 최초 방문 시에만 기록 (즉시 전송)
-        this.sendImmediate('userSetOnce', {
-            first_utm_source: utmSource,
-            first_utm_campaign: utmCampaign,
+        // 3. 소스 및 리퍼러 결정
+        const source = utmSource || (referrer ? new URL(referrer).hostname : 'direct');
+        const referrerDomain = referrer ? new URL(referrer).hostname : 'direct';
+
+        // 4. 저장할 속성 객체 생성
+        const firstVisitProperties = {
+            // --- 기본 유입 정보 ---
+            first_channel: channel,
+            first_source: source,
+            first_medium: utmMedium,
+            first_campaign: utmCampaign,
+            first_term: utmTerm, // 유료 키워드
+            first_content: utmContent,
+            first_gclid: gclid,
+            
+            // --- 추가 컨텍스트 정보 ---
+            first_referrer: referrer,
             first_referrer_domain: referrerDomain,
-            first_search_keyword: firstSearchKeyword || ''
-        });
-        
-        // TE 시간 형식 속성 추가
-        const timeProperties = addTETimeProperties({
-            first_visit_timestamp: Date.now(),
-            first_visit_time: new Date().toISOString()
-        });
-        
-        this.sendImmediate('userSetOnce', timeProperties);
-        
-        // 사용한 유입 소스 누적 (중복 제거)
+            first_landing_page_url: window.location.href,
+            first_organic_keyword: this.extractOrganicKeyword(referrer) // 자연 검색어
+        };
+
+        // null 또는 undefined 속성 제거
+        const cleanProperties = Object.fromEntries(
+            Object.entries(firstVisitProperties).filter(([, v]) => v != null)
+        );
+
+        // 5. userSetOnce로 최초 정보 전송
+        if (Object.keys(cleanProperties).length > 0) {
+            this.sendImmediate('userSetOnce', cleanProperties);
+            trackingLog('✅ 최초 유입 정보 기록:', cleanProperties);
+        }
+
+        // 6. 사용한 유입 소스 누적 (중복 제거)
         this.sendImmediate('userUniqAppend', {
-            traffic_sources_used: [utmSource]
+            traffic_sources_used: [source]
         });
-        
-        // 로컬에도 저장
-        this.attributes.first_utm_source = utmSource;
-        this.attributes.first_utm_campaign = utmCampaign;
-        this.attributes.first_referrer_domain = referrerDomain;
-        this.attributes.first_search_keyword = firstSearchKeyword || '';
+
+        // 7. 로컬 속성 업데이트 및 저장
+        Object.assign(this.attributes, cleanProperties);
         
         this.attributes.traffic_sources_used = this.attributes.traffic_sources_used || [];
-        if (!this.attributes.traffic_sources_used.includes(utmSource)) {
-            this.attributes.traffic_sources_used.push(utmSource);
+        if (!this.attributes.traffic_sources_used.includes(source)) {
+            this.attributes.traffic_sources_used.push(source);
         }
+        this.saveAttributes();
     }
-    
-    // 트래픽 소스 추론
-    inferTrafficSource() {
-        const referrer = document.referrer;
-        if (!referrer) return 'direct';
+
+    // 채널 결정 로직
+    determineChannel(utmSource, utmMedium, gclid, referrer) {
+        // 유료 검색 (Paid Search)
+        if (gclid) return 'Paid Search';
+        if (utmMedium && ['cpc', 'ppc', 'paidsearch'].includes(utmMedium.toLowerCase())) {
+            return 'Paid Search';
+        }
+
+        // 유료 소셜 (Paid Social)
+        if (utmMedium && ['cpm', 'cpa', 'paid-social'].includes(utmMedium.toLowerCase())) {
+            return 'Paid Social';
+        }
+
+        // 자연 검색 (Organic Search)
+        if (referrer) {
+            const referrerHost = new URL(referrer).hostname.toLowerCase();
+            const searchEngines = ['google', 'naver', 'daum', 'bing', 'yahoo'];
+            if (searchEngines.some(engine => referrerHost.includes(engine))) {
+                return 'Organic Search';
+            }
+        }
         
-        const referrerHost = new URL(referrer).hostname.toLowerCase();
-        
-        if (referrerHost.includes('google')) return 'google';
-        if (referrerHost.includes('naver')) return 'naver';
-        if (referrerHost.includes('facebook')) return 'facebook';
-        if (referrerHost.includes('instagram')) return 'instagram';
-        if (referrerHost.includes('linkedin')) return 'linkedin';
-        if (referrerHost.includes('twitter') || referrerHost.includes('t.co')) return 'twitter';
-        if (referrerHost.includes('youtube')) return 'youtube';
-        
-        return 'referral';
+        // 소셜 (Social)
+        if (utmMedium && ['social', 'social-network', 'social-media'].includes(utmMedium.toLowerCase())) {
+            return 'Social';
+        }
+        if (referrer) {
+            const referrerHost = new URL(referrer).hostname.toLowerCase();
+            const socialNetworks = ['facebook', 'instagram', 'twitter', 'linkedin', 't.co', 'youtube'];
+            if (socialNetworks.some(social => referrerHost.includes(social))) {
+                return 'Social';
+            }
+        }
+
+        // 추천 (Referral)
+        if (referrer && !utmSource && !utmMedium) {
+            return 'Referral';
+        }
+
+        // 직접 유입 (Direct)
+        if (!referrer && !utmSource && !utmMedium) {
+            return 'Direct';
+        }
+
+        // 기타 (UTM은 있으나 채널 불분명)
+        return utmMedium || utmSource || 'Other';
+    }
+
+    // 자연 검색어 추출
+    extractOrganicKeyword(referrer) {
+        if (!referrer) return null;
+
+        try {
+            const url = new URL(referrer);
+            const searchParams = url.searchParams;
+            
+            // 주요 검색엔진의 검색어 파라미터
+            const keywordParams = ['q', 'query', 'p', 'wd', 'keyword'];
+
+            for (const param of keywordParams) {
+                if (searchParams.has(param)) {
+                    return searchParams.get(param);
+                }
+            }
+        } catch (e) {
+            // URL 파싱 실패 시
+            return null;
+        }
+
+        return null;
     }
     
     // 페이지 관심사 업데이트 (최적화됨)

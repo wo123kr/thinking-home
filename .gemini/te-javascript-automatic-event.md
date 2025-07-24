@@ -1,8 +1,3 @@
----
-description: 
-globs: 
-alwaysApply: true
----
 # JavaScript SDK 자동 이벤트 수집 가이드
 
 ## 🖱️ 1. HTML 요소 클릭 이벤트 모니터링
