@@ -1,8 +1,3 @@
----
-description: 
-globs: 
-alwaysApply: true
----
 # JavaScript SDK 통합 가이드
 
 ## 📋 기본 정보

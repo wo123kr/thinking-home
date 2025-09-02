@@ -1,8 +1,3 @@
----
-description: 
-globs: 
-alwaysApply: true
----
 # JavaScript SDK 프리셋 속성 완전 가이드
 
 ## 📋 1. 모든 이벤트 포함 프리셋 속성

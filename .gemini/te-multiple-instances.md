@@ -1,8 +1,3 @@
----
-description: 
-globs: 
-alwaysApply: true
----
 # JavaScript SDK 다중 인스턴스 가이드
 
 ## 📋 다중 인스턴스 개요

@@ -1,8 +1,3 @@
----
-description: 
-globs: 
-alwaysApply: true
----
 # JavaScript SDK 고급 기능 가이드
 
 ## 🔐 1. 유저 식별 설정
