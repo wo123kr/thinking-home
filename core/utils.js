@@ -3,6 +3,151 @@
  * 모든 추적 모듈에서 공통으로 사용하는 함수들
  */
 
+// =============================================================================
+// 상수 정의
+// =============================================================================
+
+// 봇 감지 관련 상수
+const BOT_DETECTION_CONFIG = {
+  // 신뢰도 임계값
+  CONFIDENCE_THRESHOLD: 70,
+  
+  // 각 검사별 신뢰도 점수
+  CONFIDENCE_SCORES: {
+    USER_AGENT_PATTERN: 80,
+    WEBDRIVER_PROPERTY: 90,
+    AUTOMATION_INDICATORS: 60,
+    DEFAULT_LANGUAGE: 20,
+    NO_PLUGINS: 30,
+    BOT_RESOLUTION: 25,
+    FAST_LOAD_TIME: 15,
+    NO_USER_INTERACTION: 40,
+    SERVER_INFO_EXPOSED: 10
+  },
+  
+  // 검사 관련 설정
+  USER_INTERACTION_TIMEOUT: 5000, // 5초
+  FAST_LOAD_THRESHOLD: 1000, // 1초
+  AUTOMATION_INDICATOR_THRESHOLD: 3
+};
+
+// 봇 패턴 정의
+const BOT_PATTERNS = {
+  // 검색엔진 봇
+  'googlebot': { name: 'Google Bot', type: 'search_engine' },
+  'bingbot': { name: 'Bing Bot', type: 'search_engine' },
+  'slurp': { name: 'Yahoo Slurp', type: 'search_engine' },
+  'duckduckbot': { name: 'DuckDuckGo Bot', type: 'search_engine' },
+  'baiduspider': { name: 'Baidu Spider', type: 'search_engine' },
+  'naverbot': { name: 'Naver Bot', type: 'search_engine' },
+  'daumoa': { name: 'Daum Bot', type: 'search_engine' },
+  
+  // 소셜 미디어 봇
+  'facebookexternalhit': { name: 'Facebook Bot', type: 'social_media' },
+  'twitterbot': { name: 'Twitter Bot', type: 'social_media' },
+  'linkedinbot': { name: 'LinkedIn Bot', type: 'social_media' },
+  'whatsapp': { name: 'WhatsApp Bot', type: 'social_media' },
+  
+  // AI/챗봇 봇
+  'chatgpt': { name: 'ChatGPT', type: 'ai_chatbot' },
+  'claude': { name: 'Claude', type: 'ai_chatbot' },
+  'bard': { name: 'Google Bard', type: 'ai_chatbot' },
+  'copilot': { name: 'GitHub Copilot', type: 'ai_chatbot' },
+  'perplexity': { name: 'Perplexity', type: 'ai_chatbot' },
+  
+  // 자동화 도구
+  'selenium': { name: 'Selenium', type: 'automation' },
+  'webdriver': { name: 'WebDriver', type: 'automation' },
+  'puppeteer': { name: 'Puppeteer', type: 'automation' },
+  'playwright': { name: 'Playwright', type: 'automation' },
+  'cypress': { name: 'Cypress', type: 'automation' },
+  'headless': { name: 'Headless Browser', type: 'automation' },
+  
+  // 일반 크롤러
+  'scraper': { name: 'Web Scraper', type: 'scraper' },
+  'crawler': { name: 'Web Crawler', type: 'crawler' },
+  'spider': { name: 'Web Spider', type: 'crawler' },
+  'bot': { name: 'Generic Bot', type: 'generic_bot' },
+  
+  // HTTP 클라이언트
+  'curl': { name: 'cURL', type: 'http_client' },
+  'wget': { name: 'wget', type: 'http_client' },
+  'python': { name: 'Python Bot', type: 'script' },
+  'requests': { name: 'Python Requests', type: 'script' },
+  'urllib': { name: 'Python urllib', type: 'script' }
+};
+
+// AI 챗봇 패턴
+const AI_CHATBOT_PATTERNS = {
+  'chatgpt': 'ChatGPT',
+  'claude': 'Claude',
+  'bard': 'Google Bard',
+  'copilot': 'GitHub Copilot',
+  'perplexity': 'Perplexity',
+  'bing': 'Bing Chat',
+  'duckduckgo': 'DuckDuckGo AI'
+};
+
+// 브라우저 감지 패턴 (통합)
+const BROWSER_PATTERNS = [
+  { name: 'Chrome', pattern: 'Chrome', exclude: null, versionRegex: /Chrome\/(\d+\.\d+)/ },
+  { name: 'Firefox', pattern: 'Firefox', exclude: null, versionRegex: /Firefox\/(\d+\.\d+)/ },
+  { name: 'Safari', pattern: 'Safari', exclude: 'Chrome', versionRegex: /Version\/(\d+\.\d+)/ },
+  { name: 'Edge', pattern: 'Edge', exclude: null, versionRegex: /Edge\/(\d+\.\d+)/ },
+  { name: 'Internet Explorer', pattern: ['MSIE', 'Trident'], exclude: null, versionRegex: /(MSIE|rv:)\s*(\d+\.\d+)/ }
+];
+
+// 디바이스 감지 패턴
+const DEVICE_PATTERNS = {
+  MOBILE: /mobile|android|iphone|ipod|blackberry|iemobile|opera mini/i,
+  TABLET: /tablet|ipad/i,
+  DESKTOP: /desktop|windows|macintosh|linux/i
+};
+
+// 일반적인 봇 해상도 패턴
+const BOT_RESOLUTIONS = [
+  { width: 1920, height: 1080 },
+  { width: 1366, height: 768 },
+  { width: 1024, height: 768 },
+  { width: 800, height: 600 }
+];
+
+// 자동화 도구 감지 지표
+const AUTOMATION_INDICATORS = [
+  'window.chrome && window.chrome.runtime',
+  'window.Notification',
+  'window.outerHeight',
+  'window.outerWidth',
+  'window.screenX',
+  'window.screenY'
+];
+
+// 기타 설정
+const UTILS_CONFIG = {
+  PENDING_EVENTS_MAX: 100,
+  PENDING_EVENTS_KEY: 'te_pending_events',
+  STORAGE_TEST_KEY: 'te_storage_test',
+  
+  // 캐시 설정
+  BROWSER_INFO_CACHE_TIME: 300000, // 5분
+  DEVICE_INFO_CACHE_TIME: 300000,  // 5분
+  PAGE_INFO_CACHE_TIME: 60000      // 1분
+};
+
+// 캐시 관련 변수
+let botDetectionCache = null;
+let botDetectionCacheTime = 0;
+let browserInfoCache = null;
+let browserInfoCacheTime = 0;
+let deviceInfoCache = null;
+let deviceInfoCacheTime = 0;
+
+const BOT_DETECTION_CACHE_TIME = 60000; // 1분
+
+// =============================================================================
+// 핵심 유틸리티 함수들
+// =============================================================================
+
 // 안전한 ThinkingData SDK 호출
 export function safeTeCall(method, ...args) {
   try {
@@ -18,17 +163,19 @@ export function safeTeCall(method, ...args) {
   }
 }
 
-// 안전한 이벤트 전송 (SDK 없어도 동작)
+// 안전한 이벤트 전송 (SDK 없어도 동작, 최적화)
 export function trackEvent(eventName, properties = {}) {
   try {
     // SDK가 있는 경우 정상 전송
-    if (typeof window.te !== 'undefined' && typeof window.te.track === 'function') {
+    if (window.te?.track) {
       return window.te.track(eventName, properties);
     }
     
-    // SDK가 없는 경우 로컬 스토리지에 임시 저장 (나중에 전송 가능)
+    // SDK가 없는 경우 로컬 스토리지에 임시 저장
     if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
-      const pendingEvents = JSON.parse(localStorage.getItem('te_pending_events') || '[]');
+      const pendingEventsJson = localStorage.getItem(UTILS_CONFIG.PENDING_EVENTS_KEY) || '[]';
+      const pendingEvents = JSON.parse(pendingEventsJson);
+      
       pendingEvents.push({
         eventName,
         properties,
@@ -36,17 +183,14 @@ export function trackEvent(eventName, properties = {}) {
         url: window.location.href
       });
       
-      // 최대 100개까지만 저장
-      if (pendingEvents.length > 100) {
-        pendingEvents.splice(0, pendingEvents.length - 100);
+      // 최대 개수 제한 (메모리 보호)
+      if (pendingEvents.length > UTILS_CONFIG.PENDING_EVENTS_MAX) {
+        pendingEvents.splice(0, pendingEvents.length - UTILS_CONFIG.PENDING_EVENTS_MAX);
       }
       
-      localStorage.setItem('te_pending_events', JSON.stringify(pendingEvents));
+      localStorage.setItem(UTILS_CONFIG.PENDING_EVENTS_KEY, JSON.stringify(pendingEvents));
       
-      // 개발 환경에서만 로그 출력
-      if (window.trackingLog) {
-        window.trackingLog(`📤 이벤트 임시 저장: ${eventName}`, properties);
-      }
+      trackingLog(`📤 이벤트 임시 저장: ${eventName}`, properties);
       
       return true;
     }
@@ -129,39 +273,65 @@ export function handleError(context, error, fallback = null) {
   return fallback;
 }
 
-// 디바이스 타입 감지
+// 디바이스 타입 감지 (캐싱 적용)
 export function getDeviceType() {
-  const userAgent = navigator.userAgent.toLowerCase();
-  
-  if (/mobile|android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent)) {
-    if (/tablet|ipad/i.test(userAgent)) {
-      return 'tablet';
-    }
-    return 'mobile';
+  // 캐시 체크
+  const now = Date.now();
+  if (deviceInfoCache && (now - deviceInfoCacheTime) < UTILS_CONFIG.DEVICE_INFO_CACHE_TIME) {
+    return deviceInfoCache.type;
   }
   
-  return 'desktop';
+  const userAgent = navigator.userAgent.toLowerCase();
+  let deviceType = 'desktop';
+  
+  if (DEVICE_PATTERNS.MOBILE.test(userAgent)) {
+    deviceType = DEVICE_PATTERNS.TABLET.test(userAgent) ? 'tablet' : 'mobile';
+  }
+  
+  // 캐시 저장
+  deviceInfoCache = {
+    type: deviceType,
+    screen_width: screen.width,
+    screen_height: screen.height,
+    viewport_width: window.innerWidth,
+    viewport_height: window.innerHeight
+  };
+  deviceInfoCacheTime = now;
+  
+  return deviceType;
 }
 
-// 브라우저 정보 추출
+// 브라우저 정보 추출 (캐싱 적용, 중복 로직 제거)
 export function getBrowserInfo() {
+  // 캐시 체크
+  const now = Date.now();
+  if (browserInfoCache && (now - browserInfoCacheTime) < UTILS_CONFIG.BROWSER_INFO_CACHE_TIME) {
+    return { ...browserInfoCache };
+  }
+  
   const userAgent = navigator.userAgent;
   let browser = 'unknown';
   let version = 'unknown';
   
-  if (userAgent.includes('Chrome')) {
-    browser = 'Chrome';
-    version = userAgent.match(/Chrome\/(\d+)/)?.[1] || 'unknown';
-  } else if (userAgent.includes('Firefox')) {
-    browser = 'Firefox';
-    version = userAgent.match(/Firefox\/(\d+)/)?.[1] || 'unknown';
-  } else if (userAgent.includes('Safari')) {
-    browser = 'Safari';
-    version = userAgent.match(/Version\/(\d+)/)?.[1] || 'unknown';
-  } else if (userAgent.includes('Edge')) {
-    browser = 'Edge';
-    version = userAgent.match(/Edge\/(\d+)/)?.[1] || 'unknown';
+  // BROWSER_PATTERNS를 사용하여 통합된 로직
+  for (const browserPattern of BROWSER_PATTERNS) {
+    const patterns = Array.isArray(browserPattern.pattern) ? browserPattern.pattern : [browserPattern.pattern];
+    const hasPattern = patterns.some(pattern => userAgent.includes(pattern));
+    const hasExclude = browserPattern.exclude && userAgent.includes(browserPattern.exclude);
+    
+    if (hasPattern && !hasExclude) {
+      browser = browserPattern.name;
+      const versionMatch = userAgent.match(browserPattern.versionRegex);
+      if (versionMatch) {
+        version = versionMatch[1] || versionMatch[2] || 'unknown';
+      }
+      break;
+    }
   }
+  
+  // 캐시 저장
+  browserInfoCache = { browser, version };
+  browserInfoCacheTime = now;
   
   return { browser, version };
 }
@@ -289,17 +459,24 @@ export function isElementVisible(element) {
          rect.bottom > 0;
 }
 
-// 페이지 로드 시간 측정
+// 페이지 로드 시간 측정 (최적화)
 export function getPageLoadTime() {
-  if (performance && performance.timing) {
-    const timing = performance.timing;
-    return timing.loadEventEnd - timing.navigationStart;
-  } else if (performance && performance.getEntriesByType) {
-    const navigation = performance.getEntriesByType('navigation')[0];
-    if (navigation) {
-      return navigation.loadEventEnd - navigation.startTime;
+  try {
+    if (performance?.timing) {
+      const { loadEventEnd, navigationStart } = performance.timing;
+      return loadEventEnd && navigationStart ? loadEventEnd - navigationStart : 0;
+    } 
+    
+    if (performance?.getEntriesByType) {
+      const navigation = performance.getEntriesByType('navigation')?.[0];
+      if (navigation?.loadEventEnd && navigation?.startTime) {
+        return navigation.loadEventEnd - navigation.startTime;
+      }
     }
+  } catch (error) {
+    console.warn('페이지 로드 시간 측정 실패:', error);
   }
+  
   return 0;
 }
 
@@ -429,8 +606,193 @@ export function registerGlobalUtils() {
 // 전역 함수 등록 (선택적으로 호출 가능)
 // registerGlobalUtils(); 
 
-// 봇/크롤러/GPT 감지 함수들
+// =============================================================================
+// 봇 감지 관련 함수들 (모듈화)
+// =============================================================================
+
+/**
+ * User-Agent 기반 봇 감지
+ */
+function checkUserAgentPatterns(userAgent, botInfo) {
+  let confidence = 0;
+  
+  for (const [pattern, info] of Object.entries(BOT_PATTERNS)) {
+    if (userAgent.includes(pattern)) {
+      botInfo.is_bot = true;
+      botInfo.bot_type = info.type;
+      botInfo.bot_name = info.name;
+      botInfo.detection_method.push('user_agent_pattern');
+      confidence += BOT_DETECTION_CONFIG.CONFIDENCE_SCORES.USER_AGENT_PATTERN;
+      break;
+    }
+  }
+  
+  return confidence;
+}
+
+/**
+ * WebDriver 속성 체크
+ */
+function checkWebDriverProperty(botInfo) {
+  let confidence = 0;
+  
+  if (navigator.webdriver) {
+    botInfo.is_bot = true;
+    botInfo.bot_type = botInfo.bot_type || 'automation';
+    botInfo.bot_name = botInfo.bot_name || 'WebDriver Bot';
+    botInfo.detection_method.push('webdriver_property');
+    confidence += BOT_DETECTION_CONFIG.CONFIDENCE_SCORES.WEBDRIVER_PROPERTY;
+  }
+  
+  return confidence;
+}
+
+/**
+ * 자동화 도구 감지
+ */
+function checkAutomationIndicators(botInfo) {
+  let confidence = 0;
+  let automationScore = 0;
+  
+  AUTOMATION_INDICATORS.forEach(indicator => {
+    try {
+      if (!eval(indicator)) {
+        automationScore++;
+      }
+    } catch (e) {
+      automationScore++;
+    }
+  });
+
+  if (automationScore >= BOT_DETECTION_CONFIG.AUTOMATION_INDICATOR_THRESHOLD) {
+    botInfo.is_bot = true;
+    botInfo.bot_type = botInfo.bot_type || 'automation';
+    botInfo.bot_name = botInfo.bot_name || 'Automation Tool';
+    botInfo.detection_method.push('automation_indicators');
+    confidence += BOT_DETECTION_CONFIG.CONFIDENCE_SCORES.AUTOMATION_INDICATORS;
+  }
+  
+  return confidence;
+}
+
+/**
+ * 언어/로케일 체크
+ */
+function checkDefaultLanguage(botInfo) {
+  let confidence = 0;
+  
+  const language = navigator.language || navigator.userLanguage;
+  const languages = navigator.languages;
+  
+  if (!language || language === 'en-US' || language === 'en') {
+    if (!languages || languages.length === 0 || languages[0] === 'en-US') {
+      confidence += BOT_DETECTION_CONFIG.CONFIDENCE_SCORES.DEFAULT_LANGUAGE;
+      botInfo.detection_method.push('default_language');
+    }
+  }
+  
+  return confidence;
+}
+
+/**
+ * 플러그인 체크
+ */
+function checkPlugins(botInfo) {
+  let confidence = 0;
+  
+  try {
+    const { plugins } = navigator;
+    if (plugins && plugins.length === 0) {
+      confidence += BOT_DETECTION_CONFIG.CONFIDENCE_SCORES.NO_PLUGINS;
+      botInfo.detection_method.push('no_plugins');
+    }
+  } catch (error) {
+    // 플러그인 접근 실패 시 봇 점수 추가
+    confidence += BOT_DETECTION_CONFIG.CONFIDENCE_SCORES.NO_PLUGINS / 2;
+    botInfo.detection_method.push('plugin_access_failed');
+  }
+  
+  return confidence;
+}
+
+/**
+ * 화면 해상도 체크
+ */
+function checkBotResolution(botInfo) {
+  let confidence = 0;
+  
+  const screenWidth = window.screen.width;
+  const screenHeight = window.screen.height;
+
+  const isBotResolution = BOT_RESOLUTIONS.some(res => 
+    screenWidth === res.width && screenHeight === res.height
+  );
+
+  if (isBotResolution) {
+    confidence += BOT_DETECTION_CONFIG.CONFIDENCE_SCORES.BOT_RESOLUTION;
+    botInfo.detection_method.push('bot_resolution');
+  }
+  
+  return confidence;
+}
+
+/**
+ * 페이지 로드 시간 체크 (최적화)
+ */
+function checkLoadTime(botInfo) {
+  let confidence = 0;
+  
+  try {
+    const pageLoadTime = getPageLoadTime(); // 기존 함수 재사용
+    
+    if (pageLoadTime > 0 && pageLoadTime < BOT_DETECTION_CONFIG.FAST_LOAD_THRESHOLD) {
+      confidence += BOT_DETECTION_CONFIG.CONFIDENCE_SCORES.FAST_LOAD_TIME;
+      botInfo.detection_method.push('fast_load_time');
+    }
+  } catch (error) {
+    console.warn('로드 시간 체크 실패:', error);
+  }
+  
+  return confidence;
+}
+
+/**
+ * 사용자 상호작용 체크 (비동기)
+ */
+function checkUserInteraction(botInfo, callback) {
+  let hasUserInteraction = false;
+  
+  const checkInteraction = () => {
+    hasUserInteraction = true;
+    document.removeEventListener('mousemove', checkInteraction);
+    document.removeEventListener('keydown', checkInteraction);
+    document.removeEventListener('click', checkInteraction);
+  };
+
+  document.addEventListener('mousemove', checkInteraction, { once: true });
+  document.addEventListener('keydown', checkInteraction, { once: true });
+  document.addEventListener('click', checkInteraction, { once: true });
+
+  setTimeout(() => {
+    if (!hasUserInteraction) {
+      botInfo.detection_method.push('no_user_interaction');
+      if (callback) {
+        callback(BOT_DETECTION_CONFIG.CONFIDENCE_SCORES.NO_USER_INTERACTION);
+      }
+    }
+  }, BOT_DETECTION_CONFIG.USER_INTERACTION_TIMEOUT);
+}
+
+/**
+ * 봇 감지 메인 함수 (최적화 및 캐싱)
+ */
 export function detectBot() {
+  // 캐시 체크
+  const now = Date.now();
+  if (botDetectionCache && (now - botDetectionCacheTime) < BOT_DETECTION_CACHE_TIME) {
+    return { ...botDetectionCache }; // 복사본 반환
+  }
+
   const botInfo = {
     is_bot: false,
     bot_type: null,
@@ -442,235 +804,56 @@ export function detectBot() {
   const userAgent = navigator.userAgent.toLowerCase();
   let confidence = 0;
 
-  // 1. User-Agent 기반 봇 감지
-  const botPatterns = {
-    // 검색엔진 봇
-    'googlebot': { name: 'Google Bot', type: 'search_engine' },
-    'bingbot': { name: 'Bing Bot', type: 'search_engine' },
-    'slurp': { name: 'Yahoo Slurp', type: 'search_engine' },
-    'duckduckbot': { name: 'DuckDuckGo Bot', type: 'search_engine' },
-    'baiduspider': { name: 'Baidu Spider', type: 'search_engine' },
-    'naverbot': { name: 'Naver Bot', type: 'search_engine' },
-    'daumoa': { name: 'Daum Bot', type: 'search_engine' },
-    
-    // 소셜 미디어 봇
-    'facebookexternalhit': { name: 'Facebook Bot', type: 'social_media' },
-    'twitterbot': { name: 'Twitter Bot', type: 'social_media' },
-    'linkedinbot': { name: 'LinkedIn Bot', type: 'social_media' },
-    'whatsapp': { name: 'WhatsApp Bot', type: 'social_media' },
-    
-    // AI/챗봇 봇
-    'chatgpt': { name: 'ChatGPT', type: 'ai_chatbot' },
-    'claude': { name: 'Claude', type: 'ai_chatbot' },
-    'bard': { name: 'Google Bard', type: 'ai_chatbot' },
-    'copilot': { name: 'GitHub Copilot', type: 'ai_chatbot' },
-    'perplexity': { name: 'Perplexity', type: 'ai_chatbot' },
-    
-    // 일반 크롤러/스크래퍼
-    'scraper': { name: 'Web Scraper', type: 'scraper' },
-    'crawler': { name: 'Web Crawler', type: 'crawler' },
-    'spider': { name: 'Web Spider', type: 'crawler' },
-    'bot': { name: 'Generic Bot', type: 'generic_bot' },
-    'crawler': { name: 'Web Crawler', type: 'crawler' },
-    
-    // 자동화 도구
-    'selenium': { name: 'Selenium', type: 'automation' },
-    'webdriver': { name: 'WebDriver', type: 'automation' },
-    'puppeteer': { name: 'Puppeteer', type: 'automation' },
-    'playwright': { name: 'Playwright', type: 'automation' },
-    'cypress': { name: 'Cypress', type: 'automation' },
-    'headless': { name: 'Headless Browser', type: 'automation' },
-    
-    // 기타 봇
-    'curl': { name: 'cURL', type: 'http_client' },
-    'wget': { name: 'wget', type: 'http_client' },
-    'python': { name: 'Python Bot', type: 'script' },
-    'requests': { name: 'Python Requests', type: 'script' },
-    'urllib': { name: 'Python urllib', type: 'script' }
-  };
+  // 각 검사 수행
+  confidence += checkUserAgentPatterns(userAgent, botInfo);
+  confidence += checkWebDriverProperty(botInfo);
+  confidence += checkAutomationIndicators(botInfo);
+  confidence += checkDefaultLanguage(botInfo);
+  confidence += checkPlugins(botInfo);
+  confidence += checkBotResolution(botInfo);
+  confidence += checkLoadTime(botInfo);
 
-  // User-Agent 패턴 매칭
-  for (const [pattern, info] of Object.entries(botPatterns)) {
-    if (userAgent.includes(pattern)) {
+  // 비동기 사용자 상호작용 체크
+  checkUserInteraction(botInfo, (additionalConfidence) => {
+    botInfo.confidence += additionalConfidence;
+    botInfo.confidence = Math.min(botInfo.confidence, 100);
+    if (botInfo.confidence >= BOT_DETECTION_CONFIG.CONFIDENCE_THRESHOLD) {
       botInfo.is_bot = true;
-      botInfo.bot_type = info.type;
-      botInfo.bot_name = info.name;
-      botInfo.detection_method.push('user_agent_pattern');
-      confidence += 80;
-      break;
-    }
-  }
-
-  // 2. WebDriver 속성 체크
-  if (navigator.webdriver) {
-    botInfo.is_bot = true;
-    botInfo.bot_type = botInfo.bot_type || 'automation';
-    botInfo.bot_name = botInfo.bot_name || 'WebDriver Bot';
-    botInfo.detection_method.push('webdriver_property');
-    confidence += 90;
-  }
-
-  // 3. 자동화 도구 감지
-  const automationIndicators = [
-    'window.chrome && window.chrome.runtime',
-    'window.Notification',
-    'window.outerHeight',
-    'window.outerWidth',
-    'window.screenX',
-    'window.screenY'
-  ];
-
-  let automationScore = 0;
-  automationIndicators.forEach(indicator => {
-    try {
-      if (!eval(indicator)) {
-        automationScore++;
-      }
-    } catch (e) {
-      automationScore++;
     }
   });
-
-  if (automationScore >= 3) {
-    botInfo.is_bot = true;
-    botInfo.bot_type = botInfo.bot_type || 'automation';
-    botInfo.bot_name = botInfo.bot_name || 'Automation Tool';
-    botInfo.detection_method.push('automation_indicators');
-    confidence += 60;
-  }
-
-  // 4. 언어/로케일 체크 (봇은 보통 기본값 사용)
-  const language = navigator.language || navigator.userLanguage;
-  const languages = navigator.languages;
-  
-  if (!language || language === 'en-US' || language === 'en') {
-    if (!languages || languages.length === 0 || languages[0] === 'en-US') {
-      confidence += 20;
-      botInfo.detection_method.push('default_language');
-    }
-  }
-
-  // 5. 플러그인 체크 (봇은 보통 플러그인이 없음)
-  if (navigator.plugins && navigator.plugins.length === 0) {
-    confidence += 30;
-    botInfo.detection_method.push('no_plugins');
-  }
-
-  // 6. 화면 해상도 체크 (봇은 보통 특정 해상도 사용)
-  const screenWidth = window.screen.width;
-  const screenHeight = window.screen.height;
-  const viewportWidth = window.innerWidth;
-  const viewportHeight = window.innerHeight;
-
-  // 일반적인 봇 해상도 패턴
-  const botResolutions = [
-    { width: 1920, height: 1080 },
-    { width: 1366, height: 768 },
-    { width: 1024, height: 768 },
-    { width: 800, height: 600 }
-  ];
-
-  const isBotResolution = botResolutions.some(res => 
-    screenWidth === res.width && screenHeight === res.height
-  );
-
-  if (isBotResolution) {
-    confidence += 25;
-    botInfo.detection_method.push('bot_resolution');
-  }
-
-  // 7. 시간 기반 패턴 (봇은 보통 빠른 접근)
-  const now = Date.now();
-  const pageLoadTime = performance.timing ? 
-    performance.timing.loadEventEnd - performance.timing.navigationStart : 0;
-
-  if (pageLoadTime > 0 && pageLoadTime < 1000) { // 1초 미만 로드
-    confidence += 15;
-    botInfo.detection_method.push('fast_load_time');
-  }
-
-  // 8. 마우스/키보드 이벤트 체크 (봇은 보통 이벤트가 없음)
-  let hasUserInteraction = false;
-  
-  const checkUserInteraction = () => {
-    hasUserInteraction = true;
-    document.removeEventListener('mousemove', checkUserInteraction);
-    document.removeEventListener('keydown', checkUserInteraction);
-    document.removeEventListener('click', checkUserInteraction);
-  };
-
-  document.addEventListener('mousemove', checkUserInteraction, { once: true });
-  document.addEventListener('keydown', checkUserInteraction, { once: true });
-  document.addEventListener('click', checkUserInteraction, { once: true });
-
-  // 5초 후 체크
-  setTimeout(() => {
-    if (!hasUserInteraction) {
-      confidence += 40;
-      botInfo.detection_method.push('no_user_interaction');
-    }
-  }, 5000);
-
-  // 9. 특정 헤더 체크 (fetch로 확인)
-  try {
-    fetch(window.location.href, { 
-      method: 'HEAD',
-      cache: 'no-cache'
-    }).then(response => {
-      const headers = response.headers;
-      if (headers.get('x-powered-by') || headers.get('server')) {
-        // 서버 정보가 노출되면 봇일 가능성
-        confidence += 10;
-        botInfo.detection_method.push('server_info_exposed');
-      }
-    }).catch(() => {
-      // fetch 실패는 정상적인 브라우저에서도 발생할 수 있음
-    });
-  } catch (e) {
-    // CORS 등으로 인한 실패는 무시
-  }
 
   // 최종 신뢰도 계산
   botInfo.confidence = Math.min(confidence, 100);
 
-  // 봇 판정 기준 (신뢰도 70% 이상)
-  if (botInfo.confidence >= 70) {
+  // 봇 판정
+  if (botInfo.confidence >= BOT_DETECTION_CONFIG.CONFIDENCE_THRESHOLD) {
     botInfo.is_bot = true;
   }
+
+  // 캐시 저장
+  botDetectionCache = { ...botInfo };
+  botDetectionCacheTime = now;
 
   return botInfo;
 }
 
-// 간단한 봇 감지 (빠른 체크)
+// 간단한 봇 감지 (빠른 체크, BOT_PATTERNS 재사용)
 export function isBot() {
   const userAgent = navigator.userAgent.toLowerCase();
   
-  // 주요 봇 패턴 체크
-  const botKeywords = [
-    'bot', 'crawler', 'spider', 'scraper', 'webdriver', 
-    'selenium', 'puppeteer', 'playwright', 'headless',
-    'chatgpt', 'claude', 'bard', 'copilot'
-  ];
+  // BOT_PATTERNS에서 패턴만 추출하여 체크
+  const botKeywords = Object.keys(BOT_PATTERNS);
   
   return botKeywords.some(keyword => userAgent.includes(keyword)) || 
          navigator.webdriver === true;
 }
 
-// AI 챗봇 특별 감지
+// AI 챗봇 특별 감지 (상수 재사용)
 export function detectAIChatbot() {
   const userAgent = navigator.userAgent.toLowerCase();
   
-  const aiPatterns = {
-    'chatgpt': 'ChatGPT',
-    'claude': 'Claude',
-    'bard': 'Google Bard',
-    'copilot': 'GitHub Copilot',
-    'perplexity': 'Perplexity',
-    'bing': 'Bing Chat',
-    'duckduckgo': 'DuckDuckGo AI'
-  };
-  
-  for (const [pattern, name] of Object.entries(aiPatterns)) {
+  // AI_CHATBOT_PATTERNS 상수 재사용
+  for (const [pattern, name] of Object.entries(AI_CHATBOT_PATTERNS)) {
     if (userAgent.includes(pattern)) {
       return {
         is_ai_chatbot: true,
