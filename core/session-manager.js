@@ -3,7 +3,44 @@
  * 세션 생성, 유지, 종료 및 관련 이벤트 전송을 담당
  */
 
-import { trackEvent, addBotInfoToEvent, addTETimeProperties, trackingLog, updateSuperPropertiesWithSession } from './utils.js';
+import { 
+  trackEvent, 
+  addBotInfoToEvent, 
+  addTETimeProperties, 
+  trackingLog, 
+  updateSuperPropertiesWithSession,
+  getDeviceType,
+  getBrowserInfo
+} from './utils.js';
+
+// 세션 설정 상수
+const SESSION_CONFIG = {
+  DEFAULT_TIMEOUT: 30 * 60 * 1000, // 30분
+  ENGAGEMENT_TIME_THRESHOLD: 10000, // 10초
+  ENGAGEMENT_INTERACTION_THRESHOLD: 2, // 2회 상호작용
+  TIMEOUT_CHECK_INTERVAL: 60000, // 1분
+  UTM_PARAMETERS: ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'utm_id'],
+  TRACKING_IDS: ['gclid', 'fbclid', 'msclkid', '_ga'],
+  SESSION_STORAGE_KEYS: {
+    SESSION_ID: 'te_session_id',
+    SESSION_NUMBER: 'te_session_number', 
+    SESSION_START_TIME: 'te_session_start_time',
+    LAST_ACTIVITY_TIME: 'te_last_activity_time',
+    IS_ENGAGED_SESSION: 'te_is_engaged_session',
+    SESSION_DATE: 'te_session_date',
+    PREVIOUS_UTM: 'te_previous_utm',
+    PREVIOUS_USER: 'te_previous_user'
+  }
+};
+
+// 세션 통계 키
+const SESSION_STATS_KEYS = {
+  TOTAL_SESSIONS: 'te_total_sessions',
+  TOTAL_SESSION_TIME: 'te_total_session_time',
+  AVERAGE_SESSION_TIME: 'te_average_session_time',
+  LONGEST_SESSION_TIME: 'te_longest_session_time',
+  ENGAGED_SESSIONS: 'te_engaged_sessions'
+};
 
 // 초기화 상태 추적
 let isInitialized = false;
@@ -11,13 +48,13 @@ let initializationPromise = null;
 
 // 세션 변수들 (모듈 내부 캡슐화)
 let sessionId = null;
-let sessionNumber = parseInt(safeGetItem('te_session_number') || '0');
+let sessionNumber = parseInt(safeGetItem(SESSION_CONFIG.SESSION_STORAGE_KEYS.SESSION_NUMBER) || '0');
 let sessionStartTime = null;
 let sessionEndTime = null;
 let isEngagedSession = false;
 let interactionCount = 0;
 let lastActivityTime = Date.now();
-let sessionTimeout = 30 * 60 * 1000; // 30분 (웹 기준)
+let sessionTimeout = SESSION_CONFIG.DEFAULT_TIMEOUT;
 let isSessionTrackingEnabled = true;
 
 // 세션 이벤트 추적 (중복 전송 방지)
@@ -100,7 +137,7 @@ function initializeSession(config = {}) {
 
       try {
         // ✅ 세션 번호 초기화 검증
-        const storedSessionNumber = safeGetItem('te_session_number');
+        const storedSessionNumber = safeGetItem(SESSION_CONFIG.SESSION_STORAGE_KEYS.SESSION_NUMBER);
         if (storedSessionNumber !== null) {
           const parsedNumber = parseInt(storedSessionNumber);
           if (!isNaN(parsedNumber) && parsedNumber >= 0) {
@@ -109,17 +146,17 @@ function initializeSession(config = {}) {
           } else {
             console.warn('⚠️ 잘못된 세션 번호 발견, 0으로 리셋:', storedSessionNumber);
             sessionNumber = 0;
-            safeSetItem('te_session_number', '0');
+            safeSetItem(SESSION_CONFIG.SESSION_STORAGE_KEYS.SESSION_NUMBER, '0');
           }
         } else {
           trackingLog('📊 최초 방문자, 세션 번호 0으로 시작');
           sessionNumber = 0;
-          safeSetItem('te_session_number', '0');
+          safeSetItem(SESSION_CONFIG.SESSION_STORAGE_KEYS.SESSION_NUMBER, '0');
         }
 
-        const storedSessionId = safeGetItem('te_session_id');
-        const storedStartTime = safeGetItem('te_session_start_time');
-        const storedLastActivity = safeGetItem('te_last_activity_time');
+        const storedSessionId = safeGetItem(SESSION_CONFIG.SESSION_STORAGE_KEYS.SESSION_ID);
+        const storedStartTime = safeGetItem(SESSION_CONFIG.SESSION_STORAGE_KEYS.SESSION_START_TIME);
+        const storedLastActivity = safeGetItem(SESSION_CONFIG.SESSION_STORAGE_KEYS.LAST_ACTIVITY_TIME);
 
         // 기존 세션 복원 또는 새 세션 시작
         if (storedSessionId && storedStartTime && storedLastActivity) {
@@ -140,7 +177,7 @@ function initializeSession(config = {}) {
         }
 
         // 세션 타임아웃 체크 주기 설정
-        setInterval(checkSessionTimeout, 60000); // 1분마다 체크
+        setInterval(checkSessionTimeout, SESSION_CONFIG.TIMEOUT_CHECK_INTERVAL);
 
         // 페이지 종료 시 세션 종료 이벤트 전송
         setupSessionEndTracking();
@@ -185,11 +222,11 @@ function startNewSession() {
   lastActivityTime = now;
 
   // 세션 정보 저장
-  safeSetItem('te_session_id', sessionId.toString());
-  safeSetItem('te_session_number', sessionNumber.toString());
-  safeSetItem('te_session_start_time', sessionStartTime.toString());
-  safeSetItem('te_last_activity_time', lastActivityTime.toString());
-  safeSetItem('te_is_engaged_session', isEngagedSession.toString());
+  safeSetItem(SESSION_CONFIG.SESSION_STORAGE_KEYS.SESSION_ID, sessionId.toString());
+  safeSetItem(SESSION_CONFIG.SESSION_STORAGE_KEYS.SESSION_NUMBER, sessionNumber.toString());
+  safeSetItem(SESSION_CONFIG.SESSION_STORAGE_KEYS.SESSION_START_TIME, sessionStartTime.toString());
+  safeSetItem(SESSION_CONFIG.SESSION_STORAGE_KEYS.LAST_ACTIVITY_TIME, lastActivityTime.toString());
+  safeSetItem(SESSION_CONFIG.SESSION_STORAGE_KEYS.IS_ENGAGED_SESSION, isEngagedSession.toString());
 
   // 🪪 세션 정보로 슈퍼 프로퍼티 갱신
   updateSuperPropertiesWithSession(sessionId, sessionNumber);
@@ -278,10 +315,11 @@ function updateSessionActivity() {
     // 로컬스토리지 업데이트
     safeSetItem('te_last_activity_time', lastActivityTime.toString());
     
-    // 인게이지 세션 조건: 10초 이상 또는 2회 이상 상호작용
+    // 인게이지 세션 조건: 설정된 시간 이상 또는 설정된 상호작용 횟수 이상
     if (!isEngagedSession) {
       const timeSpent = Date.now() - sessionStartTime;
-      if (timeSpent >= 10000 || interactionCount >= 2) {
+      if (timeSpent >= SESSION_CONFIG.ENGAGEMENT_TIME_THRESHOLD || 
+          interactionCount >= SESSION_CONFIG.ENGAGEMENT_INTERACTION_THRESHOLD) {
         isEngagedSession = true;
         safeSetItem('te_is_engaged_session', 'true');
         
@@ -418,149 +456,172 @@ function generateSessionId() {
   return Date.now(); // Epoch 시간 사용
 }
 
+// 캐시된 값들 (성능 최적화)
+let cachedCapabilities = null;
+let cachedNetworkInfo = null;
+let lastNetworkInfoUpdate = 0;
+const NETWORK_INFO_CACHE_TIME = 30000; // 30초
+
 /**
- * 공통 속성 업데이트
+ * 페이지 정보 수집
+ */
+function getPageInfo() {
+  return {
+    page_host: window.location.hostname,
+    page_protocol: window.location.protocol,
+    page_hash: window.location.hash || null,
+    page_query: window.location.search || null
+  };
+}
+
+/**
+ * 뷰포트 정보 수집
+ */
+function getViewportInfo() {
+  return {
+    viewport_width: window.innerWidth,
+    viewport_height: window.innerHeight,
+    viewport_ratio: Math.round((window.innerWidth / window.innerHeight) * 100) / 100,
+    device_pixel_ratio: window.devicePixelRatio || 1,
+    orientation: window.innerHeight > window.innerWidth ? 'portrait' : 'landscape'
+  };
+}
+
+/**
+ * 브라우저 기능 지원 체크 (캐싱)
+ */
+function getBrowserCapabilities() {
+  if (cachedCapabilities) {
+    return cachedCapabilities;
+  }
+
+  cachedCapabilities = {
+    local_storage_enabled: (() => {
+      try {
+        const testKey = 'te_storage_test';
+        localStorage.setItem(testKey, 'test');
+        localStorage.removeItem(testKey);
+        return true;
+      } catch (e) {
+        return false;
+      }
+    })(),
+    
+    cookies_enabled: navigator.cookieEnabled,
+    
+    webgl_enabled: (() => {
+      try {
+        const canvas = document.createElement('canvas');
+        return !!(canvas.getContext('webgl') || canvas.getContext('experimental-webgl'));
+      } catch (e) {
+        return false;
+      }
+    })(),
+    
+    is_touch_device: 'ontouchstart' in window || navigator.maxTouchPoints > 0
+  };
+
+  return cachedCapabilities;
+}
+
+/**
+ * 네트워크 정보 수집 (캐싱)
+ */
+function getNetworkInfo() {
+  const now = Date.now();
+  if (cachedNetworkInfo && (now - lastNetworkInfoUpdate) < NETWORK_INFO_CACHE_TIME) {
+    return cachedNetworkInfo;
+  }
+
+  cachedNetworkInfo = {
+    connection_type: navigator.connection?.effectiveType || null,
+    connection_downlink: navigator.connection?.downlink || null,
+    connection_rtt: navigator.connection?.rtt || null,
+    is_online: navigator.onLine
+  };
+
+  lastNetworkInfoUpdate = now;
+  return cachedNetworkInfo;
+}
+
+/**
+ * UTM 및 추적 ID 수집
+ */
+function getMarketingParameters() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const marketingData = {};
+  
+  // UTM 파라미터
+  SESSION_CONFIG.UTM_PARAMETERS.forEach(param => {
+    const value = urlParams.get(param);
+    if (value) {
+      marketingData[param] = value;
+    }
+  });
+  
+  // 추적 ID들
+  SESSION_CONFIG.TRACKING_IDS.forEach(param => {
+    const value = urlParams.get(param);
+    if (value) {
+      marketingData[param] = value;
+    }
+  });
+  
+  return marketingData;
+}
+
+/**
+ * 성능 정보 수집
+ */
+function getPerformanceInfo() {
+  return {
+    dom_ready_state: document.readyState,
+    performance_now: Math.round(performance.now()),
+    memory_used: performance.memory?.usedJSHeapSize 
+      ? Math.round(performance.memory.usedJSHeapSize / 1024 / 1024) 
+      : null
+  };
+}
+
+/**
+ * 공통 속성 업데이트 (최적화)
  */
 function updateSuperProperties() {
   try {
+    if (!window.te?.setSuperProperties) {
+      console.warn('ThinkingData SDK setSuperProperties 메서드를 사용할 수 없습니다');
+      return;
+    }
+
     const superProperties = {
-      // 세션 관련 (커스텀)
+      // 세션 관련
       session_id: sessionId,
       session_number: sessionNumber,
       
-      // 페이지 정보 (SDK 자동수집 #url, #url_path, #title과 별개)
-      page_host: window.location.hostname,
-      page_protocol: window.location.protocol,
-      page_hash: window.location.hash || null,
-      page_query: window.location.search || null,
-      
-      // 뷰포트 정보 (SDK의 #screen_width/height와 다름 - 실제 브라우저 창 크기)
-      viewport_width: window.innerWidth,
-      viewport_height: window.innerHeight,
-      viewport_ratio: Math.round((window.innerWidth / window.innerHeight) * 100) / 100,
-      
-      // 디바이스 정보 (SDK 자동수집 외 추가 정보)
-      device_pixel_ratio: window.devicePixelRatio || 1,
-      orientation: window.innerHeight > window.innerWidth ? 'portrait' : 'landscape',
-      
-      // 환경 감지 (SDK에서 제공하지 않는 정보)
-      is_mobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent),
-      is_touch_device: 'ontouchstart' in window || navigator.maxTouchPoints > 0,
-      is_tablet: /iPad|Android|Tablet/i.test(navigator.userAgent) && window.innerWidth >= 768,
-      
-      // 브라우저 기능 지원 (기술적 제약사항)
-      local_storage_enabled: (function() {
-        try {
-          localStorage.setItem('test', 'test');
-          localStorage.removeItem('test');
-          return true;
-        } catch (e) {
-          return false;
-        }
-      })(),
-      cookies_enabled: navigator.cookieEnabled,
-      webgl_enabled: (function() {
-        try {
-          const canvas = document.createElement('canvas');
-          return !!(canvas.getContext('webgl') || canvas.getContext('experimental-webgl'));
-        } catch (e) {
-          return false;
-        }
-      })(),
-      
-      // 네트워크 정보 (지원하는 브라우저만)
-      connection_type: navigator.connection ? navigator.connection.effectiveType : null,
-      connection_downlink: navigator.connection ? navigator.connection.downlink : null,
-      is_online: navigator.onLine,
+      // 각종 정보 수집 (함수 분리)
+      ...getPageInfo(),
+      ...getViewportInfo(),
+      ...getBrowserCapabilities(),
+      ...getNetworkInfo(),
+      ...getMarketingParameters(),
+      ...getPerformanceInfo(),
       
       // 타이밍 정보
       timestamp: Date.now(),
-      local_time: new Date().toISOString(),
-      
-      // 성능 정보 (의미있는 지표만)
-      dom_ready_state: document.readyState,
-      performance_now: Math.round(performance.now()),
-      connection_rtt: navigator.connection ? navigator.connection.rtt : null, // 네트워크 지연시간
-      memory_used: performance.memory && performance.memory.usedJSHeapSize ? 
-        Math.round(performance.memory.usedJSHeapSize / 1024 / 1024) : null // MB 단위
+      local_time: new Date().toISOString()
     };
-    
-    // UTM 파라미터 추출 (마케팅 캠페인 추적 - SDK #utm과 별개)
-    const urlParams = new URLSearchParams(window.location.search);
-    ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'utm_id'].forEach(function(param) {
-      const value = urlParams.get(param);
-      if (value) {
-        superProperties[param] = value;
-      }
-    });
-    
-    // 커스텀 추적 ID들
-    ['gclid', 'fbclid', 'msclkid', '_ga'].forEach(function(param) {
-      const value = urlParams.get(param);
-      if (value) {
-        superProperties[param] = value;
-      }
-    });
     
     // TE 시간 형식 속성 추가
     const superPropertiesWithTETime = addTETimeProperties(superProperties);
     
     window.te.setSuperProperties(superPropertiesWithTETime);
-    trackingLog('✅ 공통 속성 업데이트 완료 (TE 시간 형식 포함)');
+    trackingLog('✅ 공통 속성 업데이트 완료 (최적화)');
   } catch (error) {
     console.error('공통 속성 업데이트 실패:', error);
   }
 }
 
-/**
- * 디바이스 타입 감지
- */
-function getDeviceType() {
-  const userAgent = navigator.userAgent.toLowerCase();
-  const screenWidth = window.innerWidth;
-  const screenHeight = window.innerHeight;
-
-  if (/mobile|android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent)) {
-    if (screenWidth >= 768 && screenHeight >= 1024) {
-      return 'tablet';
-    }
-    return 'mobile';
-  }
-  return 'desktop';
-}
-
-/**
- * 브라우저 정보 수집
- */
-function getBrowserInfo() {
-  const userAgent = navigator.userAgent;
-  let browser = 'unknown';
-  let version = 'unknown';
-
-  // 브라우저 감지
-  if (userAgent.includes('Chrome')) {
-    browser = 'Chrome';
-    version = userAgent.match(/Chrome\/(\d+)/)?.[1] || 'unknown';
-  } else if (userAgent.includes('Firefox')) {
-    browser = 'Firefox';
-    version = userAgent.match(/Firefox\/(\d+)/)?.[1] || 'unknown';
-  } else if (userAgent.includes('Safari') && !userAgent.includes('Chrome')) {
-    browser = 'Safari';
-    version = userAgent.match(/Version\/(\d+)/)?.[1] || 'unknown';
-  } else if (userAgent.includes('Edge')) {
-    browser = 'Edge';
-    version = userAgent.match(/Edge\/(\d+)/)?.[1] || 'unknown';
-  } else if (userAgent.includes('MSIE') || userAgent.includes('Trident')) {
-    browser = 'Internet Explorer';
-    version = userAgent.match(/MSIE (\d+)/)?.[1] || userAgent.match(/rv:(\d+)/)?.[1] || 'unknown';
-  }
-
-  return {
-    name: browser,
-    version: version,
-    user_agent: userAgent
-  };
-}
+// 디바이스/브라우저 정보 함수들은 utils.js에서 import하여 사용
 
 /**
  * 세션 설정 업데이트

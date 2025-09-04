@@ -3,14 +3,219 @@
  * 설정을 기반으로 SDK를 초기화하고 공통 속성을 설정합니다.
  */
 
-// 브라우저 환경 체크
-function isBrowserEnvironment() {
-  return typeof window !== "undefined" && typeof document !== "undefined";
+// 상수 정의
+const BOT_KEYWORDS = [
+  "bot", "crawler", "spider", "scraper", "webdriver", 
+  "selenium", "puppeteer", "playwright", "headless",
+  "chatgpt", "claude", "bard", "copilot", "perplexity"
+];
+
+const BROWSER_PATTERNS = [
+  { name: "Chrome", pattern: "Chrome", versionPattern: /Chrome\/(\d+)/ },
+  { name: "Firefox", pattern: "Firefox", versionPattern: /Firefox\/(\d+)/ },
+  { name: "Safari", pattern: "Safari", exclude: "Chrome", versionPattern: /Version\/(\d+)/ },
+  { name: "Edge", pattern: "Edge", versionPattern: /Edge\/(\d+)/ },
+  { name: "Internet Explorer", pattern: ["MSIE", "Trident"], versionPattern: /(MSIE|rv:)\s*(\d+)/ }
+];
+
+const MOBILE_PATTERNS = /mobile|android|iphone|ipod|blackberry|iemobile|opera mini/i;
+const TABLET_PATTERNS = /tablet|ipad/i;
+
+// 캐시된 값들
+let cachedUserAgent = null;
+let cachedBrowserInfo = null;
+let cachedDeviceInfo = null;
+
+// 유틸리티 함수들
+const utils = {
+  // 브라우저 환경 체크
+  isBrowserEnvironment() {
+    return typeof window !== "undefined" && typeof document !== "undefined";
+  },
+
+  // 안전한 URL 파싱
+  safeParseURL(url) {
+    try {
+      return new URL(url);
+    } catch (error) {
+      return null;
+    }
+  },
+
+  // 안전한 localStorage 접근
+  safeGetLocalStorage(key, defaultValue = null) {
+    try {
+      return localStorage.getItem(key) || defaultValue;
+    } catch (error) {
+      console.warn(`localStorage 접근 실패: ${key}`, error);
+      return defaultValue;
+    }
+  }
+};
+
+// 봇 감지 함수
+function detectBot() {
+  // 캐시된 사용자 에이전트 사용
+  const userAgent = cachedUserAgent || (cachedUserAgent = navigator.userAgent.toLowerCase());
+  
+  // 키워드 기반 감지
+  const hasBotKeywords = BOT_KEYWORDS.some(keyword => userAgent.includes(keyword));
+  
+  // WebDriver 속성 감지
+  const hasWebDriver = navigator.webdriver === true;
+  
+  return hasBotKeywords || hasWebDriver;
+}
+
+// 브라우저 정보 감지 (캐싱 적용)
+function getBrowserInfo() {
+  if (cachedBrowserInfo) {
+    return cachedBrowserInfo;
+  }
+
+  const userAgent = cachedUserAgent || (cachedUserAgent = navigator.userAgent);
+  let browserName = "unknown";
+  let browserVersion = "unknown";
+
+  for (const browser of BROWSER_PATTERNS) {
+    const patterns = Array.isArray(browser.pattern) ? browser.pattern : [browser.pattern];
+    const hasPattern = patterns.some(pattern => userAgent.includes(pattern));
+    const hasExclude = browser.exclude && userAgent.includes(browser.exclude);
+
+    if (hasPattern && !hasExclude) {
+      browserName = browser.name;
+      const versionMatch = userAgent.match(browser.versionPattern);
+      if (versionMatch) {
+        browserVersion = versionMatch[1] || versionMatch[2] || "unknown";
+      }
+      break;
+    }
+  }
+
+  cachedBrowserInfo = { name: browserName, version: browserVersion };
+  return cachedBrowserInfo;
+}
+
+// 디바이스 타입 감지 (캐싱 적용)
+function getDeviceInfo() {
+  if (cachedDeviceInfo) {
+    return cachedDeviceInfo;
+  }
+
+  const userAgent = cachedUserAgent || (cachedUserAgent = navigator.userAgent.toLowerCase());
+  
+  let deviceType = "desktop";
+  if (MOBILE_PATTERNS.test(userAgent)) {
+    deviceType = TABLET_PATTERNS.test(userAgent) ? "tablet" : "mobile";
+  }
+
+  cachedDeviceInfo = {
+    type: deviceType,
+    screen_resolution: `${screen.width}x${screen.height}`,
+    viewport_size: `${window.innerWidth}x${window.innerHeight}`,
+    timezone_offset: new Date().getTimezoneOffset() / -60
+  };
+  
+  return cachedDeviceInfo;
+}
+
+// UTM 파라미터 추출 함수
+function extractUTMParameters() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const utmKeys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
+  
+  const utmData = {};
+  utmKeys.forEach(key => {
+    const value = urlParams.get(key);
+    if (value) {
+      utmData[key] = value;
+    }
+  });
+  
+  return utmData;
+}
+
+// 공통 속성 생성 함수
+function createSuperProperties() {
+  try {
+    // 세션 정보 가져오기
+    const sessionId = utils.safeGetLocalStorage("te_session_id");
+    const sessionNumber = utils.safeGetLocalStorage("te_session_number", "0");
+
+    // 각종 정보 수집
+    const isBot = detectBot();
+    const browserInfo = getBrowserInfo();
+    const deviceInfo = getDeviceInfo();
+    const utmData = extractUTMParameters();
+
+    // 리퍼러 호스트 추출
+    const referrerHost = document.referrer 
+      ? utils.safeParseURL(document.referrer)?.hostname || null
+      : null;
+
+    // 기본 속성
+    const baseProperties = {
+      // 비즈니스 컨텍스트
+      channel: "webflow",
+      platform: "web",
+      page_type: getPageType(),
+      page_category: getPageCategory(),
+      page_section: getPageSection(),
+      source: getTrafficSource(),
+      timestamp: new Date(),
+      
+      // 세션 정보
+      session_id: sessionId,
+      session_number: parseInt(sessionNumber) || 0,
+      
+      // 봇 감지
+      is_bot: isBot,
+      
+      // 디바이스 정보
+      device_type: deviceInfo.type,
+      common_screen_resolution: deviceInfo.screen_resolution,
+      common_viewport_size: deviceInfo.viewport_size,
+      common_timezone_offset: deviceInfo.timezone_offset,
+      
+      // 페이지 정보
+      common_url: window.location.href,
+      common_title: document.title,
+      common_page_path: window.location.pathname,
+      common_host: window.location.hostname,
+      common_search_params: window.location.search,
+      
+      // 리퍼러 정보
+      common_referrer: document.referrer,
+      common_referrer_host: referrerHost,
+      
+      // 브라우저 정보
+      common_language: navigator.language || "unknown",
+      common_user_agent: navigator.userAgent,
+      common_browser: browserInfo.name,
+      common_browser_version: browserInfo.version
+    };
+
+    // UTM 파라미터 추가 (값이 있는 경우에만)
+    Object.assign(baseProperties, utmData);
+
+    return baseProperties;
+    
+  } catch (error) {
+    console.error("공통 속성 생성 실패:", error);
+    // 최소한의 기본 속성 반환
+    return {
+      channel: "webflow",
+      platform: "web",
+      timestamp: new Date(),
+      is_bot: false,
+      device_type: "unknown"
+    };
+  }
 }
 
 // SDK 존재 여부 확인 (다양한 로드 패턴 지원)
 function findSDK() {
-  if (!isBrowserEnvironment()) {
+  if (!utils.isBrowserEnvironment()) {
     console.warn("⚠️ 브라우저 환경이 아닙니다.");
     return null;
   }
@@ -34,7 +239,7 @@ function findSDK() {
 
 // 페이지 타입 판단
 function getPageType() {
-  if (!isBrowserEnvironment()) return "unknown";
+  if (!utils.isBrowserEnvironment()) return "unknown";
 
   const path = window.location.pathname;
   if (path.includes("/blog/")) return "blog";
@@ -47,7 +252,7 @@ function getPageType() {
 
 // 페이지 카테고리 판단
 function getPageCategory() {
-  if (!isBrowserEnvironment()) return "unknown";
+  if (!utils.isBrowserEnvironment()) return "unknown";
 
   const path = window.location.pathname;
   if (path.includes("/blog/")) return "content";
@@ -58,7 +263,7 @@ function getPageCategory() {
 
 // 페이지 섹션 판단
 function getPageSection() {
-  if (!isBrowserEnvironment()) return "unknown";
+  if (!utils.isBrowserEnvironment()) return "unknown";
 
   const path = window.location.pathname;
   if (path.includes("/blog/")) return "blog";
@@ -71,7 +276,7 @@ function getPageSection() {
 
 // 트래픽 소스 판단
 function getTrafficSource() {
-  if (!isBrowserEnvironment()) return "unknown";
+  if (!utils.isBrowserEnvironment()) return "unknown";
 
   const urlParams = new URLSearchParams(window.location.search);
   const utmSource = urlParams.get("utm_source");
@@ -101,7 +306,7 @@ let isInitialized = false;
  */
 function initSDK(config) {
   // 브라우저 환경이 아니면 초기화하지 않음
-  if (!isBrowserEnvironment()) {
+  if (!utils.isBrowserEnvironment()) {
     console.warn("⚠️ 브라우저 환경이 아니므로 SDK 초기화를 건너뜁니다.");
     return false;
   }
@@ -137,128 +342,8 @@ function initSDK(config) {
       window.te.init(config);
     }
 
-    // 공통 이벤트 속성 설정
-    const sessionId = localStorage.getItem("te_session_id") || null;
-    const sessionNumber = localStorage.getItem("te_session_number") || 0;
-
-    // 봇 감지
-    const botInfo = (function () {
-      const userAgent = navigator.userAgent.toLowerCase();
-      const botKeywords = [
-        "bot",
-        "crawler",
-        "spider",
-        "scraper",
-        "webdriver",
-        "selenium",
-        "puppeteer",
-        "playwright",
-        "headless",
-        "chatgpt",
-        "claude",
-        "bard",
-        "copilot",
-      ];
-      return (
-        botKeywords.some((keyword) => userAgent.includes(keyword)) ||
-        navigator.webdriver === true
-      );
-    })();
-
-    // UTM 파라미터 추출
-    const urlParams = new URLSearchParams(window.location.search);
-    const utmData = {
-      utm_source: urlParams.get("utm_source"),
-      utm_medium: urlParams.get("utm_medium"),
-      utm_campaign: urlParams.get("utm_campaign"),
-      utm_term: urlParams.get("utm_term"),
-      utm_content: urlParams.get("utm_content"),
-    };
-
-    // 디바이스 정보
-    const deviceInfo = {
-      device_type: (function () {
-        const userAgent = navigator.userAgent.toLowerCase();
-        if (
-          /mobile|android|iphone|ipod|blackberry|iemobile|opera mini/i.test(
-            userAgent
-          )
-        ) {
-          if (/tablet|ipad/i.test(userAgent)) return "tablet";
-          return "mobile";
-        }
-        return "desktop";
-      })(),
-      screen_resolution: `${screen.width}x${screen.height}`,
-      viewport_size: `${window.innerWidth}x${window.innerHeight}`,
-      timezone_offset: new Date().getTimezoneOffset() / -60,
-    };
-
-    const superProperties = {
-      channel: "webflow",
-      platform: "web",
-      page_type: getPageType(),
-      page_category: getPageCategory(),
-      page_section: getPageSection(),
-      source: getTrafficSource(),
-      timestamp: new Date(),
-      session_id: sessionId,
-      session_number: sessionNumber,
-      is_bot: botInfo,
-
-      // 디바이스 정보
-      device_type: deviceInfo.device_type,
-      common_screen_resolution: deviceInfo.screen_resolution,
-      common_viewport_size: deviceInfo.viewport_size,
-      common_timezone_offset: deviceInfo.timezone_offset,
-
-      // 페이지 정보
-      common_url: window.location.href,
-      common_title: document.title,
-      common_page_path: window.location.pathname,
-      common_host: window.location.hostname,
-      common_search_params: window.location.search,
-
-      // 리퍼러 정보
-      common_referrer: document.referrer,
-      common_referrer_host: document.referrer
-        ? (function () {
-            try {
-              return new URL(document.referrer).hostname;
-            } catch (e) {
-              return null;
-            }
-          })()
-        : null,
-
-      // 브라우저 정보
-      common_language: navigator.language,
-      common_user_agent: navigator.userAgent,
-      common_browser: (function () {
-        const ua = navigator.userAgent;
-        if (ua.includes("Chrome")) return "Chrome";
-        if (ua.includes("Firefox")) return "Firefox";
-        if (ua.includes("Safari") && !ua.includes("Chrome")) return "Safari";
-        if (ua.includes("Edge")) return "Edge";
-        if (ua.includes("MSIE") || ua.includes("Trident"))
-          return "Internet Explorer";
-        return "unknown";
-      })(),
-      common_browser_version: (function () {
-        const ua = navigator.userAgent;
-        let match = ua.match(
-          /(Chrome|Firefox|Version|Edge|MSIE|rv:)(\/|:)?(\d+)/
-        );
-        return match ? match[3] : "unknown";
-      })(),
-
-      // UTM 파라미터 (값이 있는 경우에만 포함)
-      ...(utmData.utm_source && { utm_source: utmData.utm_source }),
-      ...(utmData.utm_medium && { utm_medium: utmData.utm_medium }),
-      ...(utmData.utm_campaign && { utm_campaign: utmData.utm_campaign }),
-      ...(utmData.utm_term && { utm_term: utmData.utm_term }),
-      ...(utmData.utm_content && { utm_content: utmData.utm_content }),
-    };
+    // 공통 이벤트 속성 생성
+    const superProperties = createSuperProperties();
 
     if (typeof window.te.setSuperProperties === "function") {
       window.te.setSuperProperties(superProperties);
@@ -297,7 +382,7 @@ function initSDK(config) {
  * @returns {boolean} 초기화 여부
  */
 function isSDKInitialized() {
-  return isInitialized && isBrowserEnvironment();
+  return isInitialized && utils.isBrowserEnvironment();
 }
 
 /**
