@@ -72,7 +72,8 @@ const config = {
     popup: true,
     resource: true,
     userAttributes: true,
-    sectionScroll: true
+    sectionScroll: true,
+    operatePopup: true // 운영 팝업 모듈
   },
 
   // 스크롤 추적 설정
@@ -99,6 +100,25 @@ const config = {
     enabled: false, // 운영환경에서는 false, 개발환경에서는 true
     logLevel: 'warn', // 'error', 'warn', 'info', 'debug'
     showConsoleLogs: false // 우리가 만든 console.log들 제어 (테스트용)
+  },
+
+  // 운영 SDK 설정 (TDStrategy - 클라이언트 트리거 과제)
+  operate: {
+    enabled: true, // 운영 SDK 활성화 여부
+    mode: 'none', // SDK 모드: 'none' (운영), 'debug' (디버그), 'debugOnly' (디버그 전용)
+    clientParams: {
+      // 과제 조건에 사용할 초기 클라이언트 파라미터
+      // 예: user_level: 'guest', membership: 'free'
+    },
+    // 팝업 모듈 설정
+    popup: {
+      enabled: true, // 팝업 모듈 활성화
+      autoRegister: true, // 트리거 핸들러 자동 등록
+      showAllTriggers: false, // true: 모든 트리거를 팝업으로 표시, false: popupType 지정된 것만
+      defaultType: 'modal', // 기본 팝업 타입: 'modal', 'banner', 'toast', 'slide'
+      maxDisplayCount: 1, // 동일 과제 최대 노출 횟수 (기간 내)
+      limitPeriod: 24 * 60 * 60 * 1000 // 노출 제한 기간 (24시간)
+    }
   }
 };
 
