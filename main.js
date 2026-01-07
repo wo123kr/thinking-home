@@ -11,6 +11,9 @@ import { initResourceTracking } from './tracking/resource.js';
 import { initUserAttributes } from './user-attributes.js';
 import { trackPageView } from './tracking/pageview.js';
 import { initSectionScrollTracking } from './tracking/section-scroll.js';
+// 운영 SDK 모듈 (선택적 로드)
+import { initOperateSDK } from './core/operate-sdk-init.js';
+import { initOperatePopup } from './tracking/operate-popup.js';
 
 // 브라우저 환경 체크
 function isBrowserEnvironment() {
@@ -125,6 +128,25 @@ async function main() {
                 trackingLog('✅ 유저 속성 추적 초기화 완료');
             } catch (error) {
                 console.warn('⚠️ 유저 속성 추적 초기화 실패:', error);
+            }
+        }
+
+        // 운영 SDK 초기화 (TDStrategy - 클라이언트 트리거 과제)
+        // ⚠️ 기존 트래킹과 독립적으로 동작 - 실패해도 다른 모듈에 영향 없음
+        if (config.operate?.enabled && typeof window.TDApp !== 'undefined') {
+            try {
+                const operateInitialized = initOperateSDK(config);
+                if (operateInitialized) {
+                    trackingLog('✅ 운영 SDK 초기화 완료');
+
+                    // 운영 팝업 모듈 초기화
+                    if (config.operate?.popup?.enabled) {
+                        initOperatePopup(config.operate.popup);
+                        trackingLog('✅ 운영 팝업 모듈 초기화 완료');
+                    }
+                }
+            } catch (operateError) {
+                console.warn('⚠️ 운영 SDK 초기화 실패 (기존 트래킹은 정상 동작):', operateError);
             }
         }
 
