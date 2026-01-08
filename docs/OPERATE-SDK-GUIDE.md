@@ -127,11 +127,13 @@ popup: {
 | `secondaryButton` | X | 보조 버튼 텍스트 |
 | `secondaryButtonUrl` | X | 보조 버튼 클릭 시 이동 URL |
 | `position` | X | banner 타입일 때 위치: `top`, `bottom` |
-| `style` | X | 디자인 커스터마이징 (아래 참조) |
+| `style` | X | 디자인 커스터마이징 - 객체 그룹 1 (아래 참조) |
+| `styleText` | X | 디자인 커스터마이징 - 객체 그룹 2 (아래 참조) |
 
-### Step 6: 디자인 커스터마이징 (style 옵션)
+### Step 6: 디자인 커스터마이징 (style + styleText 옵션)
 
-TE 콘솔에서 팝업 디자인을 자유롭게 변경할 수 있습니다:
+TE 콘솔에서 팝업 디자인을 자유롭게 변경할 수 있습니다.
+객체 그룹 10개 제한으로 인해 `style`과 `styleText` 두 그룹으로 분리됩니다:
 
 ```json
 {
@@ -142,11 +144,15 @@ TE 콘솔에서 팝업 디자인을 자유롭게 변경할 수 있습니다:
     "maxWidth": "500px",
     "backgroundColor": "#ffffff",
     "primaryColor": "#4F46E5",
+    "primaryHoverColor": "#4338CA",
     "secondaryColor": "#E5E7EB",
+    "secondaryHoverColor": "#D1D5DB",
     "borderRadius": "16px",
     "titleColor": "#333333",
     "titleFontSize": "20px",
-    "bodyColor": "#666666",
+    "bodyColor": "#666666"
+  },
+  "styleText": {
     "bodyFontSize": "15px",
     "imageWidth": "100%",
     "imageHeight": "200px",
@@ -155,16 +161,25 @@ TE 콘솔에서 팝업 디자인을 자유롭게 변경할 수 있습니다:
 }
 ```
 
+**style 객체 그룹 (10개):**
+
 | 옵션 | 설명 | 기본값 |
 |------|------|--------|
 | `maxWidth` | 팝업 최대 너비 | 480px |
 | `backgroundColor` | 팝업 배경색 | #ffffff |
 | `primaryColor` | 메인 버튼 색 | #4F46E5 |
+| `primaryHoverColor` | 메인 버튼 호버 색 | #4338CA |
 | `secondaryColor` | 보조 버튼 색 | #E5E7EB |
+| `secondaryHoverColor` | 보조 버튼 호버 색 | #D1D5DB |
 | `borderRadius` | 모서리 둥글기 | 12px |
 | `titleColor` | 제목 색상 | #333333 |
 | `titleFontSize` | 제목 글자 크기 | 18px |
 | `bodyColor` | 본문 색상 | #666666 |
+
+**styleText 객체 그룹 (4개):**
+
+| 옵션 | 설명 | 기본값 |
+|------|------|--------|
 | `bodyFontSize` | 본문 글자 크기 | 14px |
 | `imageWidth` | 이미지 너비 | 100% |
 | `imageHeight` | 이미지 높이 | auto |

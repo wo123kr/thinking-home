@@ -495,7 +495,8 @@ function renderPopupContent(content, type, customStyle = {}) {
  * 모달 팝업 생성
  */
 function createModal(content, options) {
-  const customStyle = content.style || {};
+  // style + styleText 객체 그룹 병합
+  const customStyle = { ...(content.style || {}), ...(content.styleText || {}) };
   const style = { ...DEFAULT_STYLE, ...customStyle };
 
   const overlay = document.createElement('div');
@@ -534,7 +535,8 @@ function createModal(content, options) {
  */
 function createBanner(content, options) {
   const position = options.position || 'top';
-  const customStyle = content.style || {};
+  // style + styleText 객체 그룹 병합
+  const customStyle = { ...(content.style || {}), ...(content.styleText || {}) };
   const style = { ...DEFAULT_STYLE, ...customStyle };
 
   const banner = document.createElement('div');
@@ -587,7 +589,8 @@ function createBanner(content, options) {
  * 토스트 팝업 생성
  */
 function createToast(content, options) {
-  const customStyle = content.style || {};
+  // style + styleText 객체 그룹 병합
+  const customStyle = { ...(content.style || {}), ...(content.styleText || {}) };
   const style = { ...DEFAULT_STYLE, ...customStyle };
 
   const toast = document.createElement('div');
@@ -622,7 +625,8 @@ function createToast(content, options) {
  * 슬라이드 팝업 생성
  */
 function createSlide(content, options) {
-  const customStyle = content.style || {};
+  // style + styleText 객체 그룹 병합
+  const customStyle = { ...(content.style || {}), ...(content.styleText || {}) };
   const style = { ...DEFAULT_STYLE, ...customStyle };
 
   const overlay = document.createElement('div');
