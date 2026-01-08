@@ -23,6 +23,24 @@ const STORAGE_KEY = 'te_operate_popup_history';
 const DEFAULT_DISPLAY_LIMIT = 1; // 기본 1회 노출
 const DEFAULT_LIMIT_PERIOD = 24 * 60 * 60 * 1000; // 24시간
 
+// 기본 디자인 설정
+const DEFAULT_STYLE = {
+  maxWidth: '480px',
+  backgroundColor: '#ffffff',
+  primaryColor: '#4F46E5',
+  primaryHoverColor: '#4338CA',
+  secondaryColor: '#E5E7EB',
+  secondaryHoverColor: '#D1D5DB',
+  borderRadius: '12px',
+  titleColor: '#333333',
+  titleFontSize: '18px',
+  bodyColor: '#666666',
+  bodyFontSize: '14px',
+  imageWidth: '100%',
+  imageHeight: 'auto',
+  imageFit: 'cover' // cover, contain, fill, none
+};
+
 // ============================================
 // CSS 스타일 삽입
 // ============================================
@@ -385,9 +403,20 @@ function escapeHtml(text) {
 // ============================================
 
 /**
+ * 스타일 객체를 inline style 문자열로 변환
+ */
+function buildInlineStyle(styleObj) {
+  if (!styleObj || Object.keys(styleObj).length === 0) return '';
+  return Object.entries(styleObj)
+    .filter(([_, v]) => v !== undefined && v !== null)
+    .map(([k, v]) => `${k}:${v}`)
+    .join(';');
+}
+
+/**
  * 팝업 콘텐츠 HTML 생성
  */
-function renderPopupContent(content, type) {
+function renderPopupContent(content, type, customStyle = {}) {
   const {
     image,
     title,
@@ -398,22 +427,38 @@ function renderPopupContent(content, type) {
     secondaryButtonUrl
   } = content;
 
+  // 스타일 병합 (기본값 + 커스텀)
+  const style = { ...DEFAULT_STYLE, ...customStyle };
+
   let html = '';
 
   // 이미지
   if (image) {
-    html += `<img src="${escapeHtml(image)}" alt="" class="te-popup-image">`;
+    const imageStyle = buildInlineStyle({
+      'width': style.imageWidth,
+      'height': style.imageHeight,
+      'object-fit': style.imageFit
+    });
+    html += `<img src="${escapeHtml(image)}" alt="" class="te-popup-image" style="${imageStyle}">`;
   }
 
   // 콘텐츠 영역
   html += `<div class="te-popup-content">`;
 
   if (title) {
-    html += `<h3 class="te-popup-title">${escapeHtml(title)}</h3>`;
+    const titleStyle = buildInlineStyle({
+      'color': style.titleColor,
+      'font-size': style.titleFontSize
+    });
+    html += `<h3 class="te-popup-title" style="${titleStyle}">${escapeHtml(title)}</h3>`;
   }
 
   if (body) {
-    html += `<p class="te-popup-body">${escapeHtml(body)}</p>`;
+    const bodyStyle = buildInlineStyle({
+      'color': style.bodyColor,
+      'font-size': style.bodyFontSize
+    });
+    html += `<p class="te-popup-body" style="${bodyStyle}">${escapeHtml(body)}</p>`;
   }
 
   // 버튼 영역
@@ -423,13 +468,19 @@ function renderPopupContent(content, type) {
     if (secondaryButton) {
       const tag = secondaryButtonUrl ? 'a' : 'button';
       const href = secondaryButtonUrl ? ` href="${escapeHtml(secondaryButtonUrl)}" target="_blank"` : '';
-      html += `<${tag}${href} class="te-popup-btn te-popup-btn-secondary" data-action="secondary">${escapeHtml(secondaryButton)}</${tag}>`;
+      const btnStyle = buildInlineStyle({
+        'background-color': style.secondaryColor
+      });
+      html += `<${tag}${href} class="te-popup-btn te-popup-btn-secondary" style="${btnStyle}" data-action="secondary">${escapeHtml(secondaryButton)}</${tag}>`;
     }
 
     if (primaryButton) {
       const tag = primaryButtonUrl ? 'a' : 'button';
       const href = primaryButtonUrl ? ` href="${escapeHtml(primaryButtonUrl)}" target="_blank"` : '';
-      html += `<${tag}${href} class="te-popup-btn te-popup-btn-primary" data-action="primary">${escapeHtml(primaryButton)}</${tag}>`;
+      const btnStyle = buildInlineStyle({
+        'background-color': style.primaryColor
+      });
+      html += `<${tag}${href} class="te-popup-btn te-popup-btn-primary" style="${btnStyle}" data-action="primary">${escapeHtml(primaryButton)}</${tag}>`;
     }
 
     html += `</div>`;
@@ -444,14 +495,26 @@ function renderPopupContent(content, type) {
  * 모달 팝업 생성
  */
 function createModal(content, options) {
+  const customStyle = content.style || {};
+  const style = { ...DEFAULT_STYLE, ...customStyle };
+
   const overlay = document.createElement('div');
   overlay.className = 'te-popup-overlay';
 
   const modal = document.createElement('div');
   modal.className = 'te-popup te-popup-modal';
+
+  // 컨테이너 스타일 적용
+  const containerStyle = buildInlineStyle({
+    'max-width': style.maxWidth,
+    'background-color': style.backgroundColor,
+    'border-radius': style.borderRadius
+  });
+  modal.setAttribute('style', containerStyle);
+
   modal.innerHTML = `
     <button class="te-popup-close" aria-label="닫기">&times;</button>
-    ${renderPopupContent(content, POPUP_TYPES.MODAL)}
+    ${renderPopupContent(content, POPUP_TYPES.MODAL, customStyle)}
   `;
 
   document.body.appendChild(overlay);
@@ -471,21 +534,42 @@ function createModal(content, options) {
  */
 function createBanner(content, options) {
   const position = options.position || 'top';
+  const customStyle = content.style || {};
+  const style = { ...DEFAULT_STYLE, ...customStyle };
 
   const banner = document.createElement('div');
   banner.className = `te-popup te-popup-banner te-position-${position}`;
 
+  // 배너 스타일 적용
+  if (style.backgroundColor && style.backgroundColor !== '#ffffff') {
+    banner.style.background = style.backgroundColor;
+  }
+  if (style.borderRadius) {
+    banner.style.borderRadius = style.borderRadius;
+  }
+
   let html = '';
   if (content.title) {
-    html += `<span class="te-popup-title">${escapeHtml(content.title)}</span>`;
+    const titleStyle = buildInlineStyle({
+      'color': style.titleColor,
+      'font-size': style.titleFontSize
+    });
+    html += `<span class="te-popup-title" style="${titleStyle}">${escapeHtml(content.title)}</span>`;
   }
   if (content.body) {
-    html += `<span class="te-popup-body">${escapeHtml(content.body)}</span>`;
+    const bodyStyle = buildInlineStyle({
+      'color': style.bodyColor,
+      'font-size': style.bodyFontSize
+    });
+    html += `<span class="te-popup-body" style="${bodyStyle}">${escapeHtml(content.body)}</span>`;
   }
   if (content.primaryButton) {
     const tag = content.primaryButtonUrl ? 'a' : 'button';
     const href = content.primaryButtonUrl ? ` href="${escapeHtml(content.primaryButtonUrl)}" target="_blank"` : '';
-    html += `<${tag}${href} class="te-popup-btn" data-action="primary">${escapeHtml(content.primaryButton)}</${tag}>`;
+    const btnStyle = buildInlineStyle({
+      'background-color': style.primaryColor
+    });
+    html += `<${tag}${href} class="te-popup-btn" style="${btnStyle}" data-action="primary">${escapeHtml(content.primaryButton)}</${tag}>`;
   }
   html += `<button class="te-popup-close" aria-label="닫기">&times;</button>`;
 
@@ -503,11 +587,23 @@ function createBanner(content, options) {
  * 토스트 팝업 생성
  */
 function createToast(content, options) {
+  const customStyle = content.style || {};
+  const style = { ...DEFAULT_STYLE, ...customStyle };
+
   const toast = document.createElement('div');
   toast.className = 'te-popup te-popup-toast';
+
+  // 컨테이너 스타일 적용
+  const containerStyle = buildInlineStyle({
+    'max-width': style.maxWidth !== '480px' ? style.maxWidth : '360px',
+    'background-color': style.backgroundColor,
+    'border-radius': style.borderRadius
+  });
+  toast.setAttribute('style', containerStyle);
+
   toast.innerHTML = `
     <button class="te-popup-close" aria-label="닫기">&times;</button>
-    ${renderPopupContent(content, POPUP_TYPES.TOAST)}
+    ${renderPopupContent(content, POPUP_TYPES.TOAST, customStyle)}
   `;
 
   document.body.appendChild(toast);
@@ -526,14 +622,25 @@ function createToast(content, options) {
  * 슬라이드 팝업 생성
  */
 function createSlide(content, options) {
+  const customStyle = content.style || {};
+  const style = { ...DEFAULT_STYLE, ...customStyle };
+
   const overlay = document.createElement('div');
   overlay.className = 'te-popup-overlay';
 
   const slide = document.createElement('div');
   slide.className = 'te-popup te-popup-slide';
+
+  // 컨테이너 스타일 적용
+  const containerStyle = buildInlineStyle({
+    'width': style.maxWidth !== '480px' ? style.maxWidth : '400px',
+    'background-color': style.backgroundColor
+  });
+  slide.setAttribute('style', containerStyle);
+
   slide.innerHTML = `
     <button class="te-popup-close" aria-label="닫기">&times;</button>
-    ${renderPopupContent(content, POPUP_TYPES.SLIDE)}
+    ${renderPopupContent(content, POPUP_TYPES.SLIDE, customStyle)}
   `;
 
   document.body.appendChild(overlay);
