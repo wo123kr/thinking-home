@@ -185,6 +185,14 @@ TE 콘솔에서 팝업 디자인을 자유롭게 변경할 수 있습니다.
 | `imageHeight` | 이미지 높이 | auto |
 | `imageFit` | 이미지 맞춤 방식 | cover |
 
+**배너 전용 스타일 옵션:**
+
+| 옵션 | 설명 | 기본값 |
+|------|------|--------|
+| `bannerBackground` | 배너 배경 (단색 또는 그라데이션) | linear-gradient(135deg, #667eea 0%, #764ba2 100%) |
+| `bannerTextColor` | 배너 텍스트 색상 | #ffffff |
+| `bannerBtnTextColor` | 배너 버튼 텍스트 색상 | #667eea |
+
 **imageFit 옵션:**
 - `cover`: 비율 유지하며 영역 꽉 채움 (잘릴 수 있음)
 - `contain`: 비율 유지하며 전체 보이게
@@ -225,7 +233,12 @@ TE 콘솔에서 팝업 디자인을 자유롭게 변경할 수 있습니다.
   "title": "무료 배송 이벤트",
   "body": "5만원 이상 구매 시 무료 배송",
   "primaryButton": "자세히 보기",
-  "primaryButtonUrl": "https://example.com/event"
+  "primaryButtonUrl": "https://example.com/event",
+  "style": {
+    "bannerBackground": "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+    "bannerTextColor": "#ffffff",
+    "bannerBtnTextColor": "#f5576c"
+  }
 }
 ```
 

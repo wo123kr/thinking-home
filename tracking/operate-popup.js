@@ -542,26 +542,32 @@ function createBanner(content, options) {
   const banner = document.createElement('div');
   banner.className = `te-popup te-popup-banner te-position-${position}`;
 
-  // 배너 스타일 적용
-  if (style.backgroundColor && style.backgroundColor !== '#ffffff') {
+  // 배너 배경 스타일 적용 (bannerBackground 우선, 없으면 backgroundColor)
+  if (style.bannerBackground) {
+    banner.style.background = style.bannerBackground;
+  } else if (style.backgroundColor && style.backgroundColor !== '#ffffff') {
     banner.style.background = style.backgroundColor;
   }
-  if (style.borderRadius) {
+  if (style.borderRadius && style.borderRadius !== '12px') {
     banner.style.borderRadius = style.borderRadius;
   }
+
+  // 배너 텍스트 색상 (bannerTextColor 우선)
+  const bannerTextColor = style.bannerTextColor || '#ffffff';
+  const bannerBtnTextColor = style.bannerBtnTextColor || '#667eea';
 
   let html = '';
   if (content.title) {
     const titleStyle = buildInlineStyle({
-      'color': style.titleColor,
+      'color': bannerTextColor,
       'font-size': style.titleFontSize
     });
     html += `<span class="te-popup-title" style="${titleStyle}">${escapeHtml(content.title)}</span>`;
   }
   if (content.body) {
     const bodyStyle = buildInlineStyle({
-      'color': style.bodyColor,
-      'font-size': style.bodyFontSize
+      'color': bannerTextColor,
+      'opacity': '0.9'
     });
     html += `<span class="te-popup-body" style="${bodyStyle}">${escapeHtml(content.body)}</span>`;
   }
@@ -569,11 +575,16 @@ function createBanner(content, options) {
     const tag = content.primaryButtonUrl ? 'a' : 'button';
     const href = content.primaryButtonUrl ? ` href="${escapeHtml(content.primaryButtonUrl)}" target="_blank"` : '';
     const btnStyle = buildInlineStyle({
-      'background-color': style.primaryColor
+      'background-color': '#ffffff',
+      'color': bannerBtnTextColor
     });
     html += `<${tag}${href} class="te-popup-btn" style="${btnStyle}" data-action="primary">${escapeHtml(content.primaryButton)}</${tag}>`;
   }
-  html += `<button class="te-popup-close" aria-label="닫기">&times;</button>`;
+  const closeStyle = buildInlineStyle({
+    'color': bannerTextColor,
+    'opacity': '0.8'
+  });
+  html += `<button class="te-popup-close" style="${closeStyle}" aria-label="닫기">&times;</button>`;
 
   banner.innerHTML = html;
   document.body.appendChild(banner);

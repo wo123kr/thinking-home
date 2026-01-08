@@ -180,6 +180,25 @@
     <div class="sidebar">
       <h2>스타일 설정</h2>
 
+      <h3>콘텐츠</h3>
+      <div class="form-group">
+        <label>이미지 URL</label>
+        <input type="text" id="imageUrl" value="https://picsum.photos/480/200" placeholder="이미지 URL 입력" onchange="updatePreview()">
+        <div class="preset-buttons">
+          <button class="preset-btn" onclick="setPreset('imageUrl', 'https://picsum.photos/480/200')">샘플1</button>
+          <button class="preset-btn" onclick="setPreset('imageUrl', 'https://picsum.photos/480/250')">샘플2</button>
+          <button class="preset-btn" onclick="setPreset('imageUrl', '')">없음</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>제목 (title)</label>
+        <input type="text" id="popupTitle" value="신규 가입 혜택" onchange="updatePreview()">
+      </div>
+      <div class="form-group">
+        <label>본문 (body)</label>
+        <textarea id="popupBody" rows="2" style="width:100%; padding:8px 10px; border:1px solid #ddd; border-radius:6px; font-size:13px; resize:vertical;" onchange="updatePreview()">지금 가입하시면 첫 구매 20% 할인 쿠폰을 드립니다!</textarea>
+      </div>
+
       <h3>컨테이너</h3>
       <div class="form-group">
         <label>maxWidth (최대 너비)</label>
@@ -280,6 +299,36 @@
           <div class="color-input-wrapper">
             <input type="color" id="secondaryColorPicker" value="#E5E7EB" onchange="syncColor('secondaryColor')">
             <input type="text" id="secondaryColor" value="#E5E7EB" onchange="updatePreview()">
+          </div>
+        </div>
+      </div>
+
+      <h3>배너 전용 스타일</h3>
+      <div class="form-group">
+        <label>bannerBackground (배너 배경)</label>
+        <div class="color-input-wrapper">
+          <input type="color" id="bannerBackgroundPicker" value="#667eea" onchange="syncColor('bannerBackground')">
+          <input type="text" id="bannerBackground" value="linear-gradient(135deg, #667eea 0%, #764ba2 100%)" onchange="updatePreview()">
+        </div>
+        <div class="preset-buttons">
+          <button class="preset-btn" onclick="setPreset('bannerBackground', 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)')">그라데이션1</button>
+          <button class="preset-btn" onclick="setPreset('bannerBackground', 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)')">그라데이션2</button>
+          <button class="preset-btn" onclick="setPreset('bannerBackground', '#4F46E5')">단색</button>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>bannerTextColor</label>
+          <div class="color-input-wrapper">
+            <input type="color" id="bannerTextColorPicker" value="#ffffff" onchange="syncColor('bannerTextColor')">
+            <input type="text" id="bannerTextColor" value="#ffffff" onchange="updatePreview()">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>bannerBtnTextColor</label>
+          <div class="color-input-wrapper">
+            <input type="color" id="bannerBtnTextColorPicker" value="#667eea" onchange="syncColor('bannerBtnTextColor')">
+            <input type="text" id="bannerBtnTextColor" value="#667eea" onchange="updatePreview()">
           </div>
         </div>
       </div>
@@ -533,6 +582,15 @@
     let currentPopup = null;
     let currentOverlay = null;
 
+    // 콘텐츠 값 가져오기
+    function getContent() {
+      return {
+        image: document.getElementById('imageUrl').value,
+        title: document.getElementById('popupTitle').value,
+        body: document.getElementById('popupBody').value
+      };
+    }
+
     // 스타일 값 가져오기
     function getStyles() {
       return {
@@ -547,7 +605,11 @@
           borderRadius: document.getElementById('borderRadius').value,
           titleColor: document.getElementById('titleColor').value,
           titleFontSize: document.getElementById('titleFontSize').value,
-          bodyColor: document.getElementById('bodyColor').value
+          bodyColor: document.getElementById('bodyColor').value,
+          // 배너 전용
+          bannerBackground: document.getElementById('bannerBackground').value,
+          bannerTextColor: document.getElementById('bannerTextColor').value,
+          bannerBtnTextColor: document.getElementById('bannerBtnTextColor').value
         },
         // styleText 객체 그룹
         styleText: {
@@ -575,16 +637,21 @@
 
     // JSON 업데이트
     function updateJson() {
+      const content = getContent();
       const styles = getStyles();
       const json = {
         popupType: "modal",
-        image: "https://picsum.photos/480/200",
-        title: "팝업 제목",
-        body: "팝업 본문 내용입니다.",
+        image: content.image || undefined,
+        title: content.title,
+        body: content.body,
         primaryButton: "확인",
         secondaryButton: "취소",
         ...styles
       };
+      // 빈 값 제거
+      Object.keys(json).forEach(key => {
+        if (json[key] === '' || json[key] === undefined) delete json[key];
+      });
       document.getElementById('jsonOutput').textContent = JSON.stringify(json, null, 2);
     }
 
@@ -665,6 +732,7 @@
 
     function showModal() {
       closeCurrentPopup();
+      const content = getContent();
       const { style, styleText } = getStyles();
       const merged = { ...style, ...styleText };
 
@@ -678,15 +746,19 @@
       modal.style.backgroundColor = merged.backgroundColor;
       modal.style.borderRadius = merged.borderRadius;
 
-      modal.innerHTML = `
-        <button class="te-popup-close" onclick="closeCurrentPopup()">&times;</button>
-        <img src="https://picsum.photos/480/200?random=${Date.now()}"
+      const imageHtml = content.image ? `
+        <img src="${content.image}"
              class="te-popup-image"
              style="width:${merged.imageWidth}; height:${merged.imageHeight}; object-fit:${merged.imageFit}; border-radius:${merged.borderRadius} ${merged.borderRadius} 0 0;"
              alt="">
+      ` : '';
+
+      modal.innerHTML = `
+        <button class="te-popup-close" onclick="closeCurrentPopup()">&times;</button>
+        ${imageHtml}
         <div class="te-popup-content">
-          <h3 class="te-popup-title" style="color:${merged.titleColor}; font-size:${merged.titleFontSize}">신규 가입 혜택</h3>
-          <p class="te-popup-body" style="color:${merged.bodyColor}; font-size:${merged.bodyFontSize}">지금 가입하시면 첫 구매 20% 할인 쿠폰을 드립니다! 한정 기간 이벤트이니 놓치지 마세요.</p>
+          <h3 class="te-popup-title" style="color:${merged.titleColor}; font-size:${merged.titleFontSize}">${content.title}</h3>
+          <p class="te-popup-body" style="color:${merged.bodyColor}; font-size:${merged.bodyFontSize}">${content.body}</p>
           <div class="te-popup-buttons">
             <button class="te-popup-btn te-popup-btn-secondary" style="background-color:${merged.secondaryColor}" onclick="closeCurrentPopup()">나중에</button>
             <button class="te-popup-btn te-popup-btn-primary" style="background-color:${merged.primaryColor}" onclick="alert('쿠폰 받기 클릭!')">쿠폰 받기</button>
@@ -707,15 +779,24 @@
 
     function showBanner(position) {
       closeCurrentPopup();
-      const { style } = getStyles();
+      const content = getContent();
+      const { style, styleText } = getStyles();
+      const merged = { ...style, ...styleText };
 
       const banner = document.createElement('div');
       banner.className = `te-popup te-popup-banner te-position-${position}`;
+
+      // 배너 배경 스타일 적용
+      banner.style.background = merged.bannerBackground;
+      if (merged.borderRadius && merged.borderRadius !== '12px') {
+        banner.style.borderRadius = merged.borderRadius;
+      }
+
       banner.innerHTML = `
-        <span class="te-popup-title">무료 배송 이벤트</span>
-        <span class="te-popup-body">5만원 이상 구매 시 전 상품 무료 배송!</span>
-        <button class="te-popup-btn" style="background-color:${style.primaryColor}; color:#fff" onclick="alert('자세히 보기 클릭!')">자세히 보기</button>
-        <button class="te-popup-close" onclick="closeCurrentPopup()">&times;</button>
+        <span class="te-popup-title" style="color:${merged.bannerTextColor}; font-size:${merged.titleFontSize}">${content.title}</span>
+        <span class="te-popup-body" style="color:${merged.bannerTextColor}; opacity:0.9">${content.body}</span>
+        <button class="te-popup-btn" style="background-color:#fff; color:${merged.bannerBtnTextColor}" onclick="alert('자세히 보기 클릭!')">자세히 보기</button>
+        <button class="te-popup-close" style="color:${merged.bannerTextColor}; opacity:0.8" onclick="closeCurrentPopup()">&times;</button>
       `;
 
       document.body.appendChild(banner);
@@ -728,6 +809,7 @@
 
     function showToast() {
       closeCurrentPopup();
+      const content = getContent();
       const { style, styleText } = getStyles();
       const merged = { ...style, ...styleText };
 
@@ -740,8 +822,8 @@
       toast.innerHTML = `
         <button class="te-popup-close" onclick="closeCurrentPopup()">&times;</button>
         <div class="te-popup-content">
-          <h3 class="te-popup-title" style="color:${merged.titleColor}; font-size:${merged.titleFontSize}">새 메시지가 도착했습니다</h3>
-          <p class="te-popup-body" style="color:${merged.bodyColor}; font-size:${merged.bodyFontSize}">고객센터에서 문의하신 내용에 대한 답변이 등록되었습니다.</p>
+          <h3 class="te-popup-title" style="color:${merged.titleColor}; font-size:${merged.titleFontSize}">${content.title}</h3>
+          <p class="te-popup-body" style="color:${merged.bodyColor}; font-size:${merged.bodyFontSize}">${content.body}</p>
           <button class="te-popup-btn te-popup-btn-primary" style="background-color:${merged.primaryColor}" onclick="alert('확인하기 클릭!')">확인하기</button>
         </div>
       `;
@@ -756,6 +838,7 @@
 
     function showSlide() {
       closeCurrentPopup();
+      const content = getContent();
       const { style, styleText } = getStyles();
       const merged = { ...style, ...styleText };
 
@@ -768,15 +851,19 @@
       slide.style.width = merged.maxWidth !== '480px' ? merged.maxWidth : '400px';
       slide.style.backgroundColor = merged.backgroundColor;
 
+      const imageHtml = content.image ? `
+        <img src="${content.image}"
+             class="te-popup-image"
+             style="height:${merged.imageHeight}; object-fit:${merged.imageFit};"
+             alt="">
+      ` : '';
+
       slide.innerHTML = `
         <button class="te-popup-close" onclick="closeCurrentPopup()">&times;</button>
         <div class="te-popup-content">
-          <img src="https://picsum.photos/400/300?random=${Date.now()}"
-               class="te-popup-image"
-               style="height:${merged.imageHeight}; object-fit:${merged.imageFit};"
-               alt="">
-          <h3 class="te-popup-title" style="color:${merged.titleColor}; font-size:${merged.titleFontSize}">추천 상품</h3>
-          <p class="te-popup-body" style="color:${merged.bodyColor}; font-size:${merged.bodyFontSize}">고객님의 최근 관심사를 바탕으로 엄선한 추천 상품입니다. 지금 구매하시면 특별 할인 혜택을 받으실 수 있습니다.</p>
+          ${imageHtml}
+          <h3 class="te-popup-title" style="color:${merged.titleColor}; font-size:${merged.titleFontSize}">${content.title}</h3>
+          <p class="te-popup-body" style="color:${merged.bodyColor}; font-size:${merged.bodyFontSize}">${content.body}</p>
           <div class="te-popup-buttons">
             <button class="te-popup-btn te-popup-btn-primary" style="background-color:${merged.primaryColor}; width:100%" onclick="alert('상품 보기 클릭!')">상품 보기</button>
           </div>
