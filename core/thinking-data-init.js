@@ -120,18 +120,41 @@ function getDeviceInfo() {
 }
 
 // UTM 파라미터 추출 함수
+// - 세션 시작 시 저장된 UTM을 우선 사용 (세션 내 모든 페이지에서 동일한 UTM 유지)
+// - 현재 URL에 UTM이 있으면 해당 값으로 덮어씀
 function extractUTMParameters() {
+  const utmKeys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'utm_id'];
+  const trackingIds = ['gclid', 'fbclid', 'msclkid'];
+
+  // 1. 세션에 저장된 UTM 가져오기 (세션 시작 시 저장됨)
+  let utmData = {};
+  try {
+    const storedUtm = localStorage.getItem('te_session_utm');
+    if (storedUtm) {
+      utmData = JSON.parse(storedUtm);
+    }
+  } catch (e) {
+    // 파싱 실패 시 무시
+  }
+
+  // 2. 현재 URL에 UTM이 있으면 덮어쓰기 (새로운 캠페인으로 진입한 경우)
   const urlParams = new URLSearchParams(window.location.search);
-  const utmKeys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
-  
-  const utmData = {};
+
   utmKeys.forEach(key => {
     const value = urlParams.get(key);
     if (value) {
       utmData[key] = value;
     }
   });
-  
+
+  // 3. 광고 트래킹 ID도 포함 (gclid, fbclid 등)
+  trackingIds.forEach(key => {
+    const value = urlParams.get(key);
+    if (value) {
+      utmData[key] = value;
+    }
+  });
+
   return utmData;
 }
 

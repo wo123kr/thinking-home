@@ -23,13 +23,14 @@ const SESSION_CONFIG = {
   TRACKING_IDS: ['gclid', 'fbclid', 'msclkid', '_ga'],
   SESSION_STORAGE_KEYS: {
     SESSION_ID: 'te_session_id',
-    SESSION_NUMBER: 'te_session_number', 
+    SESSION_NUMBER: 'te_session_number',
     SESSION_START_TIME: 'te_session_start_time',
     LAST_ACTIVITY_TIME: 'te_last_activity_time',
     IS_ENGAGED_SESSION: 'te_is_engaged_session',
     SESSION_DATE: 'te_session_date',
     PREVIOUS_UTM: 'te_previous_utm',
-    PREVIOUS_USER: 'te_previous_user'
+    PREVIOUS_USER: 'te_previous_user',
+    SESSION_UTM: 'te_session_utm' // 세션 기간 동안 유지되는 UTM 정보
   }
 };
 
@@ -211,11 +212,11 @@ function initializeSession(config = {}) {
 function startNewSession() {
   const now = Date.now();
   sessionId = generateSessionId();
-  
+
   // ✅ 세션 번호 증가 (안전한 방식)
   const previousSessionNumber = sessionNumber;
   sessionNumber = previousSessionNumber + 1;
-  
+
   sessionStartTime = now;
   isEngagedSession = false;
   interactionCount = 0;
@@ -227,6 +228,9 @@ function startNewSession() {
   safeSetItem(SESSION_CONFIG.SESSION_STORAGE_KEYS.SESSION_START_TIME, sessionStartTime.toString());
   safeSetItem(SESSION_CONFIG.SESSION_STORAGE_KEYS.LAST_ACTIVITY_TIME, lastActivityTime.toString());
   safeSetItem(SESSION_CONFIG.SESSION_STORAGE_KEYS.IS_ENGAGED_SESSION, isEngagedSession.toString());
+
+  // ✅ 세션 UTM 저장 (세션 시작 시 현재 URL의 UTM + gclid 등 저장)
+  saveSessionUTM();
 
   // 🪪 세션 정보로 슈퍼 프로퍼티 갱신
   updateSuperPropertiesWithSession(sessionId, sessionNumber);
@@ -735,6 +739,68 @@ export async function initSession(config = {}) {
 
 // 기타 함수 내보내기
 export { updateSessionActivity, endSession, getSessionStatistics };
+
+// ============================================
+// 세션 UTM 관리 함수
+// ============================================
+
+/**
+ * 세션 시작 시 UTM 파라미터 저장
+ * - 현재 URL에서 UTM + 광고 ID (gclid, fbclid 등) 추출
+ * - 세션 동안 유지되어 모든 이벤트에 포함됨
+ */
+function saveSessionUTM() {
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    const utmData = {};
+
+    // UTM 파라미터 추출
+    SESSION_CONFIG.UTM_PARAMETERS.forEach(key => {
+      const value = urlParams.get(key);
+      if (value) {
+        utmData[key] = value;
+      }
+    });
+
+    // 광고 트래킹 ID 추출 (gclid, fbclid 등)
+    SESSION_CONFIG.TRACKING_IDS.forEach(key => {
+      const value = urlParams.get(key);
+      if (value) {
+        utmData[key] = value;
+      }
+    });
+
+    // UTM 데이터가 있으면 저장
+    if (Object.keys(utmData).length > 0) {
+      safeSetItem(SESSION_CONFIG.SESSION_STORAGE_KEYS.SESSION_UTM, JSON.stringify(utmData));
+      trackingLog('✅ 세션 UTM 저장:', utmData);
+    } else {
+      // UTM이 없으면 기존 저장된 값 삭제 (새 세션이므로)
+      localStorage.removeItem(SESSION_CONFIG.SESSION_STORAGE_KEYS.SESSION_UTM);
+    }
+  } catch (e) {
+    console.warn('세션 UTM 저장 실패:', e);
+  }
+}
+
+/**
+ * 저장된 세션 UTM 가져오기
+ * - 이벤트 공통 속성에서 사용
+ */
+function getSessionUTM() {
+  try {
+    const stored = safeGetItem(SESSION_CONFIG.SESSION_STORAGE_KEYS.SESSION_UTM);
+    if (stored) {
+      return JSON.parse(stored);
+    }
+  } catch (e) {
+    console.warn('세션 UTM 파싱 실패:', e);
+  }
+  return {};
+}
+
+// 세션 UTM 함수 내보내기
+export { getSessionUTM };
 
 // UTM 파라미터 변경 감지
 function checkUtmChange() {
