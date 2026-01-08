@@ -288,7 +288,7 @@ class UserAttributeTracker {
         }
     }
     
-    // 최초 유입 소스 기록 (v2.1 - 상세 정보 추가)
+    // 최초 유입 소스 기록 (v2.2 - 세션 UTM 우선 적용)
     recordFirstVisitSource() {
         // 이미 채널 정보가 기록된 경우 스킵 (더 강력한 중복 방지)
         if (this.attributes.first_channel !== undefined) {
@@ -298,22 +298,34 @@ class UserAttributeTracker {
         const urlParams = new URLSearchParams(window.location.search);
         const referrer = document.referrer;
 
-        // 1. 유입 정보 소스 추출
-        const utmSource = urlParams.get('utm_source');
-        const utmMedium = urlParams.get('utm_medium');
-        const utmCampaign = urlParams.get('utm_campaign');
-        const utmTerm = urlParams.get('utm_term');
-        const utmContent = urlParams.get('utm_content');
-        const gclid = urlParams.get('gclid');
-        
-        // 2. 채널 결정
+        // 1. 세션에 저장된 UTM 먼저 가져오기 (세션 시작 시 저장됨)
+        let sessionUtm = {};
+        try {
+            const storedUtm = localStorage.getItem('te_session_utm');
+            if (storedUtm) {
+                sessionUtm = JSON.parse(storedUtm);
+                trackingLog('📦 세션 UTM 로드:', sessionUtm);
+            }
+        } catch (e) {
+            // 파싱 실패 시 무시
+        }
+
+        // 2. 유입 정보 소스 추출 (현재 URL 우선, 없으면 세션 UTM 사용)
+        const utmSource = urlParams.get('utm_source') || sessionUtm.utm_source || null;
+        const utmMedium = urlParams.get('utm_medium') || sessionUtm.utm_medium || null;
+        const utmCampaign = urlParams.get('utm_campaign') || sessionUtm.utm_campaign || null;
+        const utmTerm = urlParams.get('utm_term') || sessionUtm.utm_term || null;
+        const utmContent = urlParams.get('utm_content') || sessionUtm.utm_content || null;
+        const gclid = urlParams.get('gclid') || sessionUtm.gclid || null;
+
+        // 3. 채널 결정
         const channel = this.determineChannel(utmSource, utmMedium, gclid, referrer);
 
-        // 3. 소스 및 리퍼러 결정
+        // 4. 소스 및 리퍼러 결정
         const source = utmSource || (referrer ? new URL(referrer).hostname : 'direct');
         const referrerDomain = referrer ? new URL(referrer).hostname : 'direct';
 
-        // 4. 저장할 속성 객체 생성
+        // 5. 저장할 속성 객체 생성
         const firstVisitProperties = {
             // --- 기본 유입 정보 ---
             first_channel: channel,
@@ -336,18 +348,18 @@ class UserAttributeTracker {
             Object.entries(firstVisitProperties).filter(([, v]) => v != null)
         );
 
-        // 5. userSetOnce로 최초 정보 전송
+        // 6. userSetOnce로 최초 정보 전송
         if (Object.keys(cleanProperties).length > 0) {
             this.sendImmediate('userSetOnce', cleanProperties);
             trackingLog('✅ 최초 유입 정보 기록:', cleanProperties);
         }
 
-        // 6. 사용한 유입 소스 누적 (중복 제거)
+        // 7. 사용한 유입 소스 누적 (중복 제거)
         this.sendImmediate('userUniqAppend', {
             traffic_sources_used: [source]
         });
 
-        // 7. 로컬 속성 업데이트 및 저장
+        // 8. 로컬 속성 업데이트 및 저장
         Object.assign(this.attributes, cleanProperties);
         
         this.attributes.traffic_sources_used = this.attributes.traffic_sources_used || [];
