@@ -10,30 +10,84 @@
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       min-height: 100vh;
-      padding: 40px 20px;
     }
-    .container {
-      max-width: 800px;
-      margin: 0 auto;
+    .layout {
+      display: flex;
+      min-height: 100vh;
+    }
+    .sidebar {
+      width: 320px;
+      background: #fff;
+      padding: 20px;
+      overflow-y: auto;
+      max-height: 100vh;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+    }
+    .main {
+      flex: 1;
+      padding: 40px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
     h1 {
       color: white;
       text-align: center;
-      margin-bottom: 40px;
-      font-size: 28px;
+      margin-bottom: 30px;
+      font-size: 24px;
+    }
+    .sidebar h2 {
+      font-size: 16px;
+      color: #333;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #4F46E5;
+    }
+    .sidebar h3 {
+      font-size: 13px;
+      color: #666;
+      margin: 16px 0 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .form-group {
+      margin-bottom: 12px;
+    }
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 4px;
+    }
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 13px;
+    }
+    .form-group input:focus, .form-group select:focus {
+      outline: none;
+      border-color: #4F46E5;
+    }
+    .form-row {
+      display: flex;
+      gap: 8px;
+    }
+    .form-row .form-group {
+      flex: 1;
     }
     .button-group {
       display: flex;
-      gap: 12px;
-      justify-content: center;
+      gap: 8px;
       flex-wrap: wrap;
-      margin-bottom: 40px;
+      margin-bottom: 20px;
     }
     .demo-btn {
-      padding: 14px 28px;
+      padding: 10px 16px;
       border: none;
-      border-radius: 8px;
-      font-size: 16px;
+      border-radius: 6px;
+      font-size: 13px;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.2s;
@@ -42,72 +96,221 @@
     }
     .demo-btn:hover {
       transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
     }
     .demo-btn.active {
       background: #4F46E5;
       color: white;
     }
-    .info-box {
-      background: rgba(255,255,255,0.95);
-      border-radius: 12px;
-      padding: 24px;
-      margin-top: 20px;
-    }
-    .info-box h3 {
-      color: #333;
-      margin-bottom: 12px;
-    }
-    .info-box p {
+    .preview-hint {
+      background: rgba(255,255,255,0.9);
+      padding: 16px 20px;
+      border-radius: 8px;
       color: #666;
-      line-height: 1.6;
+      font-size: 14px;
+      text-align: center;
     }
-    .code-block {
+    .color-input-wrapper {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .color-input-wrapper input[type="color"] {
+      width: 36px;
+      height: 32px;
+      padding: 2px;
+      cursor: pointer;
+    }
+    .color-input-wrapper input[type="text"] {
+      flex: 1;
+    }
+    .preset-buttons {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+    .preset-btn {
+      padding: 4px 8px;
+      font-size: 11px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background: #f9f9f9;
+      cursor: pointer;
+    }
+    .preset-btn:hover {
+      background: #eee;
+    }
+    .divider {
+      height: 1px;
+      background: #eee;
+      margin: 20px 0;
+    }
+    .json-output {
       background: #1e1e1e;
       color: #d4d4d4;
-      padding: 16px;
-      border-radius: 8px;
-      margin-top: 12px;
+      padding: 12px;
+      border-radius: 6px;
       font-family: 'Monaco', 'Menlo', monospace;
-      font-size: 13px;
-      overflow-x: auto;
+      font-size: 11px;
+      max-height: 200px;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
     }
-    .code-block .key { color: #9cdcfe; }
-    .code-block .string { color: #ce9178; }
+    .copy-btn {
+      margin-top: 8px;
+      width: 100%;
+      padding: 8px;
+      background: #4F46E5;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .copy-btn:hover {
+      background: #4338CA;
+    }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>운영 팝업 미리보기</h1>
+  <div class="layout">
+    <!-- 사이드바: 스타일 컨트롤 -->
+    <div class="sidebar">
+      <h2>스타일 설정</h2>
 
-    <div class="button-group">
-      <button class="demo-btn" onclick="showModal()">Modal 팝업</button>
-      <button class="demo-btn" onclick="showBanner('top')">Banner (상단)</button>
-      <button class="demo-btn" onclick="showBanner('bottom')">Banner (하단)</button>
-      <button class="demo-btn" onclick="showToast()">Toast 알림</button>
-      <button class="demo-btn" onclick="showSlide()">Slide 패널</button>
+      <h3>컨테이너</h3>
+      <div class="form-group">
+        <label>maxWidth (최대 너비)</label>
+        <input type="text" id="maxWidth" value="480px" onchange="updatePreview()">
+        <div class="preset-buttons">
+          <button class="preset-btn" onclick="setPreset('maxWidth', '400px')">400px</button>
+          <button class="preset-btn" onclick="setPreset('maxWidth', '480px')">480px</button>
+          <button class="preset-btn" onclick="setPreset('maxWidth', '560px')">560px</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>backgroundColor (배경색)</label>
+        <div class="color-input-wrapper">
+          <input type="color" id="backgroundColorPicker" value="#ffffff" onchange="syncColor('backgroundColor')">
+          <input type="text" id="backgroundColor" value="#ffffff" onchange="updatePreview()">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>borderRadius (모서리 둥글기)</label>
+        <input type="text" id="borderRadius" value="12px" onchange="updatePreview()">
+        <div class="preset-buttons">
+          <button class="preset-btn" onclick="setPreset('borderRadius', '0px')">0px</button>
+          <button class="preset-btn" onclick="setPreset('borderRadius', '8px')">8px</button>
+          <button class="preset-btn" onclick="setPreset('borderRadius', '12px')">12px</button>
+          <button class="preset-btn" onclick="setPreset('borderRadius', '20px')">20px</button>
+        </div>
+      </div>
+
+      <h3>이미지 스타일 (styleText)</h3>
+      <div class="form-group">
+        <label>imageWidth (이미지 너비)</label>
+        <input type="text" id="imageWidth" value="100%" onchange="updatePreview()">
+        <div class="preset-buttons">
+          <button class="preset-btn" onclick="setPreset('imageWidth', '100%')">100%</button>
+          <button class="preset-btn" onclick="setPreset('imageWidth', '80%')">80%</button>
+          <button class="preset-btn" onclick="setPreset('imageWidth', '200px')">200px</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>imageHeight (이미지 높이)</label>
+        <input type="text" id="imageHeight" value="auto" onchange="updatePreview()">
+        <div class="preset-buttons">
+          <button class="preset-btn" onclick="setPreset('imageHeight', 'auto')">auto</button>
+          <button class="preset-btn" onclick="setPreset('imageHeight', '150px')">150px</button>
+          <button class="preset-btn" onclick="setPreset('imageHeight', '200px')">200px</button>
+          <button class="preset-btn" onclick="setPreset('imageHeight', '250px')">250px</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>imageFit (이미지 맞춤)</label>
+        <select id="imageFit" onchange="updatePreview()">
+          <option value="cover">cover - 영역 채움 (잘릴 수 있음)</option>
+          <option value="contain">contain - 전체 보임 (여백 생김)</option>
+          <option value="fill">fill - 비율 무시 (찌그러짐)</option>
+          <option value="none">none - 원본 크기</option>
+        </select>
+      </div>
+
+      <h3>텍스트 스타일</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label>titleColor</label>
+          <div class="color-input-wrapper">
+            <input type="color" id="titleColorPicker" value="#333333" onchange="syncColor('titleColor')">
+            <input type="text" id="titleColor" value="#333333" onchange="updatePreview()">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>titleFontSize</label>
+          <input type="text" id="titleFontSize" value="18px" onchange="updatePreview()">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>bodyColor</label>
+          <div class="color-input-wrapper">
+            <input type="color" id="bodyColorPicker" value="#666666" onchange="syncColor('bodyColor')">
+            <input type="text" id="bodyColor" value="#666666" onchange="updatePreview()">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>bodyFontSize</label>
+          <input type="text" id="bodyFontSize" value="14px" onchange="updatePreview()">
+        </div>
+      </div>
+
+      <h3>버튼 스타일</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label>primaryColor</label>
+          <div class="color-input-wrapper">
+            <input type="color" id="primaryColorPicker" value="#4F46E5" onchange="syncColor('primaryColor')">
+            <input type="text" id="primaryColor" value="#4F46E5" onchange="updatePreview()">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>secondaryColor</label>
+          <div class="color-input-wrapper">
+            <input type="color" id="secondaryColorPicker" value="#E5E7EB" onchange="syncColor('secondaryColor')">
+            <input type="text" id="secondaryColor" value="#E5E7EB" onchange="updatePreview()">
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <h3>JSON 출력 (TE 콘솔용)</h3>
+      <div class="json-output" id="jsonOutput"></div>
+      <button class="copy-btn" onclick="copyJson()">JSON 복사</button>
     </div>
 
-    <div class="info-box">
-      <h3>사용 방법</h3>
-      <p>위 버튼을 클릭하면 각 팝업 타입을 미리볼 수 있습니다.</p>
-      <p style="margin-top: 8px;">ESC 키, X 버튼, 또는 오버레이 클릭으로 닫을 수 있습니다.</p>
+    <!-- 메인: 미리보기 -->
+    <div class="main">
+      <h1>팝업 미리보기</h1>
 
-      <h3 style="margin-top: 20px;">TE 콘솔 설정 예시</h3>
-      <div class="code-block">
-{<br>
-&nbsp;&nbsp;<span class="key">"popupType"</span>: <span class="string">"modal"</span>,<br>
-&nbsp;&nbsp;<span class="key">"image"</span>: <span class="string">"https://picsum.photos/400/200"</span>,<br>
-&nbsp;&nbsp;<span class="key">"title"</span>: <span class="string">"신규 가입 혜택"</span>,<br>
-&nbsp;&nbsp;<span class="key">"body"</span>: <span class="string">"지금 가입하면 20% 할인!"</span>,<br>
-&nbsp;&nbsp;<span class="key">"primaryButton"</span>: <span class="string">"쿠폰 받기"</span>,<br>
-&nbsp;&nbsp;<span class="key">"primaryButtonUrl"</span>: <span class="string">"https://example.com"</span><br>
-}
+      <div class="button-group">
+        <button class="demo-btn" onclick="showModal()">Modal</button>
+        <button class="demo-btn" onclick="showBanner('top')">Banner (상단)</button>
+        <button class="demo-btn" onclick="showBanner('bottom')">Banner (하단)</button>
+        <button class="demo-btn" onclick="showToast()">Toast</button>
+        <button class="demo-btn" onclick="showSlide()">Slide</button>
+      </div>
+
+      <div class="preview-hint">
+        위 버튼을 클릭하여 팝업을 미리보세요.<br>
+        왼쪽 패널에서 스타일을 조절할 수 있습니다.
       </div>
     </div>
   </div>
 
-  <!-- 팝업 스타일 (operate-popup.js에서 가져옴) -->
+  <!-- 팝업 스타일 -->
   <style>
     .te-popup-overlay {
       position: fixed;
@@ -146,20 +349,14 @@
       color: #333;
     }
     .te-popup-image {
-      max-width: 100%;
-      height: auto;
       display: block;
     }
     .te-popup-title {
       margin: 0 0 12px 0;
-      font-size: 18px;
       font-weight: 600;
-      color: #333;
     }
     .te-popup-body {
       margin: 0 0 16px 0;
-      font-size: 14px;
-      color: #666;
       line-height: 1.5;
     }
     .te-popup-btn {
@@ -175,18 +372,10 @@
       transition: all 0.2s;
     }
     .te-popup-btn-primary {
-      background: #4F46E5;
       color: #fff;
     }
-    .te-popup-btn-primary:hover {
-      background: #4338CA;
-    }
     .te-popup-btn-secondary {
-      background: #E5E7EB;
       color: #374151;
-    }
-    .te-popup-btn-secondary:hover {
-      background: #D1D5DB;
     }
 
     /* Modal */
@@ -195,10 +384,7 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%) scale(0.9);
-      background: #fff;
-      border-radius: 12px;
       box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-      max-width: 480px;
       width: 90%;
       max-height: 90vh;
       overflow: hidden;
@@ -212,12 +398,10 @@
     .te-popup-modal .te-popup-close {
       top: 12px;
       right: 12px;
+      z-index: 10;
     }
     .te-popup-modal .te-popup-content {
       padding: 24px;
-    }
-    .te-popup-modal .te-popup-image {
-      border-radius: 12px 12px 0 0;
     }
     .te-popup-modal .te-popup-buttons {
       display: flex;
@@ -285,10 +469,7 @@
       position: fixed;
       bottom: 24px;
       right: 24px;
-      background: #fff;
-      border-radius: 12px;
       box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
-      max-width: 360px;
       width: calc(100% - 48px);
       overflow: hidden;
       transform: translateX(120%);
@@ -306,11 +487,9 @@
       padding: 16px;
     }
     .te-popup-toast .te-popup-title {
-      font-size: 15px;
       padding-right: 24px;
     }
     .te-popup-toast .te-popup-body {
-      font-size: 13px;
       margin-bottom: 12px;
     }
     .te-popup-toast .te-popup-btn {
@@ -324,9 +503,7 @@
       top: 0;
       right: 0;
       height: 100%;
-      width: 400px;
       max-width: 90%;
-      background: #fff;
       box-shadow: -10px 0 40px rgba(0, 0, 0, 0.15);
       transform: translateX(100%);
       transition: transform 0.4s ease;
@@ -347,14 +524,129 @@
     }
     .te-popup-slide .te-popup-image {
       margin: -60px -24px 24px -24px;
-      width: calc(100% + 48px);
-      max-width: none;
+      width: calc(100% + 48px) !important;
+      max-width: none !important;
     }
   </style>
 
   <script>
     let currentPopup = null;
     let currentOverlay = null;
+
+    // 스타일 값 가져오기
+    function getStyles() {
+      return {
+        // style 객체 그룹
+        style: {
+          maxWidth: document.getElementById('maxWidth').value,
+          backgroundColor: document.getElementById('backgroundColor').value,
+          primaryColor: document.getElementById('primaryColor').value,
+          primaryHoverColor: document.getElementById('primaryColor').value, // 간략화
+          secondaryColor: document.getElementById('secondaryColor').value,
+          secondaryHoverColor: document.getElementById('secondaryColor').value,
+          borderRadius: document.getElementById('borderRadius').value,
+          titleColor: document.getElementById('titleColor').value,
+          titleFontSize: document.getElementById('titleFontSize').value,
+          bodyColor: document.getElementById('bodyColor').value
+        },
+        // styleText 객체 그룹
+        styleText: {
+          bodyFontSize: document.getElementById('bodyFontSize').value,
+          imageWidth: document.getElementById('imageWidth').value,
+          imageHeight: document.getElementById('imageHeight').value,
+          imageFit: document.getElementById('imageFit').value
+        }
+      };
+    }
+
+    // 프리셋 설정
+    function setPreset(id, value) {
+      document.getElementById(id).value = value;
+      updatePreview();
+    }
+
+    // 색상 동기화
+    function syncColor(field) {
+      const picker = document.getElementById(field + 'Picker');
+      const text = document.getElementById(field);
+      text.value = picker.value;
+      updatePreview();
+    }
+
+    // JSON 업데이트
+    function updateJson() {
+      const styles = getStyles();
+      const json = {
+        popupType: "modal",
+        image: "https://picsum.photos/480/200",
+        title: "팝업 제목",
+        body: "팝업 본문 내용입니다.",
+        primaryButton: "확인",
+        secondaryButton: "취소",
+        ...styles
+      };
+      document.getElementById('jsonOutput').textContent = JSON.stringify(json, null, 2);
+    }
+
+    // JSON 복사
+    function copyJson() {
+      const json = document.getElementById('jsonOutput').textContent;
+      navigator.clipboard.writeText(json).then(() => {
+        alert('JSON이 클립보드에 복사되었습니다!');
+      });
+    }
+
+    // 미리보기 업데이트
+    function updatePreview() {
+      updateJson();
+      // 현재 열린 팝업이 있으면 스타일 업데이트
+      if (currentPopup) {
+        applyStylesToPopup(currentPopup);
+      }
+    }
+
+    // 팝업에 스타일 적용
+    function applyStylesToPopup(popup) {
+      const { style, styleText } = getStyles();
+      const merged = { ...style, ...styleText };
+
+      // 컨테이너 스타일
+      popup.style.maxWidth = merged.maxWidth;
+      popup.style.backgroundColor = merged.backgroundColor;
+      popup.style.borderRadius = merged.borderRadius;
+
+      // 이미지 스타일
+      const img = popup.querySelector('.te-popup-image');
+      if (img) {
+        img.style.width = merged.imageWidth;
+        img.style.height = merged.imageHeight;
+        img.style.objectFit = merged.imageFit;
+      }
+
+      // 제목 스타일
+      const title = popup.querySelector('.te-popup-title');
+      if (title) {
+        title.style.color = merged.titleColor;
+        title.style.fontSize = merged.titleFontSize;
+      }
+
+      // 본문 스타일
+      const body = popup.querySelector('.te-popup-body');
+      if (body) {
+        body.style.color = merged.bodyColor;
+        body.style.fontSize = merged.bodyFontSize;
+      }
+
+      // 버튼 스타일
+      const primaryBtn = popup.querySelector('.te-popup-btn-primary');
+      if (primaryBtn) {
+        primaryBtn.style.backgroundColor = merged.primaryColor;
+      }
+      const secondaryBtn = popup.querySelector('.te-popup-btn-secondary');
+      if (secondaryBtn) {
+        secondaryBtn.style.backgroundColor = merged.secondaryColor;
+      }
+    }
 
     function closeCurrentPopup() {
       if (currentPopup) {
@@ -373,6 +665,8 @@
 
     function showModal() {
       closeCurrentPopup();
+      const { style, styleText } = getStyles();
+      const merged = { ...style, ...styleText };
 
       const overlay = document.createElement('div');
       overlay.className = 'te-popup-overlay';
@@ -380,15 +674,22 @@
 
       const modal = document.createElement('div');
       modal.className = 'te-popup te-popup-modal';
+      modal.style.maxWidth = merged.maxWidth;
+      modal.style.backgroundColor = merged.backgroundColor;
+      modal.style.borderRadius = merged.borderRadius;
+
       modal.innerHTML = `
         <button class="te-popup-close" onclick="closeCurrentPopup()">&times;</button>
-        <img src="https://picsum.photos/480/200?random=1" class="te-popup-image" alt="">
+        <img src="https://picsum.photos/480/200?random=${Date.now()}"
+             class="te-popup-image"
+             style="width:${merged.imageWidth}; height:${merged.imageHeight}; object-fit:${merged.imageFit}; border-radius:${merged.borderRadius} ${merged.borderRadius} 0 0;"
+             alt="">
         <div class="te-popup-content">
-          <h3 class="te-popup-title">신규 가입 혜택</h3>
-          <p class="te-popup-body">지금 가입하시면 첫 구매 20% 할인 쿠폰을 드립니다! 한정 기간 이벤트이니 놓치지 마세요.</p>
+          <h3 class="te-popup-title" style="color:${merged.titleColor}; font-size:${merged.titleFontSize}">신규 가입 혜택</h3>
+          <p class="te-popup-body" style="color:${merged.bodyColor}; font-size:${merged.bodyFontSize}">지금 가입하시면 첫 구매 20% 할인 쿠폰을 드립니다! 한정 기간 이벤트이니 놓치지 마세요.</p>
           <div class="te-popup-buttons">
-            <button class="te-popup-btn te-popup-btn-secondary" onclick="closeCurrentPopup()">나중에</button>
-            <button class="te-popup-btn te-popup-btn-primary" onclick="alert('쿠폰 받기 클릭!')">쿠폰 받기</button>
+            <button class="te-popup-btn te-popup-btn-secondary" style="background-color:${merged.secondaryColor}" onclick="closeCurrentPopup()">나중에</button>
+            <button class="te-popup-btn te-popup-btn-primary" style="background-color:${merged.primaryColor}" onclick="alert('쿠폰 받기 클릭!')">쿠폰 받기</button>
           </div>
         </div>
       `;
@@ -406,13 +707,14 @@
 
     function showBanner(position) {
       closeCurrentPopup();
+      const { style } = getStyles();
 
       const banner = document.createElement('div');
       banner.className = `te-popup te-popup-banner te-position-${position}`;
       banner.innerHTML = `
         <span class="te-popup-title">무료 배송 이벤트</span>
         <span class="te-popup-body">5만원 이상 구매 시 전 상품 무료 배송!</span>
-        <button class="te-popup-btn" onclick="alert('자세히 보기 클릭!')">자세히 보기</button>
+        <button class="te-popup-btn" style="background-color:${style.primaryColor}; color:#fff" onclick="alert('자세히 보기 클릭!')">자세히 보기</button>
         <button class="te-popup-close" onclick="closeCurrentPopup()">&times;</button>
       `;
 
@@ -426,15 +728,21 @@
 
     function showToast() {
       closeCurrentPopup();
+      const { style, styleText } = getStyles();
+      const merged = { ...style, ...styleText };
 
       const toast = document.createElement('div');
       toast.className = 'te-popup te-popup-toast';
+      toast.style.maxWidth = merged.maxWidth !== '480px' ? merged.maxWidth : '360px';
+      toast.style.backgroundColor = merged.backgroundColor;
+      toast.style.borderRadius = merged.borderRadius;
+
       toast.innerHTML = `
         <button class="te-popup-close" onclick="closeCurrentPopup()">&times;</button>
         <div class="te-popup-content">
-          <h3 class="te-popup-title">새 메시지가 도착했습니다</h3>
-          <p class="te-popup-body">고객센터에서 문의하신 내용에 대한 답변이 등록되었습니다.</p>
-          <button class="te-popup-btn te-popup-btn-primary" onclick="alert('확인하기 클릭!')">확인하기</button>
+          <h3 class="te-popup-title" style="color:${merged.titleColor}; font-size:${merged.titleFontSize}">새 메시지가 도착했습니다</h3>
+          <p class="te-popup-body" style="color:${merged.bodyColor}; font-size:${merged.bodyFontSize}">고객센터에서 문의하신 내용에 대한 답변이 등록되었습니다.</p>
+          <button class="te-popup-btn te-popup-btn-primary" style="background-color:${merged.primaryColor}" onclick="alert('확인하기 클릭!')">확인하기</button>
         </div>
       `;
 
@@ -444,17 +752,12 @@
       requestAnimationFrame(() => {
         toast.classList.add('te-show');
       });
-
-      // 10초 후 자동 닫기
-      setTimeout(() => {
-        if (currentPopup === toast) {
-          closeCurrentPopup();
-        }
-      }, 10000);
     }
 
     function showSlide() {
       closeCurrentPopup();
+      const { style, styleText } = getStyles();
+      const merged = { ...style, ...styleText };
 
       const overlay = document.createElement('div');
       overlay.className = 'te-popup-overlay';
@@ -462,14 +765,20 @@
 
       const slide = document.createElement('div');
       slide.className = 'te-popup te-popup-slide';
+      slide.style.width = merged.maxWidth !== '480px' ? merged.maxWidth : '400px';
+      slide.style.backgroundColor = merged.backgroundColor;
+
       slide.innerHTML = `
         <button class="te-popup-close" onclick="closeCurrentPopup()">&times;</button>
         <div class="te-popup-content">
-          <img src="https://picsum.photos/400/300?random=2" class="te-popup-image" alt="">
-          <h3 class="te-popup-title">추천 상품</h3>
-          <p class="te-popup-body">고객님의 최근 관심사를 바탕으로 엄선한 추천 상품입니다. 지금 구매하시면 특별 할인 혜택을 받으실 수 있습니다.</p>
+          <img src="https://picsum.photos/400/300?random=${Date.now()}"
+               class="te-popup-image"
+               style="height:${merged.imageHeight}; object-fit:${merged.imageFit};"
+               alt="">
+          <h3 class="te-popup-title" style="color:${merged.titleColor}; font-size:${merged.titleFontSize}">추천 상품</h3>
+          <p class="te-popup-body" style="color:${merged.bodyColor}; font-size:${merged.bodyFontSize}">고객님의 최근 관심사를 바탕으로 엄선한 추천 상품입니다. 지금 구매하시면 특별 할인 혜택을 받으실 수 있습니다.</p>
           <div class="te-popup-buttons">
-            <button class="te-popup-btn te-popup-btn-primary" onclick="alert('상품 보기 클릭!')" style="width:100%">상품 보기</button>
+            <button class="te-popup-btn te-popup-btn-primary" style="background-color:${merged.primaryColor}; width:100%" onclick="alert('상품 보기 클릭!')">상품 보기</button>
           </div>
         </div>
       `;
@@ -491,6 +800,9 @@
         closeCurrentPopup();
       }
     });
+
+    // 초기 JSON 업데이트
+    updateJson();
   </script>
 </body>
 </html>
